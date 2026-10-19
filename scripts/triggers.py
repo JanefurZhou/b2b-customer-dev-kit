@@ -1,40 +1,40 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-triggers.py — 数据触发口：扫描客户池与各数据表，生成「今天该做什么」的触发队列（技能版本 v3.1）
+triggers.py — Data Triggers: scan the customer pool and data tables and build a "what to do today" trigger queue (skill v3.1)
 
-托管和自动化的核心是客户池：所有动作都由数据变化触发，而不是靠人记。
-本脚本只读扫描 + 写一份队列；任何「发出去」的动作（邮件 / WhatsApp / 推 CRM）
-在队列里一律标 needs_human=true，由人工拍板后再执行对应命令。
-唯一允许自动执行的是保护性动作：--apply-safe 时，退信异常会暂停托管邮箱。
+The core of hosting and automation is the customer pool: every action is triggered by data changes, not by someone remembering.
+This script only scans read-only and writes one queue; any outbound action (e-mail / WhatsApp / CRM push)
+is marked needs_human=true in the queue and is executed only after a human signs off.
+The only action allowed to run automatically is protective: with --apply-safe, a bounce anomaly pauses the hosted mailbox.
 
-触发口（type）
+Trigger types (type)
 --------------
-  POOL_LOW         可发冷开发候选 < 红线，或只够 N 天        → search_customers.py replenish
-  NEW_IMPORT_FILE  $B2B_DATA_DIR/inbox/ 出现新的 CSV/XLSX（SaaS/海关/CRM 导出）→ data_import.py inspect/import
-  COOLDOWN_DUE     已过冷却期、可发下一封跟进的联系人        → 第六步 跟进管理（先 DRY_RUN）
-  REPLY_RECEIVED   新回复（sent_history.status=replied）      → 人工回复 + 第六/七步
-  BOUNCE_SPIKE     近 7 天退信率超阈值                         → 暂停托管邮箱 + 清洗名单（保护性，可自动）
-  WA_SIGNAL        wa_contacts 里待处理的 WhatsApp 线索        → 第七步 WhatsApp 触发
-  WARMUP_STEP      托管邮箱今天进入新的预热档位                 → 仅提示，发信脚本自动按新上限
-  MAILBOX_PAUSED   有托管邮箱处于暂停                           → 排查后 mail_setup.py resume
-  CRM_SYNC_DUE     客户库有更新且距上次 CRM 同步 ≥ N 天         → crm_sync.py export/pull
-  WEEKLY_REVIEW    距上次周复盘 ≥ 7 天                          → 第零步 全渠道复盘 / 第八步 写回
+  POOL_LOW         sendable cold-outreach candidates < red line, or only enough for N days   → search_customers.py replenish
+  NEW_IMPORT_FILE  new CSV/XLSX in $B2B_DATA_DIR/inbox/ (SaaS / customs / CRM export)           → data_import.py inspect/import
+  COOLDOWN_DUE     contacts past their cooldown and eligible for the next follow-up            → Step 6 Follow-up Management (DRY_RUN first)
+  REPLY_RECEIVED   new reply (sent_history.status=replied)                                     → human reply + Step 6/7
+  BOUNCE_SPIKE     bounce rate over the last 7 days above threshold                            → pause hosted mailbox + clean the list (protective, may run automatically)
+  WA_SIGNAL        pending WhatsApp leads in wa_contacts                                        → Step 7 WhatsApp Trigger
+  WARMUP_STEP      a hosted mailbox enters a new warm-up tier today                            → notice only; senders apply the new cap automatically
+  MAILBOX_PAUSED   a hosted mailbox is paused                                                   → investigate, then mail_setup.py resume
+  CRM_SYNC_DUE     customer DB changed and last CRM sync ≥ N days ago                           → crm_sync.py export/pull
+  WEEKLY_REVIEW    last weekly review ≥ 7 days ago                                             → Step 0 Omni-channel Review / Step 8 write-back
 
-用法
+Usage
 ----
   python3 scripts/triggers.py scan [--floor 100] [--daily-target 100] [--ahead-days 30]
                                    [--bounce-rate 0.05] [--crm-days 7] [--apply-safe]
                                    [--out reports/trigger_queue.json]
-  python3 scripts/triggers.py ack <触发 key> [...]     标记已处理（同一事件不再重复提醒）
-  python3 scripts/triggers.py reviewed                 记录本周已复盘（重置 WEEKLY_REVIEW）
-可挂到 cron / 任务计划 / 平台定时任务，每天跑一次 scan（见 references/automation_setup.md）。
-零第三方依赖。
+  python3 scripts/triggers.py ack <trigger key> [...]  mark as handled (the same event is not raised again)
+  python3 scripts/triggers.py reviewed                 record this week's review (resets WEEKLY_REVIEW)
+Can be attached to cron / Task Scheduler / a platform scheduled task; run scan once a day (see references/automation_setup.md).
+Zero third-party dependencies.
 """
 
 import os
 import sys
-for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+for _s in (sys.stdout, sys.stderr):  # keep non-ASCII output safe when redirected or on legacy Windows consoles
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
@@ -50,8 +50,8 @@ import mail_setup as _ms  # noqa: E402
 
 DATA_DIR = os.environ.get("B2B_DATA_DIR", "data")
 STATE_FILE = os.path.join(DATA_DIR, "trigger_state.json")
-COOLDOWN_RULES = {0: 3, 1: 3, 2: 10}   # 与 csv_ops.py 一致（consistency_audit 校验）
-MAX_GENERIC_FOLLOWUP = 3   # 第4封起停通用邮箱（与 csv_ops.py 一致）
+COOLDOWN_RULES = {0: 3, 1: 3, 2: 10}   # same as csv_ops.py (checked by consistency_audit)
+MAX_GENERIC_FOLLOWUP = 3   # from the 4th e-mail stop generic mailboxes (same as csv_ops.py)
 MAX_TOTAL_FOLLOWUP = 4
 NON_COLD = {"existing_customer", "do_not_contact", "competitor", "lost_do_not_contact"}
 
@@ -109,12 +109,12 @@ def scan(a):
     days = sendable // a.daily_target if a.daily_target else 0
     if not db:
         add("POOL_LOW", f"POOL_EMPTY:{today}", 1, 0,
-            "客户库为空：安装时先导入自有客户库/SaaS 导出，或直接开始补池搜索",
-            "python3 scripts/data_import.py inspect <文件>  或  python3 scripts/search_customers.py replenish --force --emit queries_today.txt",
+            "Customer DB is empty: import your own customer DB / SaaS export at install, or start a replenish search directly",
+            "python3 scripts/data_import.py inspect <file>  or  python3 scripts/search_customers.py replenish --force --emit queries_today.txt",
             False)
     elif sendable < a.floor or days < a.ahead_days:
         add("POOL_LOW", f"POOL_LOW:{today}", 1, sendable,
-            f"可发冷开发候选 {sendable}（红线 {a.floor}，约够 {days} 天 < 提前量 {a.ahead_days} 天）",
+            f"Sendable cold-outreach candidates {sendable} (red line {a.floor}, about {days} days < lead time {a.ahead_days} days)",
             "python3 scripts/search_customers.py replenish --emit queries_today.txt", False)
 
     # 2 NEW_IMPORT_FILE
@@ -125,7 +125,7 @@ def scan(a):
                if f.lower().endswith((".csv", ".xlsx")) and f not in logged]
         for f in new:
             add("NEW_IMPORT_FILE", f"IMPORT:{f}", 2, 1,
-                f"inbox 有新导出文件 {f}（来自 SaaS/海关/CRM）：先预览映射，人工确认关系与来源后导入",
+                f"New export file in inbox: {f} (from SaaS / customs / CRM): preview the mapping, confirm relation and source, then import",
                 f"python3 scripts/data_import.py inspect {os.path.join(inbox, f)}", True)
 
     # 3 COOLDOWN_DUE / 4 REPLY_RECEIVED / 5 BOUNCE_SPIKE
@@ -140,29 +140,29 @@ def scan(a):
         if status == "replied":
             replies.append(e)
             continue
-        if status not in ("sent", "") or e in non_cold_emails:   # 老客户/禁联不排冷邮件跟进
+        if status not in ("sent", "") or e in non_cold_emails:   # existing customers / do-not-contact never get cold follow-ups
             continue
         try:
             fu = int(r.get("followup_count") or 0)
         except ValueError:
             fu = 0
-        if fu >= MAX_GENERIC_FOLLOWUP:   # 第4封起不再自动排冷邮件跟进
+        if fu >= MAX_GENERIC_FOLLOWUP:   # from the 4th e-mail no automatic cold follow-up
             continue
         last = _d(r.get("last_followup_date") or r.get("send_date"))
         if last and (today - last).days >= COOLDOWN_RULES.get(fu, 999):
             due.append(e)
     if due:
         add("COOLDOWN_DUE", f"COOLDOWN:{today}", 2, len(due),
-            f"{len(due)} 个联系人已过冷却期，可写下一封跟进（先 DRY_RUN 核对）",
-            "python3 scripts/csv_ops.py cooldown <email>  → 写跟进草稿 → DRY_RUN=1 python3 scripts/batch_sender.py ...",
+            f"{len(due)} contacts are past their cooldown; write the next follow-up (DRY_RUN check first)",
+            "python3 scripts/csv_ops.py cooldown <email>  → write follow-up draft → DRY_RUN=1 python3 scripts/batch_sender.py ...",
             True)
     for e in replies:
-        add("REPLY_RECEIVED", f"REPLY:{e}", 1, 1, f"{e} 已回复：人工回复，判断转 WhatsApp / 报价 / 成单复盘",
-            "references/SOP.md 第六步 跟进管理 / 第七步 WhatsApp 触发", True)
+        add("REPLY_RECEIVED", f"REPLY:{e}", 1, 1, f"{e} replied: reply personally; decide WhatsApp handover / quote / win review",
+            "references/SOP.md Step 6 Follow-up Management / Step 7 WhatsApp Trigger", True)
     week = [r for r in sent if (_d(r.get("send_date")) or datetime.date.min) >= today - datetime.timedelta(days=7)]
     bounced = [r for r in week if (r.get("status") or "").lower() == "bounced"]
     if len(week) >= 20 and len(bounced) / len(week) > a.bounce_rate:
-        detail = f"近 7 天退信 {len(bounced)}/{len(week)} = {len(bounced) / len(week):.1%} > {a.bounce_rate:.0%}"
+        detail = f"Bounces in the last 7 days {len(bounced)}/{len(week)} = {len(bounced) / len(week):.1%} > {a.bounce_rate:.0%}"
         paused = []
         if a.apply_safe:
             data = _ms.load_mailboxes()
@@ -174,26 +174,26 @@ def scan(a):
             if paused:
                 _ms.save_mailboxes(data)
         add("BOUNCE_SPIKE", f"BOUNCE:{today}", 1, len(bounced),
-            detail + (f"；已自动暂停托管邮箱 {paused}" if paused else "；建议暂停发信并清洗名单"),
-            "python3 scripts/imap_scanner.py → dns_validator.py 清洗 → 排查后 mail_setup.py resume <id>", False)
+            detail + (f"; hosted mailbox {paused} paused automatically" if paused else "; pause sending and clean the list"),
+            "python3 scripts/imap_scanner.py → dns_validator.py clean → investigate, then mail_setup.py resume <id>", False)
 
     # 6 WA_SIGNAL
-    wa = [r for r in _rows("wa_contacts.csv") if (r.get("status") or "").lower() in ("new", "pending", "待处理", "")]
+    wa = [r for r in _rows("wa_contacts.csv") if (r.get("status") or "").lower() in ("new", "pending", "待处理", "")]  # "待处理" = legacy Chinese alias for pending
     if wa:
-        add("WA_SIGNAL", f"WA:{today}", 2, len(wa), f"{len(wa)} 条 WhatsApp 线索待处理",
-            "references/SOP.md 第七步 WhatsApp 触发（wa_bulk_sender.py preview → 人工核对 → send）", True)
+        add("WA_SIGNAL", f"WA:{today}", 2, len(wa), f"{len(wa)} WhatsApp leads pending",
+            "references/SOP.md Step 7 WhatsApp Trigger (wa_bulk_sender.py preview → human check → send)", True)
 
     # 7 WARMUP_STEP / 8 MAILBOX_PAUSED
     for m in _ms.load_mailboxes()["mailboxes"]:
         cap, dn = _ms.warmup_cap(m)
         if any(dn == day for day, _ in (m.get("warmup_schedule") or _ms.DEFAULT_WARMUP)) and dn > 1:
             add("WARMUP_STEP", f"WARMUP:{m['id']}:{today}", 3, cap,
-                f"托管邮箱 {m['id']} 今天进入预热第 {dn} 天档位，每日上限 {cap}",
+                f"Hosted mailbox {m['id']} enters warm-up day {dn} tier today, daily cap {cap}",
                 "python3 scripts/mail_setup.py list", False)
         if m.get("status") == "paused":
             add("MAILBOX_PAUSED", f"PAUSED:{m['id']}:{m.get('paused_at', '')}", 1, 1,
-                f"托管邮箱 {m['id']} 暂停中：{m.get('paused_reason', '')}",
-                f"排查退信/投诉原因后 python3 scripts/mail_setup.py resume {m['id']}", True)
+                f"Hosted mailbox {m['id']} is paused: {m.get('paused_reason', '')}",
+                f"Investigate bounce / complaint cause, then python3 scripts/mail_setup.py resume {m['id']}", True)
 
     # 9 CRM_SYNC_DUE
     log = _rows("crm_sync_log.csv")
@@ -202,57 +202,57 @@ def scan(a):
     if db and (last_sync is None or ((today - last_sync).days >= a.crm_days
                                      and db_updated and db_updated > last_sync)):
         add("CRM_SYNC_DUE", f"CRM:{today}", 3, len(db),
-            "客户库有更新，距上次 CRM 同步 ≥ %d 天（或从未同步）" % a.crm_days,
+            "Customer DB changed and last CRM sync ≥ %d days ago (or never synced)" % a.crm_days,
             "python3 scripts/crm_sync.py export --target <hubspot|salesforce|okki|fumeng|generic>", True)
 
     # 10 WEEKLY_REVIEW
     lr = _d(st.get("last_review"))
     if lr is None or (today - lr).days >= 7:
         add("WEEKLY_REVIEW", f"REVIEW:{today.isocalendar()[1]}", 3, 1,
-            "距上次周复盘 ≥ 7 天：跑第零步 全渠道复盘，并把结论写回七件套",
-            "python3 scripts/email_dashboard.py → references/soul_kit/周复盘写回.md → triggers.py reviewed", True)
+            "Last weekly review ≥ 7 days ago: run Step 0 Omni-channel Review and write the conclusions back into the Soul Seven Kit",
+            "python3 scripts/email_dashboard.py → references/soul_kit/weekly_writeback.md → triggers.py reviewed", True)
 
     q.sort(key=lambda x: (x["priority"], x["type"]))
     out = a.out or os.path.join("reports", "trigger_queue.json")
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     json.dump({"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "queue": q},
               open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    print(f"===== 数据触发口扫描 {today} =====")
+    print(f"===== Data Triggers scan {today} =====")
     if not q:
-        print("没有需要处理的触发。")
+        print("No triggers to handle.")
     for x in q:
-        flag = "需人工拍板" if x["needs_human"] else "可直接执行"
+        flag = "needs human sign-off" if x["needs_human"] else "may run directly"
         print(f"[P{x['priority']}] {x['type']:<16} {x['detail']}")
-        print(f"      → {x['next_command']}   （{flag}）")
-    print(f"队列已写入 {out}。处理完用 triggers.py ack <key> 消掉提醒。")
+        print(f"      → {x['next_command']}   ({flag})")
+    print(f"Queue written to {out}. After handling, run triggers.py ack <key> to clear the notice.")
 
 
 def cmd_ack(a):
     st = _state()
     st["acked"] = sorted(set(st.get("acked", [])) | set(a.keys))[-500:]
     _save_state(st)
-    print(f"已标记处理 {len(a.keys)} 个触发。")
+    print(f"Marked {len(a.keys)} triggers as handled.")
 
 
 def cmd_reviewed(_a):
     st = _state()
     st["last_review"] = datetime.date.today().isoformat()
     _save_state(st)
-    print("已记录本周复盘。")
+    print("This week's review recorded.")
 
 
 def main():
-    p = argparse.ArgumentParser(description="数据触发口：客户池驱动的每日触发队列（v3.1）")
+    p = argparse.ArgumentParser(description="Data Triggers: customer-pool-driven daily trigger queue (v3.1)")
     sub = p.add_subparsers(dest="cmd")
     ps = sub.add_parser("scan")
     ps.add_argument("--floor", type=int, default=100)
     ps.add_argument("--daily-target", dest="daily_target", type=int, default=100)
     ps.add_argument("--ahead-days", dest="ahead_days", type=int, default=30)
     ps.add_argument("--bounce-rate", dest="bounce_rate", type=float, default=0.05,
-                    help="近 7 天退信率阈值（本技能可调默认值，不是服务商公布数字）")
+                    help="bounce-rate threshold over the last 7 days (adjustable default of this skill, not a provider-published number)")
     ps.add_argument("--crm-days", dest="crm_days", type=int, default=7)
     ps.add_argument("--apply-safe", dest="apply_safe", action="store_true",
-                    help="允许执行保护性动作（退信异常时暂停托管邮箱）")
+                    help="allow protective actions (pause a hosted mailbox on a bounce anomaly)")
     ps.add_argument("--out")
     ps.set_defaults(func=scan)
     pa = sub.add_parser("ack")

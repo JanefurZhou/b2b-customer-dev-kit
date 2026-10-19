@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "configured": false,
+  "user_confirmed": false,
+  "confirmed_at": "",
+  "filled_at": "",
+  "business": {
+    "industry": "CNC machined aluminium parts export",
+    "offer_type": "physical_product",
+    "industry_pack": "industrial_b2b",
+    "sales_motion": "export",
+    "deal_size": "",
+    "sales_cycle": ""
+  },
+  "company": {
+    "brand_display": "Northwind Precision (demo)",
+    "legal_entity": "",
+    "website": "https://northwind.example",
+    "product_site": "",
+    "headquarters_country": ""
+  },
+  "contact": {
+    "founder_name": "Sam Lee",
+    "founder_title": "Sales Director",
+    "email": "sam@northwind.example",
+    "whatsapp": "",
+    "signature_lines": []
+  },
+  "product": {
+    "one_liner_en": "CNC-machined aluminium parts for automation OEMs",
+    "one_liner_local": "",
+    "primary_keywords": [
+      "cnc machining",
+      "precision machined parts",
+      "aluminium machined components"
+    ],
+    "alt_keywords": [],
+    "differentiators": [
+      "full CMM inspection report with every batch",
+      "<your-cert> certified"
+    ],
+    "moq": "",
+    "sample_lead_time": "",
+    "bulk_lead_time": ""
+  },
+  "offer": {
+    "entry_offer": "3 free sample parts against your drawing",
+    "cta_question": "Send a drawing and I'll quote within 48h?",
+    "key_facts": [
+      "<your-min-batch> pcs minimum",
+      "<your-lead-time> lead time"
+    ],
+    "min_commitment": "",
+    "delivery_time": "",
+    "proof_points": [],
+    "repeat_hook": ""
+  },
+  "positioning": {
+    "need_tags": [
+      "prototype",
+      "series_production"
+    ],
+    "conflict_groups": {},
+    "tag_rules": [],
+    "hooks": {}
+  },
+  "targeting": {
+    "buyer_titles": [
+      "procurement manager",
+      "purchasing engineer"
+    ],
+    "channel_keywords": [],
+    "customer_levels": [],
+    "target_regions": [
+      "DE",
+      "NL"
+    ],
+    "languages": [],
+    "exclude_keywords": [],
+    "competitor_markers": [],
+    "reference_brands": []
+  },
+  "search": {
+    "scene_terms": [],
+    "intent_terms": [],
+    "channel_site_terms": [],
+    "niche_terms": [],
+    "cert_terms": [],
+    "channels": []
+  },
+  "rules": {
+    "daily_limit": 200,
+    "local_send_window": "09:00-11:00,14:00-16:00",
+    "same_contact_cooldown_hours": 24,
+    "require_confirmed_email": true,
+    "notes": ""
+  },
+  "credentials_note": "SMTP/IMAP 密码等密钥不要写在这里，运行时通过环境变量提供：SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS/IMAP_*",
+  "_demo": "虚构演示档案：只演示字段怎么填，所有名称、域名、数字都是假的；不得用于真实发信，也不得当作任何用户的事实。",
+  "data_sources": {
+    "customer_db": "none",
+    "customer_db_files": [],
+    "saas_sources": [],
+    "mail_route": "not_yet",
+    "mail_provider": "",
+    "crm": "none",
+    "crm_route": ""
+  }
+}

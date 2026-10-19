@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-"""按收件人当地时间判断「现在能不能发」（零外部依赖，只读，不发任何东西）
+"""Decide "can we send now" by the recipient's local time (zero external dependencies, read-only, sends nothing)
 
-用法:
+Usage:
     python3 scripts/send_window.py table [--window 09:00-11:00,14:00-16:00] [--me Asia/Shanghai]
-        打印各市场的当地时间、是否在发信窗口内、窗口对应的「你本机时间」
-        （夏令时由 zoneinfo 实时计算，不靠写死的时差表）
+        print each market's local time, whether it is inside the sending window, and the window in your local time
+        (daylight saving is computed live by zoneinfo, not from a hard-coded offset table)
     python3 scripts/send_window.py check <REGION> [--window ...]
-        单个市场：返回 JSON {region, tz, local_time, in_window}
+        single market: returns JSON {region, tz, local_time, in_window}
 
-发信窗口来源（优先级从高到低）:
-    --window 参数 > 环境变量 SEND_WINDOW > 档案 rules.local_send_window
-    > 默认 "09:00-11:00,14:00-16:00"
+Sending-window source (highest priority first):
+    --window argument > SEND_WINDOW environment variable > profile rules.local_send_window
+    > default "09:00-11:00,14:00-16:00"
 
-被 batch_sender.py / decision_maker_sender.py 调用：联系人带 region 且当地时间不在
-窗口内 → 本轮跳过（记入报告 deferred_window，不写发送历史，下一轮窗口内再发）。
-设 SEND_WINDOW_ENFORCE=0 可关闭（不推荐）。region 不认识时不拦截，只提示。
+Called by batch_sender.py / decision_maker_sender.py: a contact with region whose local time is outside
+the window → skipped this round (recorded in the report as deferred_window, not written to send history, sent in a later round inside the window).
+SEND_WINDOW_ENFORCE=0 disables it (not recommended). Unknown regions are not blocked, only flagged.
 """
 import datetime
 import json
 import os
 import sys
-for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+for _s in (sys.stdout, sys.stderr):  # keep non-ASCII output safe when redirected or on legacy Windows consoles
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
@@ -28,8 +28,8 @@ for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不�
 
 DEFAULT_WINDOW = "09:00-11:00,14:00-16:00"
 
-# 市场代码 → IANA 时区（取该市场的主要商务时区；美国/澳洲等多时区用最常见的一个，
-# 联系人可在清单里直接写 "tz": "America/Los_Angeles" 覆盖）
+# Market code → IANA time zone (the market's main business zone; for multi-zone countries such as the US / Australia the most common one;
+# a contact may override it in the list with "tz": "America/Los_Angeles")
 REGION_TZ = {
     "US": "America/New_York", "USA": "America/New_York", "US-EAST": "America/New_York",
     "US-WEST": "America/Los_Angeles", "US-CENTRAL": "America/Chicago",
@@ -53,7 +53,7 @@ REGION_TZ = {
     "AU": "Australia/Sydney", "AU-WEST": "Australia/Perth", "NZ": "Pacific/Auckland",
 }
 
-# Python 3.8 没有 zoneinfo：退回「标准时间」固定偏移（不含夏令时，会提示）
+# Python 3.8 has no zoneinfo: fall back to fixed standard-time offsets (no daylight saving; flagged in the output)
 _FIXED_OFFSET_H = {
     "America/New_York": -5, "America/Los_Angeles": -8, "America/Chicago": -6,
     "America/Toronto": -5, "America/Mexico_City": -6, "America/Sao_Paulo": -3,
@@ -73,12 +73,12 @@ def _tz(name):
     except Exception:
         off = _FIXED_OFFSET_H.get(name)
         if off is None:
-            off = 1  # 欧洲大陆默认 CET
+            off = 1  # continental Europe defaults to CET
         return datetime.timezone(datetime.timedelta(hours=off)), False
 
 
 def tz_for(region, explicit_tz=""):
-    """返回 IANA 时区名；认不出返回 ''。"""
+    """Return the IANA zone name; '' when unknown."""
     if explicit_tz:
         return explicit_tz
     return REGION_TZ.get((region or "").strip().upper().replace(" ", "-"), "")
@@ -120,7 +120,7 @@ def local_now(tzname, now_utc=None):
 
 
 def in_window(region, spec, explicit_tz="", now_utc=None):
-    """返回 (allowed: bool|None, info: dict)。None = 认不出时区，不拦截。"""
+    """Return (allowed: bool|None, info: dict). None = zone unknown, not blocked."""
     name = tz_for(region, explicit_tz)
     if not name:
         return None, {"region": region, "tz": "", "reason": "unknown region; not enforced"}
@@ -150,8 +150,8 @@ def _load_profile_quiet():
 def cmd_table(spec, me_tz=""):
     now = datetime.datetime.now(datetime.timezone.utc)
     me = now.astimezone(_tz(me_tz)[0]) if me_tz else datetime.datetime.now().astimezone()
-    print(f"发信窗口（收件人当地）：{spec}   你的本机时间：{me.strftime('%a %H:%M %Z')}")
-    print(f"{'市场':<12}{'时区':<32}{'当地现在':<12}{'可发?':<6}窗口起点 = 你本机时间")
+    print(f"Sending window (recipient local): {spec}   your local time: {me.strftime('%a %H:%M %Z')}")
+    print(f"{'market':<12}{'time zone':<32}{'local now':<12}{'send?':<6}window start = your local time")
     shown = set()
     for region, name in REGION_TZ.items():
         if name in shown:
@@ -163,9 +163,9 @@ def cmd_table(spec, me_tz=""):
         for (ha, ma), _ in parse_window(spec):
             start_local = lt.replace(hour=ha, minute=ma, second=0, microsecond=0)
             starts.append(start_local.astimezone(me.tzinfo).strftime("%H:%M"))
-        flag = "是" if ok else "否"
+        flag = "yes" if ok else "no"
         print(f"{region:<12}{name:<32}{lt.strftime('%a %H:%M'):<12}{flag:<7}{' / '.join(starts)}"
-              + ("" if exact else "  (无 zoneinfo：未含夏令时)"))
+              + ("" if exact else "  (no zoneinfo: daylight saving not included)"))
 
 
 def main():

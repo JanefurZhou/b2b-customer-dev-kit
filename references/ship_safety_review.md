@@ -1,27 +1,27 @@
-# 发送路径人工审查记录（Skill-Self-Check · EXT.3）
+# Manual review of sending paths (Skill-Self-Check · EXT.3)
 
-> Skill-Self-Check 的 ship-safety 静态扫描对 PowerShell 自动化给出 should_fix「需要人工审查发送路径」。以下为逐文件审查结论（v3.0 审查，v3.1 未改动这三个文件）；改动这三个文件后需要重新审查。
+> The ship-safety static scan of Skill-Self-Check flags PowerShell automation as should_fix "sending path needs manual review". Below is the per-file conclusion (reviewed for v3.0; v3.1 did not change these three files); any change to them requires a new review.
 
-| 文件 | 会不会发消息 | 发给谁 | 拦截与保护 |
+| File | Sends messages? | To whom | Guards |
 |---|---|---|---|
-| `scripts/wa_bulk/wa_harness.ps1` | 会（剪贴板粘贴 + 回车） | **只发给必填参数 `-TestPhone`**（你自己的测试号），不发给名单里的客户 | `-TestPhone` / `-MessageFile` 均为必填；消息文件不存在即退出；默认只发前 3 条（`-Count`）；每条截图留证 |
-| `scripts/wa_bulk/wa_audit.ps1` | 不会（无发送按键） | — | 只打开聊天并截图，用于发后复查 |
-| `scripts/wa_bulk/wa_phase1_batch3.ps1` | 不会（文件头注明 no send） | — | 只打开聊天 + 截图；运行前预检：残留 `<占位符>`、号码不是 8–15 位数字、重复号码 → 拒绝运行 |
+| `scripts/wa_bulk/wa_harness.ps1` | yes (clipboard paste + Enter) | **only to the required parameter `-TestPhone`** (your own test number), never to customers in the list | `-TestPhone` / `-MessageFile` both required; exits when the message file is missing; sends only the first 3 by default (`-Count`); screenshot per message |
+| `scripts/wa_bulk/wa_audit.ps1` | no (no send keystroke) | — | opens chats and screenshots only, for post-send review |
+| `scripts/wa_bulk/wa_phase1_batch3.ps1` | no (file header states no send) | — | opens chats + screenshots only; pre-check before running: leftover `<placeholders>`, numbers not 8–15 digits, duplicate numbers → refuses to run |
 
-正式群发只经 `wa_bulk_sender.py send`：门禁 READY + 内容指纹一致才运行；每条生成前检查当日计数（`WA_DAILY_LIMIT`，默认 200，到上限返回 STOP）；`validate` 不通过的文件 `harness` 拒绝使用。
+Real bulk sending goes only through `wa_bulk_sender.py send`: runs only with gate READY + matching content fingerprint; checks the daily counter before generating each message (`WA_DAILY_LIMIT`, default 200, returns STOP at the limit); `harness` refuses files that fail `validate`.
 
-## 其它外部动作的演练开关
+## Dry-run switches of the other external actions
 
-| 脚本 | 外部动作 | 演练 |
+| Script | External action | Dry run |
 |---|---|---|
-| `batch_sender.py` / `decision_maker_sender.py` | SMTP 发信 | `DRY_RUN=1`：逐封输出主题、正文、当地窗口状态，不发送 |
-| `imap_scanner.py` | 读邮箱（只读打开） | `DRY_RUN=1`：只列识别到的退信，不写黑名单 |
-| `dns_validator.py` | DNS 查询（只读） | `DRY_RUN=1`：只列将要查询的域名，不发网络请求 |
-| `search_customers.py` | 无（只生成搜索式文本） | — |
-| `crm_sync.py push-hubspot` | 调 HubSpot 批量 upsert API | **默认演练**：不设 `CRM_PUSH=1` 只打印将推送的条目；真推还需 `HUBSPOT_TOKEN` 并过安装门禁（READY + 内容指纹一致）；禁联 / 同行永不推送 |
-| `crm_sync.py export / pull / mcp-payload` | 无（只读写本地 CSV / JSON） | — |
-| `mail_setup.py test` | 登录 SMTP / IMAP 验证密钥 | **只登录、不发信**；密码从环境变量读取，不落盘 |
-| `mail_setup.py auth-check` | DNS 查询 SPF / DMARC（UDP，失败时走公共 DoH） | 只读查询 |
-| `mail_setup.py mcp-export` | 无（只生成待发清单 JSON） | 清单里每条 `approved=false`，由你逐条改为 true 后才交给连接器 |
-| `triggers.py scan --apply-safe` | 本地：暂停退信异常的托管邮箱 | 唯一的自动动作，且只会「停」不会「发」；恢复要人工 `mail_setup.py resume` |
-| `data_import.py` | 无（只写本地客户库） | `inspect` / `--dry-run` 只读预览 |
+| `batch_sender.py` / `decision_maker_sender.py` | SMTP sending | `DRY_RUN=1`: prints subject, body and local-window status per e-mail, sends nothing |
+| `imap_scanner.py` | reads the mailbox (read-only open) | `DRY_RUN=1`: lists detected bounces only, writes no blacklist |
+| `dns_validator.py` | DNS queries (read-only) | `DRY_RUN=1`: lists the domains to query, no network requests |
+| `search_customers.py` | none (generates query text only) | — |
+| `crm_sync.py push-hubspot` | HubSpot batch upsert API | **dry run by default**: without `CRM_PUSH=1` it only prints the items to push; a real push also needs `HUBSPOT_TOKEN` and the Install Gate (READY + matching fingerprint); do-not-contact / peers are never pushed |
+| `crm_sync.py export / pull / mcp-payload` | none (local CSV / JSON only) | — |
+| `mail_setup.py test` | logs into SMTP / IMAP to verify keys | **login only, no sending**; passwords read from environment variables, never written to disk |
+| `mail_setup.py auth-check` | DNS queries for SPF / DMARC (UDP, public DoH fallback) | read-only queries |
+| `mail_setup.py mcp-export` | none (generates the to-send list JSON only) | every item `approved=false`; you flip them to true one by one before handing over to the connector |
+| `triggers.py scan --apply-safe` | local: pauses hosted mailboxes with bounce anomalies | the only automatic action, and it only "stops", never "sends"; resuming is manual via `mail_setup.py resume` |
+| `data_import.py` | none (writes the local customer DB only) | `inspect` / `--dry-run` read-only preview |

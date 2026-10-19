@@ -1,32 +1,32 @@
 #!/usr/bin/env python3
-"""B2B客户开发 CSV数据层操作脚本（技能版本 v3.1）
-用法: python3 scripts/csv_ops.py <command> [args]
+"""B2B customer development — CSV data-layer operations (skill v3.1)
+Usage: python3 scripts/csv_ops.py <command> [args]
 Commands:
-  check <email>              — 查sent_history+blacklist+wa_contacts,返回该邮箱状态+备注
-  add_sent <email> <brand> <subject> <need_tag> [notes]  — 追加发送记录(含需求标签+备注)
-  add_blacklist <email> <brand> <reason>           — 追加黑名单
-  add_wa <wa_number> <brand> <contact_name> <status> — 追加WA联系人
-  add_note <email> <note>    — 给该邮箱最新记录追加备注
-  mark_bounced <email>       — 标记退信(sent_history+bounced, blacklist)
-  mark_replied <email>       — 标记回复
-  mark_wa_only <email> <wa_number> <brand> <contact_name> — 转WA渠道
-  cooldown <email>           — 检查冷却期状态
-  cross_brand_check <domain> — 检查跨品牌排重(按域名)
-  stats                      — 统计数据概览
-  add_success <email> <brand> <contact> <order_amount> <success_points> [options] — 添加成功案例(含完整客户档案)
+  check <email>              — look up sent_history + blacklist + wa_contacts; return the mailbox status + notes
+  add_sent <email> <brand> <subject> <need_tag> [notes]  — append a send record (with need tag + notes)
+  add_blacklist <email> <brand> <reason>           — append to the blacklist
+  add_wa <wa_number> <brand> <contact_name> <status> — append a WA contact
+  add_note <email> <note>    — append a note to the mailbox's latest record
+  mark_bounced <email>       — mark bounced (sent_history+bounced, blacklist)
+  mark_replied <email>       — mark replied
+  mark_wa_only <email> <wa_number> <brand> <contact_name> — hand over to the WA channel
+  cooldown <email>           — check cooldown status
+  cross_brand_check <domain> — cross-brand de-dup check (by domain)
+  stats                      — data overview
+  add_success <email> <brand> <contact> <order_amount> <success_points> [options] — add a success case (full customer record)
     Options: --region --need_tag --hook_type --language --source_channel --won_channel(email/wa) --company_info --contact_phone --company_address --website --whatsapp --products_info --social_linkedin --social_instagram --notes
-  list_success [--region XX] [--need_tag XX] [--channel XX] — 列出成功案例(可按地区/需求标签/渠道筛选)
-  review_success             — 输出复盘摘要(提炼成功要点,供启动开发前学习)
+  list_success [--region XX] [--need_tag XX] [--channel XX] — list success cases (filter by region / need tag / channel)
+  review_success             — print the review summary (distilled success points, to study before starting outreach)
   
-  # === 备用池管理（v5新增）===
-  pipeline_check             — 检查备用池状态（已备/待备数量，是否低于最低阈值）
-  add_pipeline <email> <brand> <region> <need_tag> [priority] [notes] — 添加到备用池（已完成背调）
-  list_pipeline [--status ready] [--region US] [--min 100] — 列出备用池（可按状态/地区筛选）
-  use_pipeline <email>       — 标记备用池条目为已使用（移出备用池）
+  # === Pipeline (reserve pool) management (added in v5) ===
+  pipeline_check             — check the reserve pool (ready / pending counts, below the minimum threshold or not)
+  add_pipeline <email> <brand> <region> <need_tag> [priority] [notes] — add to the reserve pool (research done)
+  list_pipeline [--status ready] [--region US] [--min 100] — list the reserve pool (filter by status / region)
+  use_pipeline <email>       — mark a reserve-pool entry as used (removed from the pool)
 """
 import csv, os, sys, datetime, re, json
 from collections import Counter
-for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+for _s in (sys.stdout, sys.stderr):  # keep non-ASCII output safe when redirected or on legacy Windows consoles
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
@@ -34,13 +34,13 @@ for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不�
 
 DATA_DIR = os.environ.get("B2B_DATA_DIR", "data")
 
-# === 冷却期规则（与SKILL.md/csv_guide.md统一）===
-# followup_count(已发封数-1) -> 冷却天数
-#   第1封后(0): 3天 | 第2封后(1): 3天 | 第3封后(2): 10天
-#   第4封(3): 永久停通用邮箱 | 第5封(4+): 永久停发，仅WA/个人邮箱
+# === Cooldown rules (unified with SKILL.md / csv_guide.md) ===
+# followup_count (e-mails sent − 1) -> cooldown days
+#   after 1st (0): 3 days | after 2nd (1): 3 days | after 3rd (2): 10 days
+#   4th (3): stop generic mailboxes permanently | 5th (4+): stop permanently, WA / personal mailbox only
 COOLDOWN_RULES = {0: 3, 1: 3, 2: 10}
-MAX_GENERIC_FOLLOWUP = 3   # 第4封起停用通用邮箱
-MAX_TOTAL_FOLLOWUP = 4     # 第5封起(followup>=4)永久停发
+MAX_GENERIC_FOLLOWUP = 3   # from the 4th e-mail stop generic mailboxes
+MAX_TOTAL_FOLLOWUP = 4     # from the 5th e-mail (followup>=4) stop permanently
 
 def _path(name):
     return os.path.join(DATA_DIR, name)
@@ -97,8 +97,8 @@ def cmd_check(email):
             if note:
                 results['notes'].append({'date': r.get('send_date',''), 'note': note})
     
-    # Check wa_contacts — 仅当WA联系人的品牌与本邮箱已发记录的品牌一致时才判定wa_only
-    # （wa_contacts无email字段，靠brand关联；避免"任意一条wa_only就误伤全部"的bug）
+    # Check wa_contacts — only mark wa_only when the WA contact's brand matches the brand in this mailbox's send records
+    # (wa_contacts has no email field; linked by brand; avoids the "any wa_only row hits everyone" bug)
     sent_brands = {r.get('brand','').strip().lower() for r in results['sent'] if r.get('brand','').strip()}
     for r in _read_csv('wa_contacts.csv'):
         if r.get('status','') == 'wa_only':
@@ -209,12 +209,12 @@ def cmd_cooldown(email):
     
     result = {'email': email, 'sent_count': len(rows), 'followup_count': followup, 'status': status}
     
-    # 5级递进规则（先判最严的>=MAX_TOTAL，再判>=MAX_GENERIC，避免>=5分支不可达）
-    if followup >= MAX_TOTAL_FOLLOWUP:      # 已发5封及以上
+    # 5-level progression (check the strictest >=MAX_TOTAL first, then >=MAX_GENERIC, so the >=5 branch stays reachable)
+    if followup >= MAX_TOTAL_FOLLOWUP:      # 5 or more e-mails sent
         result['action'] = 'stop_all'
         result['can_followup'] = False
         result['reason'] = '5+ emails sent, permanent stop — WA/personal inbox only'
-    elif followup >= MAX_GENERIC_FOLLOWUP:  # 已发4封
+    elif followup >= MAX_GENERIC_FOLLOWUP:  # 4 e-mails sent
         result['action'] = 'stop_generic'
         result['can_followup'] = False
         result['reason'] = '4+ emails sent, stop generic inbox — LinkedIn/personal inbox only'
@@ -297,7 +297,7 @@ def cmd_add_success(email, brand, contact, order_amount, success_points, region=
         'hook_type': hook_type.strip(),
         'language': language.strip(),
         'source_channel': source_channel.strip(),
-        'won_channel': won_channel.strip(),  # 成单渠道：email / wa（空=未标，wa_review 会靠brand关联兜底判定）
+        'won_channel': won_channel.strip(),  # won channel: email / wa (empty = unmarked; wa_review falls back to brand association)
         'company_info': company_info.strip(),
         'contact_phone': contact_phone.strip(),
         'company_address': company_address.strip(),
@@ -334,25 +334,25 @@ def cmd_review_success():
     """Generate review summary: extract patterns from success cases"""
     cases = _read_csv('success_cases.csv')
     if not cases:
-        print("NO_DATA: 暂无成功案例，无法复盘")
+        print("NO_DATA: no success cases yet; nothing to review")
         return
     
     
     total_amount = sum(float(c.get('order_amount','0') or 0) for c in cases)
     
-    # 按维度统计
+    # Split by dimension
     by_region = Counter(c.get('region','Unknown') for c in cases)
     by_need_tag = Counter(c.get('need_tag','Unknown') for c in cases)
     by_hook_type = Counter(c.get('hook_type','Unknown') for c in cases)
     by_language = Counter(c.get('language','EN') for c in cases)
     by_source_channel = Counter(c.get('source_channel','Unknown') for c in cases)
     
-    # 提炼成功要点（词频）
+    # Distil success points (keyword frequency)
     all_points = ' '.join(c.get('success_points','') for c in cases)
-    keywords = ['个性化', '具名', '决策人', '钩子', '跟进', '差异化', '母语', '本地化', '样品', '试用', '演示', '案例', '试点', '认证', '合规', '可持续', '新品']
+    keywords = ['personalised', 'named', 'decision maker', 'hook', 'follow-up', 'differentiator', 'native language', 'localised', 'sample', 'trial', 'demo', 'case study', 'pilot', 'certification', 'compliance', 'sustainable', 'new range']
     keyword_hits = {k: all_points.count(k) for k in keywords if all_points.count(k) > 0}
     
-    # 按金额排序Top案例
+    # Top cases by amount
     top_cases = sorted(cases, key=lambda c: float(c.get('order_amount','0') or 0), reverse=True)[:5]
     
     result = {
@@ -379,11 +379,11 @@ def cmd_review_success():
             } for c in top_cases
         ],
         'actionable_insights': [
-            f"最高效地区: {by_region.most_common(1)[0][0] if by_region else 'N/A'} ({by_region.most_common(1)[0][1] if by_region else 0}单)",
-            f"最常见需求类型: {by_need_tag.most_common(1)[0][0] if by_need_tag else 'N/A'}",
-            f"最有效钩子类型: {by_hook_type.most_common(1)[0][0] if by_hook_type else 'N/A'}",
-            f"最有效获客渠道: {by_source_channel.most_common(1)[0][0] if by_source_channel else 'N/A'} ({by_source_channel.most_common(1)[0][1] if by_source_channel else 0}单)",
-            f"母语邮件占比: {by_language.get('EN',0)}/{len(cases)} 用英文，其余用本地语言"
+            f"Top region: {by_region.most_common(1)[0][0] if by_region else 'N/A'} ({by_region.most_common(1)[0][1] if by_region else 0} deals)",
+            f"Most common need type: {by_need_tag.most_common(1)[0][0] if by_need_tag else 'N/A'}",
+            f"Most effective hook type: {by_hook_type.most_common(1)[0][0] if by_hook_type else 'N/A'}",
+            f"Most effective acquisition channel: {by_source_channel.most_common(1)[0][0] if by_source_channel else 'N/A'} ({by_source_channel.most_common(1)[0][1] if by_source_channel else 0} deals)",
+            f"Language split: {by_language.get('EN',0)}/{len(cases)} in English, the rest in the local language"
         ]
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -409,7 +409,7 @@ def cmd_stats():
         result['sent_by_status'][s] = result['sent_by_status'].get(s, 0) + 1
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
-# === 备用池管理（v5新增）===
+# === Pipeline (reserve pool) management (added in v5) ===
 PIPELINE_FIELDS = ['email','brand','region','need_tag','status','priority','research_done','added_date','notes']
 
 def cmd_pipeline_check():
@@ -419,7 +419,7 @@ def cmd_pipeline_check():
     pending = [c for c in cases if c.get('status','') == 'pending']
     disqualified = [c for c in cases if c.get('status','') == 'disqualified']
     
-    MIN_READY = 100  # 7天储备量
+    MIN_READY = 100  # 7-day reserve
     shortage = max(0, MIN_READY - len(ready))
     
     result = {
@@ -436,18 +436,18 @@ def cmd_pipeline_check():
         'by_need_tag': {}
     }
     
-    # 按地区统计
+    # By region
     by_region = Counter(c.get('region','Unknown') for c in ready)
     result['by_region'] = dict(by_region.most_common())
     
-    # 按需求标签统计
+    # By need tag
     by_need_tag = Counter(c.get('need_tag','Unknown') for c in ready)
     result['by_need_tag'] = dict(by_need_tag.most_common())
     
     if shortage > 0:
-        result['action_required'] = f"⚠️ 备用池不足！当前{len(ready)}家，最低{MIN_READY}家，需补充{shortage}家"
+        result['action_required'] = f"⚠️ Reserve pool low: {len(ready)} ready, minimum {MIN_READY}, {shortage} more needed"
     else:
-        result['action_required'] = f"✅ 备用池充足：{len(ready)}家已备，{len(pending)}家待备"
+        result['action_required'] = f"✅ Reserve pool sufficient: {len(ready)} ready, {len(pending)} pending"
     
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

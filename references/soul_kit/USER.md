@@ -1,22 +1,22 @@
 ---
 filled: false
 ---
-<!-- 灵魂七件套 · 回答：你在服务谁。太笼统 AI 无法据此决策。填完把 filled 改成 true。 -->
+<!-- Soul Seven Kit · answer: who are you serving? Too vague and the AI cannot decide from it. Set filled to true when done. -->
 
-# USER.md — 老板设定
+# USER.md — Boss profile
 
-## 汇报格式偏好
-- （例：达标状态先行，第一句说达标/未达标）
-- （例：异常必须直说，不许包装成"正常结果"）
+## Reporting format preferences
+- (e.g. status first: the first sentence says on target / off target)
+- (e.g. anomalies stated plainly, never dressed up as a "normal result")
 
-## 审批习惯
-- （例：邮件内容老板定，发送 AI 执行）
-- （例：报价、合同、询盘回复必须老板确认）
+## Approval habits
+- (e.g. the boss decides e-mail content, the AI executes the sending)
+- (e.g. quotes, contracts and enquiry replies must be confirmed by the boss)
 
-## 敏感信息（不外传）
+## Sensitive information (never shared externally)
 -
 -
 
-## 决策标准
-- （例：客户明确拒绝 = 关闭，不反复打扰）
-- （例：只有真正需要主观判断的事才上报）
+## Decision criteria
+- (e.g. explicit refusal from a customer = closed, no repeated contact)
+- (e.g. escalate only what truly needs a judgement call)

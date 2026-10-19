@@ -1,115 +1,115 @@
-# 首次建档采访问题清单（Onboarding Interview）
+# First-install interview checklist (Onboarding Interview)
 
-本技能是**全行业通用的脱敏模板**，不含任何真实公司信息，也不预设任何行业。AI 第一次加载时，必须用这份清单
-逐项向使用者采集，写入 `config/company_profile.json`，再跑
-`python3 scripts/onboarding.py check` 直到 `READY`。**严禁替用户编造任何值**；
-使用者暂时答不上来的可选项先留空，但"必填"项必须拿到。
+This skill is a **de-identified, industry-agnostic template** with no real company information and no default industry. On first load the AI must use this checklist
+to collect each item from the user, write it into `config/company_profile.json`, then run
+`python3 scripts/onboarding.py check` until it prints `READY`. **Never invent any value on the user's behalf**;
+optional items the user cannot answer yet may stay empty, but every "required" item must be obtained.
 
-## 怎么用
+## How to use
 
-0. `python3 scripts/onboarding.py start` 先看「装好后马上要补的信息」清单（三关 + 建议项，只读）。
-1. `python3 scripts/onboarding.py init` 生成空白档案（不覆盖已有档案）。
-   可选：先问用户属于哪类业务，`onboarding.py packs` 列出 13 个行业包，选中后
-   `apply-pack <id>` 预填方法层建议（分层/角色/渠道/意图词），再逐项和用户改成他的说法。
-   详见 `行业适配指南.md`。
-2. 按下面顺序提问；能从用户一句话里拆出多个字段就一次问清，减少往返。
-3. 直接编辑 JSON 写入，或用 `python3 scripts/onboarding.py ask` 走引导式提问。
-4. 七件套写完跑 `python3 scripts/onboarding.py kit-check`（7/7 才算过）；全部完成后 `python3 scripts/onboarding.py check`，
-   回读给用户、用户确认后 `attest`，出现 `READY` 才能做后续任务。确认后再改档案或七件套，需要重新回读确认再 `attest`。
+0. `python3 scripts/onboarding.py start` first shows the "what to fill in right after installing" list (three checks + recommended items, read-only).
+1. `python3 scripts/onboarding.py init` creates a blank profile (never overwrites an existing one).
+   Optional: ask which kind of business the user is in, `onboarding.py packs` lists the 13 industry packs, then
+   `apply-pack <id>` pre-fills method-level suggestions (tiers / roles / channels / intent terms), which you then rewrite with the user in their own words.
+   See `industry_adaptation_guide.md`.
+2. Ask in the order below; when one sentence from the user yields several fields, fill them all at once to reduce back-and-forth.
+3. Edit the JSON directly, or use `python3 scripts/onboarding.py ask` for guided questions.
+4. After the kit is written run `python3 scripts/onboarding.py kit-check` (7/7 to pass); when everything is done run `python3 scripts/onboarding.py check`,
+   read it back to the user, and after confirmation run `attest`; only `READY` allows later tasks. Changing the profile or the kit after confirmation requires reading back, confirming and `attest` again.
 
-## 必填字段（check 会卡这些）
+## Required fields (check blocks on these)
 
-| 字段 | 要问的问题 | 用在哪 |
+| Field | Question to ask | Used for |
 | --- | --- | --- |
-| `business.industry` | 一句话说说你所在的行业/赛道？（例："工业阀门出口""HR SaaS""跨境货代"） | 选行业包、复盘口径 |
-| `business.offer_type` | 你卖的是有形产品、软件、人力服务、还是按项目成交？（physical_product / software / service / project / other） | 决定默认搜索渠道 |
-| `company.brand_display` | 你邮件落款用的公司/品牌名是什么？ | 签名、主题 |
-| `contact.founder_name` | 对外发件人姓名（署名）？ | 签名 |
-| `contact.email` | 对外发件邮箱是哪个？ | 发件身份、回复 |
-| `product.one_liner_en` | 用一句英文说清你卖的是什么？（例：`<your one-line positioning>`） | 邮件首句、定位 |
-| `product.primary_keywords` | 客户会用哪 ≥3 个英文词搜你这类产品/服务？ | 搜索词矩阵核心 |
-| `product.differentiators` | 你和别家最硬的 ≥2 个可验证差异？（性能/工艺/结果/时效/资质/服务…） | 邮件证据段 |
-| `targeting.buyer_titles` | 你想触达的 ≥1 个决策角色？（procurement manager / CTO / HR director / owner…） | 角色词、词矩阵 |
+| `business.industry` | In one sentence, which industry / segment are you in? (e.g. "industrial valve export", "HR SaaS", "cross-border freight forwarding") | picking a pack, review framing |
+| `business.offer_type` | Do you sell physical products, software, people-based services, or project-based work? (physical_product / software / service / project / other) | default search channels |
+| `company.brand_display` | Which company / brand name goes in your e-mail signature? | signature, subject |
+| `contact.founder_name` | Sender name for outbound e-mail (signature)? | signature |
+| `contact.email` | Which mailbox sends outbound e-mail? | sender identity, replies |
+| `product.one_liner_en` | One English sentence saying what you sell? (e.g. `<your one-line positioning>`) | first line of the e-mail, positioning |
+| `product.primary_keywords` | Which ≥3 English terms would customers use to search for your kind of product / service? | core of the query matrix |
+| `product.differentiators` | Your ≥2 hardest, verifiable differences from others? (performance / process / results / speed / credentials / service …) | evidence section of the e-mail |
+| `targeting.buyer_titles` | ≥1 decision role you want to reach? (procurement manager / CTO / HR director / owner …) | role terms, query matrix |
 
-## 强烈建议补全（不补也能激活，但定位会粗）
+## Strongly recommended (activation works without them, but positioning will be coarse)
 
-- `company.website` / `product_site`：主站与产品站（不同则分开填）。
-- `contact.whatsapp`：WhatsApp 国际格式；`contact.signature_lines`：签名附加行。
-- `product.alt_keywords`：近义/品类扩展词。
-- **`offer.*`（成交入口层，所有邮件/WhatsApp 脚本都从这里取，强烈建议填）**：
-  - `entry_offer`：客户低风险起步方式？（免费样品 / 14 天试用 / 免费诊断 / 试点 / 试走一票 / 样板）
-  - `cta_question`：邮件最后一句英文问句？（例："Open to a 20-minute demo next week?"）
-  - `key_facts`：2–4 条可对外的短事实（MOQ / 上线周期 / 认证名 / 交付时效 / 客户数——填事实，别写形容词）
-  - `proof_points`：可公开的案例（须客户授权或已脱敏）；`repeat_hook`：老客户复购跟进一句话
-  - 实体商品可继续用旧字段 `product.moq` / `sample_lead_time` / `bulk_lead_time`，`key_facts` 为空时自动兜底。
-- `targeting.channel_keywords`：客户类型词（distributor / contractor / startup /
-  clinic chain / importer / agency…）。
-- `targeting.customer_levels`：自定义客户分层数组，每层
-  `{name, desc, keyword_suffixes}`，搜索脚本据此生成各层词表。
-- `targeting.target_regions`：目标市场（ISO 国家码，如 USA/GB/DE）。
-- `targeting.languages`：发信语言（en/fr/de/es/it…），用于本地化。
-- `targeting.exclude_keywords`：你的行业里**明确不是客户**的词（如个人消费者、
-  维修、二手、教程、招聘站、某不做的品类），搜索与门禁都会排除。
-- `targeting.competitor_markers`：同行/竞品的识别特征词（manufacturer / agency /
-  software vendor…），防止把竞品当客户。
-- `positioning.need_tags`：你的产品/服务线标签（背调时 need_tag 的取值）；
-  需要"某线与某类客户互斥"之类规则时，写 `conflict_groups` / `tag_rules`。
-- `rules.*`：`daily_limit`、`local_send_window`（收件人当地时间窗口，默认 `09:00-11:00,14:00-16:00`，
-  `send_window.py table --me <你的时区>` 可查各市场对应的北京时间）、`same_contact_cooldown_hours`、
-  `require_confirmed_email`、`notes`（自定义红线）。
-- `search.social_platforms`：要用哪些社媒平台做免登录公开搜索（linkedin / instagram / facebook / youtube /
-  tiktok / pinterest / x / threads / whatsapp / lemon8；留空 = 10 个全开），见 `social_media_playbooks.md`。
+- `company.website` / `product_site`: main site and product site (separate when different).
+- `contact.whatsapp`: WhatsApp in international format; `contact.signature_lines`: extra signature lines.
+- `product.alt_keywords`: synonyms / category expansion terms.
+- **`offer.*` (deal-entry layer; every e-mail / WhatsApp script reads from here, strongly recommended)**:
+  - `entry_offer`: how does a customer start with low risk? (free sample / 14-day trial / free diagnosis / pilot / trial shipment / mock-up)
+  - `cta_question`: the English closing question of the e-mail? (e.g. "Open to a 20-minute demo next week?")
+  - `key_facts`: 2–4 short publishable facts (MOQ / go-live time / certification name / delivery time / customer count — facts, not adjectives)
+  - `proof_points`: publishable cases (customer-authorised or de-identified); `repeat_hook`: one sentence for repeat-order follow-ups with existing customers
+  - Physical goods may keep the legacy fields `product.moq` / `sample_lead_time` / `bulk_lead_time`; they are used automatically when `key_facts` is empty.
+- `targeting.channel_keywords`: customer-type terms (distributor / contractor / startup /
+  clinic chain / importer / agency …).
+- `targeting.customer_levels`: custom customer tiers, each
+  `{name, desc, keyword_suffixes}`; the search script builds per-tier term lists from them.
+- `targeting.target_regions`: target markets (ISO country codes, e.g. USA/GB/DE).
+- `targeting.languages`: sending languages (en/fr/de/es/it …) for localisation.
+- `targeting.exclude_keywords`: terms that are **clearly not customers** in your industry (consumers,
+  repair, second-hand, tutorials, job boards, a category you do not serve); excluded by search and the gate.
+- `targeting.competitor_markers`: identifying terms of peers / competitors (manufacturer / agency /
+  software vendor …) so competitors are not treated as customers.
+- `positioning.need_tags`: your product / service line tags (need_tag values during research);
+  for rules like "line X and customer type Y are mutually exclusive", write `conflict_groups` / `tag_rules`.
+- `rules.*`: `daily_limit`, `local_send_window` (recipient-local window, default `09:00-11:00,14:00-16:00`;
+  `send_window.py table --me <your tz>` shows each market in your local time), `same_contact_cooldown_hours`,
+  `require_confirmed_email`, `notes` (custom red lines).
+- `search.social_platforms`: which social platforms to use for login-free public search (linkedin / instagram / facebook / youtube /
+  tiktok / pinterest / x / threads / whatsapp / lemon8; empty = all 10), see `social_media_playbooks.md`.
 
-## Part B：灵魂七件套（`soul_seven_kit/`，7 份，全部必填）
+## Part B: Soul Seven Kit (`soul_seven_kit/`, 7 files, all required)
 
-`onboarding.py init` 已把 `references/soul_kit/` 下 7 份模板复制到
-`soul_seven_kit/`。每份填 3–5 条具体内容（把「（例…）」示例换成你的真实做法），填完把文件顶部
-`filled: false` 改成 `filled: true`，再跑 `onboarding.py kit-check`——只改 filled 不写真内容过不了。
-填写参考：`soul_kit/填写参考_客户开发岗.md`。这 7 份定义「干活的这个 AI」本身，
-和 Part A 的业务事实互补：
+`onboarding.py init` has copied the 7 templates from `references/soul_kit/` into
+`soul_seven_kit/`. Fill 3–5 concrete lines per file (replace the "(e.g. …)" examples with your real practice), then change
+`filled: false` at the top to `filled: true` and run `onboarding.py kit-check` — flipping filled without real content does not pass.
+Fill-in reference: `soul_kit/fill_reference_customer_dev.md`. These 7 files define "the AI doing the work" itself,
+complementing the business facts of Part A:
 
-| 文件 | 要问用户填什么 |
+| File | What to ask the user to fill in |
 |---|---|
-| IDENTITY.md | 岗位一句话、服务谁、交付目标、明确边界、红线 |
-| SOUL.md | 沟通语气、做事优先级、决策原则（不编造/留痕/不越权等） |
-| AGENTS.md | 标准 SOP、**必须停下来找老板确认的刹车节点**、禁做事项、异常上报 |
-| TOOLS.md | 每件工具/脚本/渠道何时用、怎么用、坏了用什么替代 |
-| MEMORY.md | 活页工作笔记（客户库指针、重要决策、未决事项、踩坑） |
-| USER.md | 老板的汇报频率/渠道/格式、审批粒度、沟通偏好 |
-| HEARTBEAT.md | 每日/每周健康检查项（池子、发信量、退信、回复跟进、卡点） |
+| IDENTITY.md | role in one sentence, who it serves, delivery goal, explicit boundaries, red lines |
+| SOUL.md | communication tone, working priorities, decision principles (no fabrication / leave a trace / no overreach etc.) |
+| AGENTS.md | standard SOP, **brake nodes where it must stop and ask the boss**, never-do list, exception escalation |
+| TOOLS.md | for every tool / script / channel: when to use, how to use, what to use when it breaks |
+| MEMORY.md | living work notes (customer DB pointers, key decisions, open items, pitfalls) |
+| USER.md | the boss's reporting frequency / channel / format, approval granularity, communication preferences |
+| HEARTBEAT.md | daily / weekly health-check items (pool, sending volume, bounces, reply follow-up, blockers) |
 
-重点采访 IDENTITY 的边界红线、AGENTS 的人工刹车节点、USER 的汇报与
-审批偏好——这三处最容易被泛泛填过，务必让老板给具体规则。
+Interview carefully for IDENTITY's boundaries and red lines, AGENTS' human brake nodes, and USER's reporting and
+approval preferences — these three are most often filled in vaguely; make the boss give concrete rules.
 
-## 凭证（不进档案）
+## Credentials (never in the profile)
 
-SMTP/IMAP 密码、授权码属于密钥，运行时用环境变量提供，**不要**写进
-company_profile.json、脚本或对话记录：
+SMTP/IMAP passwords and authorisation codes are keys, provided at runtime through environment variables; **never** write them into
+company_profile.json, scripts or the conversation log:
 
 ```bash
 export SMTP_HOST=...   SMTP_PORT=465   SMTP_USER=...   SMTP_PASS=...
-# 退信扫描需要时：
+# when bounce scanning is needed:
 export IMAP_HOST=...   IMAP_USER=...   IMAP_PASS=...
 ```
 
-## 采访示例（仅演示问法，值为虚构占位）
+## Interview examples (demonstrating the questions only; values are fictional placeholders)
 
-**示例 A：工业零部件**
-> AI：先帮你建档才能开始。你在什么行业、卖的是产品、软件、服务还是项目？
-> 用户：做精密机加工零件出口，是产品。
-> AI：落款的公司名、发件人姓名、邮箱是？
-> 用户：Northwind Precision，Sam Lee，sam@northwind.example。
-> AI：用一句英文描述你卖的东西？客户搜哪几个词？最硬的两个差异？
-> 用户：CNC machined parts for automation OEMs；cnc machining / precision parts / machined components；
->       全检报告、ISO 9001。
-> AI：客户怎么低风险起步？邮件结尾想问什么？
-> 用户：按图免费打 3 件样；"Send a drawing and I'll quote within 48h?"
+**Example A: industrial parts**
+> AI: I need to set up your profile before we start. Which industry are you in, and do you sell products, software, services or projects?
+> User: Precision machined parts export; products.
+> AI: Company name for the signature, sender name and e-mail?
+> User: Northwind Precision, Sam Lee, sam@northwind.example.
+> AI: Describe what you sell in one English sentence? Which terms do customers search? Your two hardest differences?
+> User: CNC machined parts for automation OEMs; cnc machining / precision parts / machined components;
+>       full inspection report, ISO 9001.
+> AI: How does a customer start with low risk? What do you want to ask at the end of the e-mail?
+> User: 3 free sample pieces to drawing; "Send a drawing and I'll quote within 48h?"
 
-**示例 B：SaaS**
-> AI：你在什么行业、什么交付形态？
-> 用户：HR 入职软件，SaaS。
-> AI：想找哪类决策人、哪些国家？客户怎么开始用？
-> 用户：HR director 和 People Ops，先做英国和德国；可以免费试点一个团队 14 天。
+**Example B: SaaS**
+> AI: Which industry and which offer type?
+> User: HR onboarding software, SaaS.
+> AI: Which decision makers and countries? How do customers start?
+> User: HR directors and People Ops, UK and Germany first; a free 14-day pilot with one team.
 
-填完后 AI 写入档案并运行 check，**逐项回读**给用户确认，用户明确同意后 `attest`，
-`READY` 后再进入搜索/背调/发信流程。
+After filling in, the AI writes the profile, runs check, **reads back every item** for the user to confirm, runs `attest` after explicit agreement,
+and only after `READY` moves on to search / research / sending.

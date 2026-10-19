@@ -1,24 +1,24 @@
 ---
 filled: false
 ---
-<!-- 灵魂七件套 · 活页，天天更新。判据：新对话拿这份，五分钟内能接上活。填完把 filled 改成 true。 -->
+<!-- Soul Seven Kit · a living page, updated daily. Test: a new conversation can pick up the work within five minutes from this file. Set filled to true when done. -->
 
-# MEMORY.md — 工作笔记
+# MEMORY.md — Work notes
 
-_最后更新：（日期）_
+_Last updated: (date)_
 
-## 本周结论
+## Conclusions this week
 -
 
-## 池子与发送关键状态
-- 可发送池：　已发送累计：　黑名单：　待跟进询盘：
+## Pool and sending status
+- Sendable pool:　Sent to date:　Blacklist:　Enquiries awaiting follow-up:
 
-## 待办
+## To-do
 - [ ]
 - [ ]
 
-## 上次复盘结论
+## Conclusions of the last review
 -
 
-## 下一步动作
+## Next step
 -

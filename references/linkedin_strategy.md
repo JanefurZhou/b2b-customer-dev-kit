@@ -60,55 +60,55 @@
 
 ### Decision Layer (manage direction)
 
-| Position (EN) | Chinese | Tier |
-|---|---|---|
-| Purchasing Director | 采购总监 | Decision |
-| Procurement Director | 采购总监(职能向) | Decision |
-| Sourcing Director | 寻源总监 | Decision |
-| Supply Chain Director | 供应链总监 | Decision |
-| VP Sourcing | 寻源副总裁 | Decision |
-| VP Supply Chain | 供应链副总裁 | Decision |
-| Head of Procurement | 采购负责人 | Decision |
-| Head of Buying | 采购团队负责人 | Decision |
+| Position (EN) | Tier |
+|---|---|
+| Purchasing Director | Decision |
+| Procurement Director | Decision |
+| Sourcing Director | Decision |
+| Supply Chain Director | Decision |
+| VP Sourcing | Decision |
+| VP Supply Chain | Decision |
+| Head of Procurement | Decision |
+| Head of Buying | Decision |
 
 ### Execution Layer (manage implementation)
 
-| Position (EN) | Chinese | Tier |
-|---|---|---|
-| Purchasing Manager | 采购经理 | Execution |
-| Procurement Manager | 采购经理(职能向) | Execution |
-| Sourcing Manager | 寻源经理 | Execution |
-| Category Manager | 品类经理 | Execution |
-| Senior Buyer | 高级采购 | Execution |
-| Buyer | 采购 | Execution |
-| Procurement Specialist | 采购专员 | Execution |
-| Sourcing Specialist | 寻源专员 | Execution |
-| Purchasing Agent | 采购代理 | Execution |
-| Supply Chain Coordinator | 供应链专员 | Execution |
-| Import Manager | 进口经理 | Execution |
-| Supply Chain Manager | 供应链经理 | Execution |
+| Position (EN) | Tier |
+|---|---|
+| Purchasing Manager | Execution |
+| Procurement Manager | Execution |
+| Sourcing Manager | Execution |
+| Category Manager | Execution |
+| Senior Buyer | Execution |
+| Buyer | Execution |
+| Procurement Specialist | Execution |
+| Sourcing Specialist | Execution |
+| Purchasing Agent | Execution |
+| Supply Chain Coordinator | Execution |
+| Import Manager | Execution |
+| Supply Chain Manager | Execution |
 
 ### Influence Layer (manage selection)
 
-| Position (EN) | Chinese | Tier |
-|---|---|---|
-| Product Development Manager | 产品开发经理 | Influence |
-| Product Manager | 产品经理 | Influence |
-| R&D Manager | 研发经理 | Influence |
-| NPD Manager | 新品开发经理 | Influence |
-| Brand Manager | 品牌经理 | Influence |
-| Operations Manager | 运营经理 | Influence |
-| Quality Manager | 质量经理 | Influence |
-| Managing Director | 总经理(中小企业常兼采购) | Influence |
+| Position (EN) | Tier |
+|---|---|
+| Product Development Manager | Influence |
+| Product Manager | Influence |
+| R&D Manager | Influence |
+| NPD Manager | Influence |
+| Brand Manager | Influence |
+| Operations Manager | Influence |
+| Quality Manager | Influence |
+| Managing Director | Influence |
 
-> 上表偏「采购」职能，适合卖产品/零部件/耗材。卖软件、服务或项目时，把决策层换成对应职能（写进 `targeting.buyer_titles`）：
-> 软件 → CTO / VP Engineering / Head of IT / VP Operations / CMO；服务 → CEO / Founder / Managing Director / Head of Marketing / HR Director / CFO；
-> 项目型 → Project Director / Procurement Manager / Head of Engineering / Architect；物流 → Logistics Manager / Supply Chain Director / Import Manager。
+> The table above is procurement-oriented (products / parts / consumables). When selling software, services or projects, replace the decision tier with the matching function (written into `targeting.buyer_titles`):
+> software → CTO / VP Engineering / Head of IT / VP Operations / CMO; services → CEO / Founder / Managing Director / Head of Marketing / HR Director / CFO;
+> project-based → Project Director / Procurement Manager / Head of Engineering / Architect; logistics → Logistics Manager / Supply Chain Director / Import Manager.
 >
-> 非采购职能的布尔式示例（结构与下面 21 条相同，只换角色词）：
-> - 软件：`("CTO" OR "VP Engineering" OR "Head of IT") AND (<customer-industry>) AND {country}`
-> - 服务：`("Head of Marketing" OR "Managing Director" OR "Founder") AND (<customer-industry>)`
-> - 项目：`("Project Director" OR "Procurement Manager") AND (contractor OR developer) AND {country}`
+> Boolean examples for non-procurement functions (same structure as the 21 commands, only the role words change):
+> - software: `("CTO" OR "VP Engineering" OR "Head of IT") AND (<customer-industry>) AND {country}`
+> - services: `("Head of Marketing" OR "Managing Director" OR "Founder") AND (<customer-industry>)`
+> - projects: `("Project Director" OR "Procurement Manager") AND (contractor OR developer) AND {country}`
 
 ### Profile-driven Search Combos
 

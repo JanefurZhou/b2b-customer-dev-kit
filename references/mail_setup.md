@@ -1,97 +1,97 @@
-# 发信通道接入（企业邮箱密钥 / 多邮箱托管预热 / MCP）
+# Sending-route setup (business mailbox keys / hosted multi-mailbox warm-up / MCP)
 
-> 装好技能后按本页走一遍，就能知道用哪条路径、去哪生成密钥、怎么验证、怎么交给脚本用。
-> 所有服务器地址、端口、密钥叫法都标了出处；本技能自定的数值（预热档位、退信暂停阈值）都标为「可调默认值」。
+> Walk through this page once after installing and you will know which route to use, where to generate the key, how to verify it and how to hand it to the scripts.
+> Every server address, port and key name carries its source; numbers set by this skill (warm-up tiers, bounce pause threshold) are marked "adjustable default".
 
 ---
 
-## 一、先选路径
+## 1. Pick a route first
 
-| 你的情况 | 选 | 一句话 |
+| Your situation | Choose | In one sentence |
 |---|---|---|
-| 国内企业邮箱（腾讯 / 阿里 / 网易）或 Gmail、单个发件邮箱 | **A1 单邮箱密钥** | 后台生成客户端密钥 → `export` 环境变量 → 脚本直接发 |
-| 2 个以上发件邮箱，想分摊量、按预热爬坡 | **A2 多邮箱托管** | `mail_setup.py add` 登记 → 发信脚本自动挑剩余额度最多的邮箱 |
-| 运行环境已接 Gmail / Outlook 连接器或邮件 MCP，不想给脚本密钥 | **B MCP / 连接器** | 脚本只出演练报告 → 人工逐条批准 → AI 用连接器建草稿/发送 → 回写记录 |
+| Chinese business mailbox (Tencent / Alibaba / NetEase) or Gmail, a single sender mailbox | **A1 single mailbox key** | generate a client key in the admin UI → `export` environment variables → the scripts send directly |
+| 2 or more sender mailboxes, want to spread volume and ramp up with warm-up | **A2 hosted multi-mailbox** | register with `mail_setup.py add` → the senders pick the mailbox with the most quota left |
+| The runtime already has a Gmail / Outlook connector or a mail MCP and you do not want to give scripts a key | **B MCP / connector** | the script only produces a dry-run report → human approves each item → the AI drafts/sends through the connector → results written back |
 
-三条路径的共同点：先 `DRY_RUN=1` 出演练报告、逐条核对收件人和正文，再真发。
+All three routes share one step: `DRY_RUN=1` first, check every recipient and body, then send for real.
 
 ---
 
-## 二、A1 单邮箱密钥
+## 2. A1 single mailbox key
 
 ```bash
-python3 scripts/mail_setup.py providers                       # 看服务器、端口、密钥叫法、在哪生成
-python3 scripts/mail_setup.py env tencent_exmail --user sales@你的域名   # 打印要 export 的行
-export SMTP_PASS=<后台生成的客户端密钥>                         # 只在终端里填，不写进任何文件
-python3 scripts/mail_setup.py test                            # 只登录 SMTP/IMAP，不发任何邮件
+python3 scripts/mail_setup.py providers                       # servers, ports, key names, where to generate
+python3 scripts/mail_setup.py env tencent_exmail --user sales@your-domain   # prints the lines to export
+export SMTP_PASS=<client key generated in the admin UI>        # type it in the terminal only, never in a file
+python3 scripts/mail_setup.py test                            # logs in to SMTP/IMAP only, sends nothing
 ```
 
-### 服务商预设（出处见右列）
+### Provider presets (sources in the right column)
 
-| 服务商 | SMTP | IMAP | 密钥叫法与生成位置 | 出处 |
+| Provider | SMTP | IMAP | Key name and where to generate | Source |
 |---|---|---|---|---|
-| 腾讯企业邮箱 `tencent_exmail` | `smtp.exmail.qq.com` 465 SSL | `imap.exmail.qq.com` 993 SSL | 开启安全登录后须用「客户端专用密码」；网页版 设置 → 邮箱绑定 生成；需在 收发信设置 开启 IMAP/SMTP。海外节点 `hwsmtp/hwimap.exmail.qq.com` | [企业微信帮助中心](https://open.work.weixin.qq.com/help2/pc/19886)、[腾讯云文档](https://main.qcloudimg.com/raw/document/product/pdf/613_46019_cn.pdf) |
-| 阿里企业邮箱 `aliyun_qiye` | `smtp.qiye.aliyun.com` 465 SSL | `imap.qiye.aliyun.com` 993 SSL | 「三方客户端安全密码」；设置 → 账户与安全 → 账户安全。香港节点 `smtphk/imaphk.qiye.aliyun.com` | [阿里云帮助 36576](https://help.aliyun.com/zh/document_detail/36576.html)、[阿里云帮助 36687](https://help.aliyun.com/zh/document_detail/36687.html) |
-| 网易企业邮箱 `netease_qiye` | `smtphz.qiye.163.com` 465 SSL | `imaphz.qiye.163.com` 993 SSL | 第三方客户端须用「客户端授权码」；设置 → 账户与安全 → 客户端设置，只显示一次；管理员可能需先开放客户端协议 | [网易企业邮帮助 1](https://office.163.com/helpCenter/mail/d/2057123645218729986.html)、[网易企业邮帮助 2](https://office.163.com/helpCenter/mail/d/1892504337403437057.html) |
-| Gmail / Workspace `gmail` | `smtp.gmail.com` 465 SSL（或 587 TLS） | `imap.gmail.com` 993 SSL | 「应用专用密码」需先开两步验证；改账户密码后会被吊销；Google 更推荐 OAuth（即路径 B） | [Gmail 帮助](https://support.google.com/mail/answer/185833?hl=en)、[Workspace 管理帮助](https://knowledge.workspace.google.com/admin/gmail/send-email-from-a-printer-scanner-or-app)、[Gmail 开发者文档](https://developers.google.com/workspace/gmail/imap/imap-smtp) |
-| Microsoft 365 `microsoft365` | `smtp.office365.com` 587 STARTTLS（TLS 1.2+） | 不预设（收信/退信扫描建议走 OAuth 或连接器） | 邮箱需开启 Authenticated SMTP；SMTP AUTH 基本认证到 2026 年 12 月底前不变，之后现有租户默认关闭（管理员可再开），2026 年 12 月之后新建的租户须用 OAuth；最终移除日期将于 2027 下半年公布。建议直接走路径 B | [Microsoft Learn](https://learn.microsoft.com/en-us/exchange/mail-flow-best-practices/how-to-set-up-a-multifunction-device-or-application-to-send-email-using-microsoft-365-or-office-365)、[Microsoft Exchange 团队博客](https://techcommunity.microsoft.com/blog/exchange/updated-exchange-online-smtp-auth-basic-authentication-deprecation-timeline/4489835) |
-| 其他 `custom` | 服务商给的地址 | 同左 | 服务商给的 SMTP 密码 / 授权码 | 看服务商帮助文档 |
+| Tencent Exmail `tencent_exmail` | `smtp.exmail.qq.com` 465 SSL | `imap.exmail.qq.com` 993 SSL | once secure login is enabled a "client-specific password" is required; webmail Settings → Mailbox binding; IMAP/SMTP must be enabled under send/receive settings. Overseas nodes `hwsmtp/hwimap.exmail.qq.com` | [WeCom help centre](https://open.work.weixin.qq.com/help2/pc/19886), [Tencent Cloud docs](https://main.qcloudimg.com/raw/document/product/pdf/613_46019_cn.pdf) |
+| Alibaba Mail `aliyun_qiye` | `smtp.qiye.aliyun.com` 465 SSL | `imap.qiye.aliyun.com` 993 SSL | "third-party client security password"; Settings → Account & security → Account security. Hong Kong nodes `smtphk/imaphk.qiye.aliyun.com` | [Alibaba Cloud help 36576](https://help.aliyun.com/zh/document_detail/36576.html), [Alibaba Cloud help 36687](https://help.aliyun.com/zh/document_detail/36687.html) |
+| NetEase Enterprise Mail `netease_qiye` | `smtphz.qiye.163.com` 465 SSL | `imaphz.qiye.163.com` 993 SSL | third-party clients need a "client authorisation code"; Settings → Account & security → Client settings, shown once only; the admin may need to enable client protocols first | [NetEase enterprise mail help 1](https://office.163.com/helpCenter/mail/d/2057123645218729986.html), [NetEase enterprise mail help 2](https://office.163.com/helpCenter/mail/d/1892504337403437057.html) |
+| Gmail / Workspace `gmail` | `smtp.gmail.com` 465 SSL (or 587 TLS) | `imap.gmail.com` 993 SSL | "app password" requires 2-step verification; revoked when the account password changes; Google prefers OAuth (route B) | [Gmail help](https://support.google.com/mail/answer/185833?hl=en), [Workspace admin help](https://knowledge.workspace.google.com/admin/gmail/send-email-from-a-printer-scanner-or-app), [Gmail developer docs](https://developers.google.com/workspace/gmail/imap/imap-smtp) |
+| Microsoft 365 `microsoft365` | `smtp.office365.com` 587 STARTTLS (TLS 1.2+) | not preset (inbound / bounce scanning should use OAuth or a connector) | the mailbox needs Authenticated SMTP enabled; SMTP AUTH basic authentication stays until the end of December 2026, then is disabled by default for existing tenants (admins can re-enable), tenants created after December 2026 must use OAuth; the final removal date will be announced in the second half of 2027. Route B recommended | [Microsoft Learn](https://learn.microsoft.com/en-us/exchange/mail-flow-best-practices/how-to-set-up-a-multifunction-device-or-application-to-send-email-using-microsoft-365-or-office-365), [Microsoft Exchange team blog](https://techcommunity.microsoft.com/blog/exchange/updated-exchange-online-smtp-auth-basic-authentication-deprecation-timeline/4489835) |
+| Other `custom` | address from your provider | same | SMTP password / authorisation code from your provider | your provider's help pages |
 
-**常见失败**：用了网页登录密码而不是客户端密钥；没开 IMAP/SMTP 服务；管理员没开放客户端协议；公司网络拦了 465/587 端口。`test` 会把认证失败的原因提示出来。
+**Common failures**: the web login password was used instead of the client key; IMAP/SMTP not enabled; the admin has not enabled client protocols; the company network blocks ports 465/587. `test` prints the cause of an authentication failure.
 
 ---
 
-## 三、A2 多邮箱托管 + 预热爬坡
+## 3. A2 hosted multi-mailbox + warm-up ramp
 
 ```bash
-python3 scripts/mail_setup.py add mb1 --provider aliyun_qiye --user a@你的域名
-python3 scripts/mail_setup.py add mb2 --provider tencent_exmail --user b@你的域名 --daily-cap 60
-export MAILBOX_PASS_MB1=<mb1 的客户端密钥>
-export MAILBOX_PASS_MB2=<mb2 的客户端密钥>
-python3 scripts/mail_setup.py list          # 每个邮箱：状态 / 预热第几天 / 今日上限 / 已用 / 剩余
+python3 scripts/mail_setup.py add mb1 --provider aliyun_qiye --user a@your-domain
+python3 scripts/mail_setup.py add mb2 --provider tencent_exmail --user b@your-domain --daily-cap 60
+export MAILBOX_PASS_MB1=<client key of mb1>
+export MAILBOX_PASS_MB2=<client key of mb2>
+python3 scripts/mail_setup.py list          # each mailbox: status / warm-up day / cap today / used / left
 python3 scripts/mail_setup.py test --mailbox mb1
 ```
 
-- **托管文件** `config/mailboxes.json`：只存邮箱地址、服务商、密钥的**环境变量名**，不存密钥本身。打包分发时 `config/` 整体排除。
-- **自动轮换**：没设 `SMTP_HOST` 时，`batch_sender.py` / `decision_maker_sender.py` 自动挑今天剩余额度最多的邮箱；`MAILBOX=mb2` 可指定。
-- **预热爬坡**：每个邮箱有 `warmup_schedule`（从第 N 天起 → 每日上限）。内置默认 `第1天 20 → 第8天 40 → 第15天 80 → 第22天 150 → 第29天 200`。
-  这是本技能的**保守可调默认值，不是任何服务商公布的数字**；服务商对你的账户有明确发信额度时以服务商为准。
-  发信脚本取 `min(档案 rules.daily_limit, 预热上限 − 今日已用)`。
-- **自动暂停**：一轮真发里退信（收件人被拒）占比超过 `bounce_pause_rate`（默认 0.05，可改）→ 该邮箱置为 `paused`，之后发信脚本拒绝使用它；排查名单后 `mail_setup.py resume mb1`。`triggers.py scan --apply-safe` 也会在近 7 天退信率异常时暂停全部托管邮箱。
-- **用量记录** `data/mailbox_usage.csv`：日期、邮箱、发送数、退信数，看板和触发口都读它。
-- **第三方预热服务**（选用）：市面上有专门的邮箱预热/托管服务，可与本技能并用；本技能不内置、不推荐具体厂商，接入前自行核实其条款与数据处理方式。
+- **Hosting file** `config/mailboxes.json`: stores only the mailbox address, provider and the **environment-variable name** of the key, never the key itself. `config/` is excluded entirely when packaging.
+- **Automatic rotation**: when `SMTP_HOST` is unset, `batch_sender.py` / `decision_maker_sender.py` pick the mailbox with the most quota left today; `MAILBOX=mb2` pins one.
+- **Warm-up ramp**: every mailbox has a `warmup_schedule` (from day N → daily cap). Built-in default `day 1: 20 → day 8: 40 → day 15: 80 → day 22: 150 → day 29: 200`.
+  This is a **conservative adjustable default of this skill, not a number published by any provider**; if your provider gives your account an explicit quota, the provider wins.
+  The senders use `min(profile rules.daily_limit, warm-up cap − used today)`.
+- **Automatic pause**: when bounces (recipient rejected) in one real round exceed `bounce_pause_rate` (default 0.05, editable) → the mailbox is set to `paused` and the senders refuse to use it; after checking the list, `mail_setup.py resume mb1`. `triggers.py scan --apply-safe` also pauses all hosted mailboxes when the 7-day bounce rate is abnormal.
+- **Usage log** `data/mailbox_usage.csv`: date, mailbox, sent, bounced; read by the dashboard and the triggers.
+- **Third-party warm-up services** (optional): dedicated mailbox warm-up / hosting services exist and can be used alongside this skill; the skill does not bundle or recommend a specific vendor — check their terms and data handling before connecting.
 
 ---
 
-## 四、B MCP / 连接器发信
+## 4. B MCP / connector sending
 
-适合：不想把邮箱密钥交给脚本，或 Microsoft 365 / Google 只允许 OAuth。
+For: not wanting to hand mailbox keys to scripts, or Microsoft 365 / Google allowing OAuth only.
 
 ```bash
-DRY_RUN=1 python3 scripts/decision_maker_sender.py queue.json reports/     # 1 出演练报告（含最终正文）
-python3 scripts/mail_setup.py mcp-export reports/decision_maker_report_<日期>.json   # 2 生成 outbox
-# 3 人工逐条核对 reports/mcp_outbox.json，把要发的条目改成 "approved": true
-# 4 AI 用运行环境里的 Gmail / Outlook 连接器（或邮件 MCP）对 approved 条目「建草稿」；
-#   用户明确授权后才「发送」；每条处理完把 status 改为 drafted / sent
-python3 scripts/mail_setup.py mcp-writeback reports/mcp_outbox.json        # 5 回写 sent_history（标 via:mcp）
+DRY_RUN=1 python3 scripts/decision_maker_sender.py queue.json reports/     # 1 dry-run report (with final bodies)
+python3 scripts/mail_setup.py mcp-export reports/decision_maker_report_<date>.json   # 2 build the outbox
+# 3 a human checks reports/mcp_outbox.json item by item and sets "approved": true on the ones to send
+# 4 the AI uses the runtime's Gmail / Outlook connector (or mail MCP) to create drafts for approved items;
+#   it sends only with the user's explicit authorisation; after each item set status to drafted / sent
+python3 scripts/mail_setup.py mcp-writeback reports/mcp_outbox.json        # 5 write back to sent_history (marked via:mcp)
 ```
 
-规则：脚本本身不调用任何 MCP；AI 只处理 `approved=true` 的条目；默认建草稿，不默认发送。
+Rules: the script itself calls no MCP; the AI processes only `approved=true` items; drafts by default, never sends by default.
 
 ---
 
-## 五、发件域认证与退订（进箱率的硬条件）
+## 5. Sending-domain authentication and unsubscribe (hard requirements for inbox placement)
 
 ```bash
-python3 scripts/mail_setup.py auth-check 你的域名 --selector <DKIM selector>
+python3 scripts/mail_setup.py auth-check your-domain --selector <DKIM selector>
 ```
-查 SPF、DMARC、DKIM 三条 DNS TXT 记录（UDP 53 不通时自动改用 DNS-over-HTTPS）。
+Looks up the SPF, DMARC and DKIM DNS TXT records (falls back to DNS-over-HTTPS when UDP 53 is blocked).
 
-Gmail 发件人要求（[Google 发件人指南](https://support.google.com/mail/answer/81126?hl=en)、[Google 发件人指南 FAQ](https://support.google.com/mail/answer/14229414?hl=en)）：
-- 所有发件人：至少配置 SPF 或 DKIM；发件 IP 有有效的反向解析（PTR）；Postmaster Tools 里的垃圾邮件率保持在 0.3% 以下。
-- 每天给 Gmail 个人账户发约 5000 封以上的批量发件人：SPF + DKIM + DMARC 都要配（DMARC 可以是 `p=none`），From 域与 SPF/DKIM 对齐；营销类邮件要支持一键退订（`List-Unsubscribe` + `List-Unsubscribe-Post` 头）并在正文里放明显的退订链接；垃圾邮件率建议保持在 0.1% 以下。
+Gmail sender requirements ([Google sender guidelines](https://support.google.com/mail/answer/81126?hl=en), [Google sender guidelines FAQ](https://support.google.com/mail/answer/14229414?hl=en)):
+- All senders: set up at least SPF or DKIM; the sending IP has a valid reverse DNS (PTR) record; keep the spam rate in Postmaster Tools below 0.3%.
+- Bulk senders (about 5,000+ messages a day to personal Gmail accounts): SPF + DKIM + DMARC all required (DMARC may be `p=none`), From domain aligned with SPF/DKIM; marketing mail must support one-click unsubscribe (`List-Unsubscribe` + `List-Unsubscribe-Post` headers) with a visible unsubscribe link in the body; spam rate ideally below 0.1%.
 
-本技能的落地：
-- 发信脚本发**纯文本**邮件，每封自动带 `List-Unsubscribe: <mailto:发件邮箱?subject=unsubscribe>` 头；设了 `UNSUBSCRIBE_URL=https://...` 时再加 HTTPS 一键退订头和 `List-Unsubscribe-Post`。
-- 正文末尾自动补一句退订提示（默认英文 “If this isn't relevant for you, just reply "no" and I won't write again.”；档案 `rules.opt_out_line` 可改成当地语言，设 `off` 可关闭但不建议）。演练报告里看到的就是最终正文。
-- 收到 “no / unsubscribe / 退订” 的回复 → `csv_ops.py add_blacklist`，或在客户库把关系改成 `do_not_contact` 后重新 `data_import`，之后永不再发。
+How this skill implements it:
+- The senders send **plain-text** e-mail, each with a `List-Unsubscribe: <mailto:sender?subject=unsubscribe>` header; with `UNSUBSCRIBE_URL=https://...` set, an HTTPS one-click header and `List-Unsubscribe-Post` are added.
+- An opt-out sentence is appended to the body (default English "If this isn't relevant for you, just reply \"no\" and I won't write again."; the profile's `rules.opt_out_line` can change it to the local language; `off` disables it, not recommended). What you see in the dry-run report is the final body.
+- A reply saying "no / unsubscribe" → `csv_ops.py add_blacklist`, or set the relation to `do_not_contact` in the customer DB and run `data_import` again; never contacted again.

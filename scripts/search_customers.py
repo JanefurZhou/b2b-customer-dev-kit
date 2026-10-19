@@ -1,62 +1,62 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-search_customers.py  —  通用 B2B 客户搜索候选生成器 + 自循环引擎（技能版本 v3.1 · 配置驱动版）
+search_customers.py  —  Industry-agnostic B2B customer search candidate generator + self-replenishing engine (skill v3.1, profile-driven)
 
-【行业无关】：本脚本不内置任何具体行业的产品词/客户分层/排除词；实体商品、软件、
-服务、项目型业务通用。可选的行业包（references/industry_packs.json，经
-onboarding.py apply-pack 写入 profile）只提供方法层建议：意图词、站点词、推荐渠道。
-全部业务词库在运行时从公司档案 config/company_profile.json 读取：
-  - 核心产品词     product.primary_keywords + product.alt_keywords
-  - 决策角色词     targeting.buyer_titles
-  - 渠道词         targeting.channel_keywords
-  - 客户分层       targeting.customer_levels（每层 name/desc/keyword_suffixes）
-                   未定义时用 buyer_titles + channel_keywords 组合出一个默认单层
-  - 非目标排除词   targeting.exclude_keywords（命中即拦截；为空则不做行业排除）
-  - 竞品特征词     targeting.competitor_markers（命中即拦截；为空则不做竞品排除）
-  - 目标地区       targeting.target_regions（也可用 --regions 临时覆盖）
-  - 侧翼轴词       可选 search.scene_terms / intent_terms / channel_site_terms /
-                   niche_terms / cert_terms（不配则意图轴/渠道站轴用行业中性通用词，
-                   其余三轴不启用）
-未建档/必填项未填齐时，任何业务子命令都会被 config.py 门禁拒绝（exit 2）。
+[Industry-agnostic] This script embeds no product terms, customer tiers or exclusion words for any
+specific industry; it works for physical goods, software, services and project businesses. Optional
+industry packs (references/industry_packs.json, written into the profile by onboarding.py apply-pack) only supply method-level hints: intent terms, site terms, recommended channels.
+All business vocabulary is read at runtime from config/company_profile.json:
+  - core product terms       product.primary_keywords + product.alt_keywords
+  - decision-maker titles    targeting.buyer_titles
+  - channel terms            targeting.channel_keywords
+  - customer tiers           targeting.customer_levels (each with name/desc/keyword_suffixes)
+                             when undefined, buyer_titles + channel_keywords form one default tier
+  - non-target exclusions    targeting.exclude_keywords (hit = blocked; empty = no industry exclusion)
+  - competitor markers       targeting.competitor_markers (hit = blocked; empty = no competitor exclusion)
+  - target regions           targeting.target_regions (can be overridden with --regions)
+  - flank axes               optional search.scene_terms / intent_terms / channel_site_terms /
+                             niche_terms / cert_terms (if unset, intent/site axes use neutral generic
+                             terms and the other three axes stay off)
+Without a profile, or with required fields missing, every business sub-command is rejected by the config.py gate (exit 2).
 
-自循环引擎（一年不枯竭 · 全自动触发 · 客户池保底）：
-  1) 客户池保底（never dry）：A 级可发候选池 < 红线(默认100) → 自动触发补池 + 预警。
-  2) 四维轮换状态机：深度(d1/d2/d3) → 远度(地区由近到远) → 高度(客户层级由高到低) → 广度(core/wide/max) 梯次轮换（state.json 记录进度）。
-  3) 内置调度器（daemon）：schedule 常驻模式，每日定点跑
-     「检查池→不足则补池→轮换搜索→回池」全闭环。
+Self-replenishing engine (never runs dry · fully automatic · pool floor):
+  1) Pool floor (never dry): A-tier sendable pool < red line (default 100) → auto-replenish + warning.
+  2) Four-axis rotation state machine: depth (d1/d2/d3) → reach (regions near→far) → height (customer tiers high→low) → breadth (core/wide/max), stepped rotation (progress kept in state.json).
+  3) Built-in scheduler (daemon): schedule mode runs once a day at a fixed time:
+     check pool → replenish if low → rotate search → back to pool, as one closed loop.
 
-  breadth 三档：
-  - core = {地区}×{核心产品词}×{分层角色词} 全组合
-  - wide = core + 场景轴/意图轴（行业相关轴需在 profile 自行配置）
-  - max  = core + 全部 5 个侧翼轴
-  搜索只负责扩面找候选；如何打动目标客户由后续背调诊断决定。
+  breadth has three levels:
+  - core = {region} × {core product term} × {tier role term}, full combination
+  - wide = core + scene axis / intent axis (industry-specific axes must be configured in the profile)
+  - max  = core + all 5 flank axes
+  Search only widens the candidate funnel; how to win the account is decided by the later research step.
 
-命令：
-  A. 只生成搜索词：  python3 search_customers.py queries [--out queries.txt]
-  B. 渠道发现式：    python3 search_customers.py channels [--ch social maps ...] [--out ch.txt]
-  C. 过滤+分级：     python3 search_customers.py filter results.json \
-                        --against 全量客户数据库.csv [--since 2026-04-01] [--out candidates.csv]
-  D. 检查保底并补池：python3 search_customers.py replenish --pool 客户管家库.csv
-  E. 常驻调度器：    python3 search_customers.py schedule --pool 客户管家库.csv
-  F. 看轮换进度：    python3 search_customers.py status
-  G. 非目标复核：    python3 search_customers.py audit-exclude candidates.csv
-                     （audit-category 为向后兼容别名）
-  I. 10 平台社媒公开搜索：python3 search_customers.py social [--platforms linkedin instagram ...]
+Commands:
+  A. Generate queries only:   python3 search_customers.py queries [--out queries.txt]
+  B. Channel discovery:       python3 search_customers.py channels [--ch social maps ...] [--out ch.txt]
+  C. Filter + grade:          python3 search_customers.py filter results.json \
+                                 --against customer_db.csv [--since 2026-04-01] [--out candidates.csv]
+  D. Check floor & replenish: python3 search_customers.py replenish --pool customer_db.csv
+  E. Resident scheduler:      python3 search_customers.py schedule --pool customer_db.csv
+  F. Rotation progress:       python3 search_customers.py status
+  G. Non-target review:       python3 search_customers.py audit-exclude candidates.csv
+                              (audit-category is kept as a backward-compatible alias)
+  I. 10-platform social search: python3 search_customers.py social [--platforms linkedin instagram ...]
                         [--tier decision|execution|influence|all] [--regions UK,DE] [--out social.txt]
-                     （只生成 Google/Bing 可用的 site: 公开搜索式；不登录、不注册、不私信；
-                       --titles 只打印 30 个采购链职位词库）
-  H. 标签冲突校正：  python3 search_customers.py conflict-check --against 客户管家库.csv \
+                              (only generates public site: queries usable on Google/Bing; no login, no sign-up,
+                               no DMs; --titles prints the 30 procurement-chain job titles only)
+  H. Tag conflict check:      python3 search_customers.py conflict-check --against customer_db.csv \
                         [--new new.json] [--since 2026-04-01] [--out conflicts.csv]
-                     （背调新结论 vs 库内旧标签，只标不改，交人工拍板）
+                              (new research conclusion vs. old tag in the DB; flags only, never edits; human decides)
 
-results.json 期望结构：
+Expected structure of results.json:
   [{"url": "...", "title": "...", "snippet": "...", "emails": ["..."]}, ...]
-（emails 可缺省，缺省时按启发式从文本提取）
+(emails may be omitted; when omitted they are extracted heuristically from the text)
 """
 
 import sys
-for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+for _s in (sys.stdout, sys.stderr):  # keep non-ASCII output safe when redirected or on legacy Windows consoles
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
@@ -69,7 +69,7 @@ import argparse
 from urllib.parse import urlparse
 
 # ============================================================
-# 零、统一配置门禁（与所有业务脚本共用 config.py）
+# 0. Shared config gate (config.py, used by every business script)
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
@@ -77,30 +77,30 @@ try:
 except ImportError:
     _cfg = None
 
-# 运行时业务上下文：main() 过门禁后从 company_profile.json 填充。
-# 引擎函数只读本字典，模块内不保留任何具体行业词表。
+# Runtime business context: filled from company_profile.json after main() passes the gate.
+# Engine functions only read this dict; the module keeps no industry vocabulary of its own.
 RUNTIME = {
-    "categories": [],        # 核心产品词（primary + alt）
-    "spectrum": {},          # 客户分层 {层级名: [角色/渠道词]}
-    "regions": [],           # 目标地区
-    "exclude_keywords": [],  # 非目标排除词
-    "competitor_markers": [],# 同行/竞品特征词（命中即拦截）
-    "competitors": [],       # 参照/竞品品牌名（供"竞品逆向"渠道展开，不用于拦截）
-    "axes": {                # 侧翼搜索轴（scene/niche/cert 默认空，由 profile 提供）
+    "categories": [],        # core product terms (primary + alt)
+    "spectrum": {},          # customer tiers {tier name: [role/channel terms]}
+    "regions": [],           # target regions
+    "exclude_keywords": [],  # non-target exclusion terms
+    "competitor_markers": [],# peer/competitor markers (hit = blocked)
+    "competitors": [],       # reference/competitor brand names (for the "competitor reverse" channel; not used for blocking)
+    "axes": {                # flank search axes (scene/niche/cert default empty, supplied by the profile)
         "scene": [], "intent": [], "channel": [], "niche": [], "cert": [],
     },
-    "default_level": False,  # profile 未定义 customer_levels 时的兜底单层标记
+    "default_level": False,  # fallback single-tier flag when the profile defines no customer_levels
 }
 
 # ============================================================
-# 一、侧翼轴：行业中性的通用意图词 / 渠道站点词
+# 1. Flank axes: industry-neutral generic intent terms / channel site terms
 # ============================================================
-# 这两组词不绑定任何行业，描述的是「买家正在找供应商」这一通用采购意图，
-# 以及「在哪些站点找人」这一通用渠道。场景/人群/认证三轴与具体行业强相关，
-# 不在此内置，需要时在 profile 的 search.*_terms 自行配置。
+# These two lists are not tied to any industry. They describe the generic buying intent
+# "a buyer is looking for a supplier" and the generic "where to find people" sites. Scene/
+# audience/certification axes are industry-specific and must be configured in profile.search.*_terms.
 GENERIC_INTENT_TERMS = [
-    # 行业中性的「正在找供应方」信号；实体商品/软件/服务/项目通用。
-    # 行业专属意图词（如 low MOQ / free trial / tender）由行业包或 profile.search.intent_terms 提供。
+    # Industry-neutral "looking for a supplier" signals; shared by goods/software/services/projects.
+    # Industry-specific intent terms (e.g. low MOQ / free trial / tender) come from the industry pack or profile.search.intent_terms.
     "looking for supplier", "looking for vendor", "new vendor", "vendor application",
     "request for proposal", "request for quotation", "seeking partner", "partner program",
     "alternative to", "switching provider",
@@ -116,7 +116,7 @@ EMPTY_AXES = {
 
 
 def build_profile_context(profile):
-    """从公司档案构造运行时词表上下文（业务数据的唯一来源）。"""
+    """Build the runtime vocabulary context from the company profile (the only source of business data)."""
     def _dedup(seq):
         seen, out = set(), []
         for x in seq:
@@ -126,10 +126,10 @@ def build_profile_context(profile):
                 out.append(x)
         return out
 
-    # ① 核心词：
-    #   offer 锚点   = primary_keywords + alt_keywords（客户的网页上会出现你的品类词：实体商品/工业品/项目型）
-    #   customer 锚点 = targeting.customer_industries（客户按"他自己的行业"被找到：软件/服务常见，
-    #                   比如卖 HR 软件要找"logistics company"，而不是搜"HR software"——那会搜到同行）
+    # ① Core terms:
+    #   offer anchor    = primary_keywords + alt_keywords (your category words appear on the customer's site: goods/industrial/project)
+    #   customer anchor = targeting.customer_industries (customers are found by *their own* industry: common for software/services,
+    #                     e.g. selling HR software you search "logistics company", not "HR software" — that would find competitors)
     offer_terms = _dedup(
         list(_cfg.get(profile, "product.primary_keywords", []) or [])
         + list(_cfg.get(profile, "product.alt_keywords", []) or [])
@@ -143,7 +143,7 @@ def build_profile_context(profile):
         anchor = "offer"
     categories = customer_inds if anchor == "customer" else offer_terms
 
-    # ② 客户分层 = customer_levels[].keyword_suffixes；未定义则角色词+渠道词兜底单层
+    # ② Customer tiers = customer_levels[].keyword_suffixes; if undefined, role terms + channel terms form one fallback tier
     titles = list(_cfg.get(profile, "targeting.buyer_titles", []) or [])
     channels_kw = list(_cfg.get(profile, "targeting.channel_keywords", []) or [])
     levels = _cfg.get(profile, "targeting.customer_levels", []) or []
@@ -163,14 +163,14 @@ def build_profile_context(profile):
         spectrum = {"L1_default": fallback}
         default_level = True
 
-    # ③ 非目标排除词 + 竞品特征词（用户填什么排什么；为空不做行业过滤）
+    # ③ Non-target exclusions + competitor markers (whatever the user lists is excluded; empty = no industry filter)
     exclude_keywords = _dedup(_cfg.get(profile, "targeting.exclude_keywords", []) or [])
     competitor_markers = _dedup(_cfg.get(profile, "targeting.competitor_markers", []) or [])
 
-    # ④ 目标地区
+    # ④ Target regions
     regions = _dedup(_cfg.get(profile, "targeting.target_regions", []) or [])
 
-    # ⑤ 侧翼轴：profile > 行业包 > 行业中性通用词
+    # ⑤ Flank axes: profile > industry pack > industry-neutral generic terms
     pack = _cfg.active_pack(profile) or {}
     axes = {
         "scene": _dedup(_cfg.get(profile, "search.scene_terms", []) or []),
@@ -205,19 +205,19 @@ def build_profile_context(profile):
 
 
 # ============================================================
-# 一·三、渠道配方库（新发现源 · 不止 Google/LinkedIn）
+# 1.3 Channel recipe library (new discovery sources, not just Google/LinkedIn)
 # ============================================================
-# 模板占位符：{region}=地区  {cat}=核心产品/服务词  {role}=分层角色/客户类型词
-# src  = "offer" 时 {cat} 用你的品类词（招标/招聘/评测/海关等描述"你卖的东西"）；
-#        缺省用当前锚点词（customer 锚点下 = 客户所在行业）。
-# fits = 适用的交付形态（business.offer_type）。未在 profile.search.channels / 行业包里
-# 指定渠道时，channels 子命令按 offer_type 自动挑选 fits 命中的渠道；"all" 表示通用。
+# Template placeholders: {region}=region  {cat}=core product/service term  {role}=tier role / customer-type term
+# src  = "offer" means {cat} uses your category words (tenders/hiring/reviews/customs describe "what you sell");
+#        default uses the current anchor term (under the customer anchor = the customer's industry).
+# fits = applicable delivery types (business.offer_type). When no channels are specified in profile.search.channels
+# or the industry pack, the channels sub-command picks recipes whose fits match offer_type; "all" = generic.
 ALL = "all"
 PHYS = ("physical_product",)
 CHANNEL_RECIPES = {
     "social": {
-        "name": "社媒/职业网络发现（10 平台免登录公开搜索，完整版用 social 子命令）", "star": "⭐⭐⭐⭐", "fits": ALL,
-        "use": "按关键词/地区找目标公司与决策人主页 → 官网 → 具名邮箱",
+        "name": "Social / professional network discovery (10 platforms, public search without login; full version in the social sub-command)", "star": "⭐⭐⭐⭐", "fits": ALL,
+        "use": "Find target companies and decision-maker profiles by keyword/region → website → named mailbox",
         "tmpl": [
             'site:linkedin.com/company {cat} {role} {region}',
             'site:linkedin.com/in {role} {cat} {region}',
@@ -226,17 +226,17 @@ CHANNEL_RECIPES = {
         ],
     },
     "maps": {
-        "name": "Google Maps / 本地商家目录", "star": "⭐⭐⭐⭐",
+        "name": "Google Maps / local business directories", "star": "⭐⭐⭐⭐",
         "fits": ("physical_product", "service", "project"),
-        "use": "按城市+客户类型找有实体地址的公司（门店/展厅/工程商/诊所/仓库），拿官网与电话",
+        "use": "Find companies with a physical address by city + customer type (stores/showrooms/contractors/clinics/warehouses); get website and phone",
         "tmpl": [
             '{role} {region} - Google Maps',
             '{cat} {role} {region} - Google Maps',
         ],
     },
     "customs": {
-        "name": "海关/进出口贸易数据", "star": "⭐⭐⭐⭐⭐", "src": "offer", "fits": ("physical_product", "service"),
-        "use": "用产品词/HS 编码反查真实进口商（免注册路径优先：ImportYeti 基础搜索 / site:importyeti.com；付费平台可选）；操作见 references/海关数据操作指引.md",
+        "name": "Customs / import-export trade data", "star": "⭐⭐⭐⭐⭐", "src": "offer", "fits": ("physical_product", "service"),
+        "use": "Reverse-look real importers by product term / HS code (no-signup path first: ImportYeti basic search / site:importyeti.com; paid platforms optional); see references/customs_data_guide.md",
         "tmpl": [
             '{cat} importer {region} customs data',
             '{cat} import records {region}',
@@ -245,8 +245,8 @@ CHANNEL_RECIPES = {
         ],
     },
     "rfq": {
-        "name": "B2B 采购平台买家端 / RFQ", "star": "⭐⭐⭐⭐", "src": "offer", "fits": ("physical_product", "project"),
-        "use": "不看卖家看买家：从询价/RFQ/采购需求页反找正在找供应方的活跃买家",
+        "name": "B2B marketplace buyer side / RFQ", "star": "⭐⭐⭐⭐", "src": "offer", "fits": ("physical_product", "project"),
+        "use": "Look at buyers, not sellers: find active buyers who are looking for a supplier from RFQ / sourcing-request pages",
         "tmpl": [
             '{cat} RFQ buyer {region}',
             '{cat} sourcing request {region}',
@@ -254,8 +254,8 @@ CHANNEL_RECIPES = {
         ],
     },
     "tender": {
-        "name": "公开招标/政府与机构采购", "star": "⭐⭐⭐⭐⭐", "src": "offer", "fits": ALL,
-        "use": "招标=明确预算+明确需求；在各国公共采购门户（如 TED、SAM.gov、本地政府采购网）按关键词检索",
+        "name": "Public tenders / government & institutional procurement", "star": "⭐⭐⭐⭐⭐", "src": "offer", "fits": ALL,
+        "use": "Tender = confirmed budget + confirmed need; search public procurement portals (TED, SAM.gov, local government portals) by keyword",
         "tmpl": [
             '{cat} tender {region}',
             '{cat} request for proposal {region}',
@@ -263,8 +263,8 @@ CHANNEL_RECIPES = {
         ],
     },
     "hiring": {
-        "name": "招聘信号（岗位=预算+痛点）", "star": "⭐⭐⭐⭐", "src": "offer", "fits": ALL,
-        "use": "在招与你解决的问题相关的岗位 → 说明在投入这件事；适合软件、服务、设备与耗材",
+        "name": "Hiring signals (a job post = budget + pain)", "star": "⭐⭐⭐⭐", "src": "offer", "fits": ALL,
+        "use": "Hiring for roles related to the problem you solve → they are investing in it; good for software, services, equipment and consumables",
         "tmpl": [
             '{cat} job {region} site:linkedin.com/jobs',
             'hiring {cat} specialist {region}',
@@ -272,8 +272,8 @@ CHANNEL_RECIPES = {
         ],
     },
     "directory": {
-        "name": "行业目录/协会会员名录", "star": "⭐⭐⭐⭐", "fits": ALL,
-        "use": "行业协会、商会、行业目录（Kompass、Thomasnet、Europages、Clutch 等）集中列出同类公司",
+        "name": "Industry directories / association member lists", "star": "⭐⭐⭐⭐", "fits": ALL,
+        "use": "Trade associations, chambers of commerce and directories (Kompass, Thomasnet, Europages, Clutch, etc.) list similar companies in one place",
         "tmpl": [
             '{cat} {role} directory {region}',
             '{cat} association members {region}',
@@ -281,8 +281,8 @@ CHANNEL_RECIPES = {
         ],
     },
     "review": {
-        "name": "评测/比价站点（软件与服务）", "star": "⭐⭐⭐⭐", "src": "offer", "fits": ("software", "service"),
-        "use": "G2/Capterra/Clutch 等评测页能看到谁在用竞品、谁在比较方案",
+        "name": "Review / comparison sites (software & services)", "star": "⭐⭐⭐⭐", "src": "offer", "fits": ("software", "service"),
+        "use": "G2/Capterra/Clutch review pages show who uses competitors and who is comparing solutions",
         "tmpl": [
             '{cat} reviews site:g2.com',
             '{cat} alternatives {region}',
@@ -290,8 +290,8 @@ CHANNEL_RECIPES = {
         ],
     },
     "partners": {
-        "name": "合作伙伴/集成生态", "star": "⭐⭐⭐", "src": "offer", "fits": ("software", "service", "project"),
-        "use": "生态市场、实施伙伴、经销伙伴页面 → 找可转介或联合交付的伙伴",
+        "name": "Partner / integration ecosystem", "star": "⭐⭐⭐", "src": "offer", "fits": ("software", "service", "project"),
+        "use": "Ecosystem marketplaces, implementation and reseller partner pages → partners who can refer or co-deliver",
         "tmpl": [
             '{cat} implementation partner {region}',
             '{cat} reseller program {region}',
@@ -299,16 +299,16 @@ CHANNEL_RECIPES = {
         ],
     },
     "events": {
-        "name": "行业会议/峰会（赞助商·演讲人·参会者）", "star": "⭐⭐⭐⭐", "fits": ALL,
-        "use": "会议官网的 sponsors / speakers / exhibitors 页是高质量决策人名单",
+        "name": "Industry conferences / summits (sponsors · speakers · attendees)", "star": "⭐⭐⭐⭐", "fits": ALL,
+        "use": "The sponsors / speakers / exhibitors pages of a conference site are a high-quality decision-maker list",
         "tmpl": [
             '{cat} conference {region} speakers',
             '{cat} summit {region} sponsors',
         ],
     },
     "media": {
-        "name": "行业媒体/榜单/融资与扩张新闻", "star": "⭐⭐⭐", "fits": ALL,
-        "use": "新开店/新项目/融资/进入新市场=采购窗口期",
+        "name": "Trade media / rankings / funding & expansion news", "star": "⭐⭐⭐", "fits": ALL,
+        "use": "New store / new project / funding / new market entry = a buying window",
         "tmpl": [
             '{cat} {role} expansion {region}',
             '{role} raised funding {region}',
@@ -316,8 +316,8 @@ CHANNEL_RECIPES = {
         ],
     },
     "exhibition": {
-        "name": "展会名录（参展商/买家名录）", "star": "⭐⭐⭐⭐⭐", "src": "offer", "fits": ("physical_product", "project"),
-        "use": "锁定本行业目标市场展会，从 exhibitor list / buyer directory 批量找集中、对口的客户",
+        "name": "Trade show directories (exhibitor / buyer lists)", "star": "⭐⭐⭐⭐⭐", "src": "offer", "fits": ("physical_product", "project"),
+        "use": "Lock onto the shows of your target market and pull concentrated, on-target customers from exhibitor lists / buyer directories",
         "tmpl": [
             '{cat} trade fair exhibitor list {region}',
             '{cat} trade show exhibitors {region}',
@@ -325,8 +325,8 @@ CHANNEL_RECIPES = {
         ],
     },
     "competitor": {
-        "name": "竞品逆向（竞品的客户/经销商网络）", "star": "⭐⭐⭐⭐", "fits": ALL,
-        "use": "以建档填写的竞品/参照品牌为起点，找它们的经销商、案例客户、集成伙伴",
+        "name": "Competitor reverse (a competitor's customers / dealer network)", "star": "⭐⭐⭐⭐", "fits": ALL,
+        "use": "Start from the competitor / reference brands in your profile and find their dealers, case-study customers and integration partners",
         "tmpl": [
             '"{competitor}" distributors {region}',
             '"{competitor}" customers case study {region}',
@@ -335,8 +335,8 @@ CHANNEL_RECIPES = {
         "needs_competitor": True,
     },
     "ecommerce": {
-        "name": "电商独立站卖家（Shopify/DTC）", "star": "⭐⭐⭐⭐", "src": "offer", "fits": PHYS,
-        "use": "找自建站卖同类/相邻产品的品牌（非平台卖家），从 about/contact/LinkedIn 挖采购联系人",
+        "name": "DTC / independent e-commerce sellers (Shopify etc.)", "star": "⭐⭐⭐⭐", "src": "offer", "fits": PHYS,
+        "use": "Find brands selling similar/adjacent products on their own site (not marketplace sellers); dig purchasing contacts from about/contact/LinkedIn",
         "tmpl": [
             '{cat} brand shopify {region}',
             '{cat} "powered by shopify" {region}',
@@ -344,9 +344,9 @@ CHANNEL_RECIPES = {
         ],
     },
     "gift": {
-        "name": "礼品/企业礼赠渠道（可选，需手动指定）", "star": "⭐⭐⭐", "src": "offer", "fits": PHYS,
+        "name": "Gifting / corporate gift channel (optional, must be specified manually)", "star": "⭐⭐⭐", "src": "offer", "fits": PHYS,
         "opt_in": True,
-        "use": "仅当产品具备礼品属性时启用：礼品店、企业礼赠公司、文创店",
+        "use": "Only when the product has gift appeal: gift shops, corporate gifting companies, lifestyle stores",
         "tmpl": [
             'gift shop {cat} supplier {region}',
             'corporate gifts {cat} {region}',
@@ -356,7 +356,7 @@ CHANNEL_RECIPES = {
 
 
 def default_channels():
-    """profile.search.channels > 行业包 recommended_channels > 按 offer_type 匹配 fits。"""
+    """profile.search.channels > industry pack recommended_channels > recipes whose fits match offer_type."""
     chosen = [c for c in (RUNTIME.get("default_channels") or []) if c in CHANNEL_RECIPES]
     if chosen:
         return chosen
@@ -367,7 +367,7 @@ def default_channels():
 
 
 def _top_roles(limit=6):
-    """从各分层词表里取头部角色词，供渠道模板 {role} 使用（避免组合爆炸）。"""
+    """Take the leading role terms from each tier for the {role} placeholder (avoids combinatorial explosion)."""
     out = []
     for words in RUNTIME["spectrum"].values():
         for w in words:
@@ -377,29 +377,29 @@ def _top_roles(limit=6):
 
 
 def build_channel_queries(channels=None, regions=None, cats=None, roles=None):
-    """按渠道生成发现式。channels=None 则全渠道；cats=None 用头部核心产品词。"""
+    """Generate discovery queries per channel. channels=None = all channels; cats=None = leading core product terms."""
     chans = channels or default_channels()
     regs = regions or RUNTIME["regions"]
     all_cats = RUNTIME["categories"]
     offer_cats = RUNTIME.get("offer_terms") or all_cats
     top_roles = roles or _top_roles()
     out = []
-    # 竞品逆向渠道需要用户在档案里给出参照品牌/竞品名；没给则无法生成
+    # The competitor-reverse channel needs reference/competitor brands in the profile; without them nothing can be generated
     competitors = list(RUNTIME.get("competitors") or [])
     for ch in chans:
         recipe = CHANNEL_RECIPES.get(ch)
         if not recipe:
             continue
         if recipe.get("needs_competitor") and not competitors:
-            print(f"# 跳过渠道 [{ch}] {recipe['name']}：未配置参照/竞品品牌 "
-                  f"（请在 company_profile 的 targeting.reference_brands 填写）",
+            print(f"# skipping channel [{ch}] {recipe['name']}: no reference/competitor brands configured "
+                  f"(fill targeting.reference_brands in company_profile)",
                   file=__import__("sys").stderr)
             continue
         pool = offer_cats if recipe.get("src") == "offer" else all_cats
         use_cats = cats or pool[:8]
         for tmpl in recipe["tmpl"]:
             for region in regs:
-                # 竞品逆向：以每个参照品牌为起点展开，不依赖产品词笛卡尔积
+                # Competitor reverse: expand from each reference brand, independent of the product-term cartesian product
                 if "{competitor}" in tmpl:
                     for comp in competitors[:6]:
                         out.append(tmpl.format(region=region, cat="", role="", competitor=comp))
@@ -420,28 +420,28 @@ def build_channel_queries(channels=None, regions=None, cats=None, roles=None):
 
 
 # ============================================================
-# 四、行业无关的技术性过滤规则（不针对任何具体行业）
+# 4. Industry-agnostic technical filter rules (not aimed at any specific industry)
 # ============================================================
-# 4.1 平台 / B2B 集市（非终端客户站点，排除）
+# 4.1 Platforms / B2B marketplaces (not end-customer sites → excluded)
 PLATFORM_BLOCKLIST = [
     "alibaba.", "aliexpress.", "made-in-china.", "1688.", "globalsources.",
     "dhgate.", "amazon.", "ebay.", "wish.", "temu.", "shein.",
     "indiamart.", "tradeindia.", "ec21.", "tradekey.", "go4worldbusiness.",
     "etsy.com",
 ]
-# 4.2 目录页 / 博客 / 媒体 / 无效页 URL 特征（排除）
-#     注意：directory/tender/review/events 渠道搜到的名录页、招标页、评测页是「线索来源页」，
-#     不是客户官网——要先人工/AI 从页面里取出公司名再反查官网，所以这里照常排除，不入候选池。
+# 4.2 URL patterns of directory pages / blogs / media / junk pages (excluded)
+#     Note: directory, tender, review and event pages found via those channels are "lead source pages",
+#     not customer websites — a human/AI must first pull company names from the page and look up the site, so they are excluded here as usual and never enter the candidate pool.
 NONLEAD_URL_PATTERNS = [
     "/blog/", "/news/", "/press/", "/article/", "/wiki/", "wikipedia.org",
     "/category/", "/tag/", "pinterest.", "youtube.", "reddit.",
     "/directory/", "yellowpages.", "yelp.",
 ]
-# 4.3 通用邮箱前缀（→ B 级入库，不再直接丢弃）
+# 4.3 Generic mailbox prefixes (→ B-tier entry instead of being discarded)
 GENERIC_EMAIL_PREFIXES = set(_cfg.GENERIC_MAILBOX_PREFIXES) if _cfg is not None else {
     "info", "contact", "sales", "hello", "support", "office",
 }
-# 4.4 免费个人邮箱域（非企业邮箱 → 不作 A 级具名邮箱）
+# 4.4 Free personal e-mail domains (not corporate → never counts as an A-tier named mailbox)
 FREE_EMAIL_DOMAINS = {
     "gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "aol.com",
     "msn.com", "icloud.com", "me.com", "mail.com", "gmx.com",
@@ -452,15 +452,15 @@ EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
 
 
 # ============================================================
-# 五、生成搜索词（全组合，不截断）
+# 5. Query generation (full combination, no truncation)
 # ============================================================
 def build_queries(spectrum_keys=None, regions=None, breadth="core"):
-    """生成搜索词全集（核心全组合 + 侧翼轴限定采样）。
+    """Generate the full query set (core full combination + sampled flank axes).
 
     breadth:
-        core = {地区}×{核心产品词}×{分层角色词}       全组合
-        wide = core + 场景轴(scene)+意图轴(intent)    仅启用 profile 已配置/有通用词的轴
-        max  = core + 全部 5 个侧翼轴                 空轴自动跳过
+        core = {region} × {core product term} × {tier role term}   full combination
+        wide = core + scene axis + intent axis                       only axes configured in the profile / with generic terms
+        max  = core + all 5 flank axes                               empty axes are skipped automatically
     """
     spectrum = RUNTIME["spectrum"]
     all_categories = RUNTIME["categories"]
@@ -469,14 +469,14 @@ def build_queries(spectrum_keys=None, regions=None, breadth="core"):
     regs = regions or RUNTIME["regions"]
     queries = []
 
-    # ① 核心全组合：{地区} × {核心产品词} × {分层角色词}
+    # ① Core full combination: {region} × {core product term} × {tier role term}
     for region in regs:
         for cat in all_categories:
             for key in keys:
                 for role in spectrum.get(key, []):
                     queries.append(f"{region} {cat} {role}")
 
-    # ② 侧翼轴挂载（限定采样，不与核心全组合叠乘，避免爆炸）
+    # ② Flank axes (sampled; not multiplied against the core set, to avoid explosion)
     if breadth in ("wide", "max"):
         rep_cats = all_categories[:8] if len(all_categories) >= 8 else all_categories
         offer_terms = RUNTIME.get("offer_terms") or all_categories
@@ -493,12 +493,12 @@ def build_queries(spectrum_keys=None, regions=None, breadth="core"):
                         for cat in rep_cats:
                             queries.append(f"{term} {cat} {region}")
                     else:
-                        # 意图轴描述的是"在找你这类东西"，永远配你的品类词
+                        # The intent axis describes "looking for your kind of thing", so it always pairs with your category words
                         use = rep_offer if axis_name == "intent" else rep_cats
                         for cat in use:
                             queries.append(f"{region} {term} {cat}")
 
-    # 去重保序
+    # de-duplicate, keep order
     seen, uniq = set(), []
     for q in queries:
         if q not in seen:
@@ -508,7 +508,7 @@ def build_queries(spectrum_keys=None, regions=None, breadth="core"):
 
 
 # ============================================================
-# 六、结果过滤 + 全量域名去重 + 分级入库
+# 6. Result filtering + full domain de-duplication + graded entry
 # ============================================================
 def domain_of(url):
     try:
@@ -533,8 +533,8 @@ def is_nonlead(url):
 
 
 def is_non_target(rec):
-    """非目标品类拦截：标题/正文命中 profile 的 targeting.exclude_keywords。
-    用户未配置排除词时不做任何行业排除（仅保留技术性过滤）。"""
+    """Non-target category block: title/body hits profile targeting.exclude_keywords.
+    With no exclusion terms configured, no industry exclusion is applied (technical filters only)."""
     keywords = RUNTIME["exclude_keywords"]
     if not keywords:
         return False
@@ -543,9 +543,9 @@ def is_non_target(rec):
 
 
 def is_competitor(rec):
-    """同行/竞品拦截：命中 profile 的 targeting.competitor_markers；
-    或记录显式标记 is_competitor=True（旧字段 has_own_factory 兼容；仅在用户配置了竞品特征词时启用）。
-    用户未配置竞品特征词时不做竞品排除。"""
+    """Peer/competitor block: hits profile targeting.competitor_markers,
+    or the record is explicitly flagged is_competitor=True (legacy field has_own_factory supported; only active when competitor markers are configured).
+    With no competitor markers configured, no competitor exclusion is applied."""
     markers = RUNTIME["competitor_markers"]
     if not markers:
         return False
@@ -556,7 +556,7 @@ def is_competitor(rec):
 
 
 def extract_emails(rec):
-    """从记录里取邮箱：优先显式 emails 字段，否则从 snippet/title 正则提取。"""
+    """Pull e-mails from a record: explicit emails field first, otherwise regex-extract from snippet/title."""
     emails = list(rec.get("emails") or [])
     if not emails:
         blob = f"{rec.get('title','')} {rec.get('snippet','')} {rec.get('text','')}"
@@ -570,7 +570,7 @@ def extract_emails(rec):
 
 
 def grade_email(emails):
-    """分级：A=有企业具名邮箱直发；B=只有通用/免费个人邮箱，需找决策人；none=无邮箱。"""
+    """Grade: A = corporate named mailbox, send directly; B = generic/free mailbox only, find a decision maker; none = no e-mail."""
     if not emails:
         return "none", ""
     named = []
@@ -585,10 +585,10 @@ def grade_email(emails):
 
 
 # ============================================================
-# 六·一  客户管家库增量去重
+# 6.1  Incremental de-duplication against the customer DB
 # ============================================================
 def domain_from_website(website):
-    """从 website 字段取域名（兼容无 http 前缀 / 带 www）。"""
+    """Take the domain from the website field (tolerates missing http prefix / www)."""
     if not website:
         return ""
     w = website.strip().lower()
@@ -598,7 +598,7 @@ def domain_from_website(website):
 
 
 def load_customer_db(csv_path, since=None):
-    """加载客户管家库，建 email / 域名 / customer_code 三套索引。"""
+    """Load the customer DB and build three indexes: e-mail / domain / customer_code."""
     emails, domains, codes = set(), set(), set()
     loaded = 0
     with open(csv_path, "r", encoding="utf-8-sig", newline="") as f:
@@ -623,7 +623,7 @@ def load_customer_db(csv_path, since=None):
 
 
 def in_customer_db(rec, dom, emails_set, domains_set, codes_set):
-    """按 email → website域名 → customer_code 优先级判断是否已在库中。"""
+    """Decide whether a record is already in the DB, by e-mail → website domain → customer_code."""
     for e in extract_emails(rec):
         if e in emails_set:
             return True
@@ -636,8 +636,8 @@ def in_customer_db(rec, dom, emails_set, domains_set, codes_set):
 
 
 def filter_and_grade(results, db_index=None):
-    """核心：库增量去重 + 全量域名去重 + 平台/目录/政府媒体技术过滤
-    + 非目标词/竞品特征过滤（均由 profile 驱动）+ 分级。"""
+    """Core: incremental DB de-dup + full domain de-dup + platform/directory/government/media technical filters
+    + non-target / competitor filters (all profile-driven) + grading."""
     stats = {
         "input": len(results), "platform_skip": 0, "nonlead_skip": 0,
         "nontarget_skip": 0, "competitor_skip": 0,
@@ -693,25 +693,25 @@ def filter_and_grade(results, db_index=None):
             "region_hint": rec.get("region_hint", ""),
             "customer_type_hint": rec.get("customer_type_hint", ""),
             "next_action": {
-                "A": "直发（有企业具名邮箱）",
-                "B": "入库+LinkedIn找决策人/email_guesser补齐具名邮箱",
-                "none": "入库+官网/LinkedIn补邮箱",
+                "A": "send directly (corporate named mailbox)",
+                "B": "enter DB + find decision maker on LinkedIn / fill named mailbox with email_guesser",
+                "none": "enter DB + fill e-mail from website/LinkedIn",
             }[grade],
-            "note": "B级=仅通用/免费个人邮箱(info@/gmail.com 等)" if grade == "B" else "",
+            "note": "B-tier = generic/free mailbox only (info@/gmail.com etc.)" if grade == "B" else "",
         })
     stats["candidates"] = len(candidates)
     return candidates, stats
 
 
 # ============================================================
-# 六之二、搜索漏斗诊断
+# 6.2  Search funnel diagnostics
 # ============================================================
-FUNNEL_DUP_DB_RED = 0.40      # 库内重复率 >40% → 标红
-FUNNEL_NAMED_EMAIL_RED = 0.20 # 具名邮箱率 <20% → 标红
+FUNNEL_DUP_DB_RED = 0.40      # in-DB duplicate rate >40% → red
+FUNNEL_NAMED_EMAIL_RED = 0.20 # named-mailbox rate <20% → red
 
 
 def build_funnel(stats):
-    """把 filter 的 stats 转成漏斗诊断。"""
+    """Turn filter stats into a funnel diagnosis."""
     total = max(stats["input"], 1)
     after_platform = stats["input"] - stats["platform_skip"] - stats["nonlead_skip"]
     after_dupdom = after_platform - stats["dup_domain_skip"]
@@ -728,14 +728,14 @@ def build_funnel(stats):
         return f"{n/max(prev,1)*100:.0f}%"
 
     rows = [
-        ("搜索结果",       stats["input"], "—", "100%"),
-        ("去平台/目录",    after_platform, step_pct(after_platform, stats["input"]), pct(after_platform)),
-        ("去域名重复",     after_dupdom, step_pct(after_dupdom, after_platform), pct(after_dupdom)),
-        ("去库内已有",     after_db, step_pct(after_db, after_dupdom), pct(after_db)),
-        ("去非目标词",     after_nt, step_pct(after_nt, after_db), pct(after_nt)),
-        ("去竞品特征",     after_comp, step_pct(after_comp, after_nt), pct(after_comp)),
-        ("入库候选",       cand, step_pct(cand, after_comp), pct(cand)),
-        ("  └ A级可直发",  a, step_pct(a, cand), pct(a)),
+        ("Search results",        stats["input"], "—", "100%"),
+        ("- platforms/directories", after_platform, step_pct(after_platform, stats["input"]), pct(after_platform)),
+        ("- duplicate domains",     after_dupdom, step_pct(after_dupdom, after_platform), pct(after_dupdom)),
+        ("- already in DB",         after_db, step_pct(after_db, after_dupdom), pct(after_db)),
+        ("- non-target terms",      after_nt, step_pct(after_nt, after_db), pct(after_nt)),
+        ("- competitor markers",    after_comp, step_pct(after_comp, after_nt), pct(after_comp)),
+        ("Candidates entered",      cand, step_pct(cand, after_comp), pct(cand)),
+        ("  └ A-tier sendable",     a, step_pct(a, cand), pct(a)),
     ]
 
     dup_db_rate = stats["dup_in_db_skip"] / total
@@ -751,35 +751,35 @@ def build_funnel(stats):
     diagnostics = []
     if dup_db_rate > FUNNEL_DUP_DB_RED:
         diagnostics.append(
-            f"🔴 库内重复率 {dup_db_rate*100:.0f}% (>{FUNNEL_DUP_DB_RED*100:.0f}%)："
-            f"搜索词大量命中已开发客户 → 换未覆盖地区/产品词/层级")
+            f"🔴 In-DB duplicate rate {dup_db_rate*100:.0f}% (>{FUNNEL_DUP_DB_RED*100:.0f}%): "
+            f"queries mostly hit customers already worked → switch to uncovered regions / product terms / tiers")
     if named_rate < FUNNEL_NAMED_EMAIL_RED and cand > 0:
         diagnostics.append(
-            f"🔴 具名邮箱率仅 {named_rate*100:.0f}% (<{FUNNEL_NAMED_EMAIL_RED*100:.0f}%)："
-            f"可直发太少 → B级客户走 email_guesser 补具名邮箱；优质客户勿因只有 info@ 丢弃")
+            f"🔴 Named-mailbox rate only {named_rate*100:.0f}% (<{FUNNEL_NAMED_EMAIL_RED*100:.0f}%): "
+            f"too few directly sendable → run email_guesser on B-tier accounts; do not drop good accounts just because they only show info@")
     if stats["platform_skip"] + stats["nonlead_skip"] > total * 0.5:
         diagnostics.append(
-            f"🟡 平台/目录占比 {(stats['platform_skip']+stats['nonlead_skip'])/total*100:.0f}%："
-            f"搜索词太宽泛 → 收窄关键词、加 -site:平台域 排除")
+            f"🟡 Platforms/directories share {(stats['platform_skip']+stats['nonlead_skip'])/total*100:.0f}%: "
+            f"queries too broad → narrow keywords, add -site:<platform domain> exclusions")
     if stats["nontarget_skip"] > total * 0.3:
         diagnostics.append(
-            f"🟡 非目标命中占比 {stats['nontarget_skip']/total*100:.0f}%："
-            f"混入大量非目标结果 → 在 profile 的 targeting.exclude_keywords 补充排除词，"
-            f"或在搜索词里加 -关键词 排除")
+            f"🟡 Non-target hits share {stats['nontarget_skip']/total*100:.0f}%: "
+            f"many off-target results → add exclusion terms to profile targeting.exclude_keywords, "
+            f"or add -keyword exclusions to the queries")
     if not diagnostics:
-        diagnostics.append("✅ 各环转化率健康，无明显瓶颈。")
+        diagnostics.append("✅ Conversion is healthy at every stage; no obvious bottleneck.")
     return rows, diagnostics, ratios
 
 
 def print_funnel(stats):
     rows, diagnostics, ratios = build_funnel(stats)
-    print("\n===== 搜索漏斗诊断（转化率）=====")
-    print(f"{'环节':<14}{'数量':>7}{'本环转化':>10}{'累计转化':>10}")
+    print("\n===== Search funnel diagnostics (conversion) =====")
+    print(f"{'Stage':<26}{'Count':>7}{'Step':>10}{'Cumulative':>12}")
     for name, n, step, cum in rows:
         print(f"{name:<14}{n:>7}{step:>10}{cum:>10}")
     print("-------------------------------")
-    print(f"最终转化率：入库 {ratios['candidate_rate']*100:.0f}%｜可直发 {ratios['sendable_rate']*100:.0f}%")
-    print("\n💡 瓶颈诊断与优化建议：")
+    print(f"Final conversion: entered {ratios['candidate_rate']*100:.0f}% | directly sendable {ratios['sendable_rate']*100:.0f}%")
+    print("\n💡 Bottleneck diagnosis and suggestions:")
     for d in diagnostics:
         print(f"  {d}")
     return ratios
@@ -801,25 +801,25 @@ def save_funnel_history(state_path, stats, ratios):
 
 
 # ============================================================
-# 七、CLI 命令
+# 7. CLI commands
 # ============================================================
 def _resolve_regions(cli_regions):
-    """命令行 --regions 优先；否则用 profile 的 target_regions；都为空则拒绝。"""
+    """--regions on the command line wins; otherwise profile target_regions; refuse if both are empty."""
     if cli_regions:
         return [r.strip() for r in cli_regions.split(",") if r.strip()]
     regs = RUNTIME["regions"]
     if not regs:
-        print("ERROR: 未指定目标地区。请在 company_profile.json 的 "
-              "targeting.target_regions 填写，或用 --regions USA,UK 临时传入。")
+        print("ERROR: no target regions. Fill targeting.target_regions in company_profile.json, "
+              "or pass --regions USA,UK for this run.")
         sys.exit(2)
     return regs
 
 
 def _print_level_hint():
     if RUNTIME.get("default_level"):
-        print("# 提示：profile 未定义 targeting.customer_levels，"
-              "当前用 buyer_titles+channel_keywords 兜底为单层 L1_default；"
-              "可在 profile 自定义多层客户分层。", file=sys.stderr)
+        print("# Note: the profile defines no targeting.customer_levels; "
+              "falling back to a single tier L1_default built from buyer_titles + channel_keywords. "
+              "You can define multiple customer tiers in the profile.", file=sys.stderr)
 
 
 def cmd_queries(args):
@@ -827,7 +827,7 @@ def cmd_queries(args):
     if levels:
         bad = [l for l in levels if l not in RUNTIME["spectrum"]]
         if bad:
-            print(f"ERROR: 层级 {bad} 不存在。可用分层（profile customer_levels.name）："
+            print(f"ERROR: tier {bad} does not exist. Available tiers (profile customer_levels.name): "
                   f"{list(RUNTIME['spectrum'].keys())}")
             sys.exit(2)
     regions = _resolve_regions(args.regions)
@@ -840,16 +840,16 @@ def cmd_queries(args):
     if out:
         with open(out, "w", encoding="utf-8") as f:
             f.write("\n".join(qs))
-        print(f"OK: 生成 {len(qs)} 条搜索词 → {out}  (breadth={breadth}, 地区{reg_n}, 层级{lvl_n})")
+        print(f"OK: generated {len(qs)} queries → {out}  (breadth={breadth}, regions {reg_n}, tiers {lvl_n})")
     else:
         for q in qs:
             print(q)
-        anchor_cn = "客户行业词" if RUNTIME.get("anchor") == "customer" else "产品/服务词"
-        print(f"\n# 共 {len(qs)} 条搜索词（breadth={breadth}：{reg_n}地区 × {cat_n}{anchor_cn} × {lvl_n}层级 + 侧翼轴）",
+        anchor_cn = "customer-industry terms" if RUNTIME.get("anchor") == "customer" else "product/service terms"
+        print(f"\n# {len(qs)} queries in total (breadth={breadth}: {reg_n} regions × {cat_n} {anchor_cn} × {lvl_n} tiers + flank axes)",
               file=sys.stderr)
         if RUNTIME.get("anchor") == "offer" and RUNTIME.get("offer_type") in ("software", "service"):
-            print("# 提示：软件/服务业务用你的品类词搜，容易搜到同行。建议在 targeting.customer_industries "
-                  "填客户所在行业（如 logistics / manufacturing），脚本会自动改用客户锚点。", file=sys.stderr)
+            print("# Note: searching with your own category words for software/services tends to find competitors. "
+                  "Fill targeting.customer_industries (e.g. logistics / manufacturing) and the script switches to the customer anchor.", file=sys.stderr)
     _print_level_hint()
 
 
@@ -857,51 +857,51 @@ def cmd_channels(args):
     chans = args.ch if getattr(args, "ch", None) else None
     regions = _resolve_regions(args.regions) if (chans or args.out) else None
     if not chans and not args.out:
-        print("===== 搜索客户渠道配方库（新发现源）=====")
+        print("===== Customer search channel recipes (new discovery sources) =====")
         rec = set(default_channels())
-        print(f"当前交付形态：{RUNTIME.get('offer_type') or 'other'}；▶ = 默认会生成的渠道")
+        print(f"Current delivery type: {RUNTIME.get('offer_type') or 'other'}; ▶ = channels generated by default")
         for key, r in CHANNEL_RECIPES.items():
             mark = "▶" if key in rec else " "
             print(f"\n{mark} [{key}] {r['name']}  {r['star']}")
-            print(f"    适用：{r['use']}")
-            print(f"    示例式：{r['tmpl'][0]}")
-        print("\n# 生成发现式： channels --ch social maps  或  channels --out ch.txt")
+            print(f"    Use: {r['use']}")
+            print(f"    Example query: {r['tmpl'][0]}")
+        print("\n# Generate discovery queries:  channels --ch social maps   or   channels --out ch.txt")
         return
     qs = build_channel_queries(channels=chans, regions=regions)
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
             f.write("\n".join(qs))
-        picked = ",".join(chans) if chans else "默认渠道：" + ",".join(default_channels())
-        print(f"OK: 生成 {len(qs)} 条渠道发现式（{picked}）→ {args.out}")
+        picked = ",".join(chans) if chans else "default channels: " + ",".join(default_channels())
+        print(f"OK: generated {len(qs)} channel discovery queries ({picked}) → {args.out}")
     else:
         for q in qs:
             print(q)
-        print(f"\n# 共 {len(qs)} 条渠道发现式", file=sys.stderr)
+        print(f"\n# {len(qs)} channel discovery queries in total", file=sys.stderr)
 
 
 def cmd_social(args):
     import social_platforms as _sp
     if args.titles:
         for tier, cn in _sp.TIER_CN.items():
-            print(f"[{tier}] {cn}：" + " / ".join(_sp.TITLE_TIERS[tier]))
-        print("# 档案 targeting.buyer_titles 会排在词库前面；--tier 选档。")
+            print(f"[{tier}] {cn}: " + " / ".join(_sp.TITLE_TIERS[tier]))
+        print("# Profile targeting.buyer_titles are listed before the built-in vocabulary; --tier selects the level.")
         return
     plats = args.platforms or RUNTIME.get("social_platforms") or _sp.PLATFORM_ORDER
     bad = [x for x in plats if x not in _sp.PLATFORMS]
     if bad:
-        print(f"ERROR: 未知平台 {bad}。可用：{_sp.PLATFORM_ORDER}")
+        print(f"ERROR: unknown platform {bad}. Available: {_sp.PLATFORM_ORDER}")
         sys.exit(2)
     if not args.platforms and not args.out and not args.all:
-        print("===== 10 大海外社媒 · 免登录公开搜索（只读）=====")
+        print("===== 10 overseas social platforms · public search without login (read-only) =====")
         for pid in _sp.PLATFORM_ORDER:
             sp = _sp.PLATFORMS[pid]
             on = "▶" if pid in plats else " "
             print(f"\n{on} [{pid}] {sp['name']}  {sp['star']}  · {sp['stage']}")
-            print(f"    公开搜索式：{sp['tmpl'][0]}")
-            print(f"    从结果里取：{sp['extract']}")
-            print(f"    人工 · 需登录（本技能不执行）：{sp['login']}")
-        print("\n# 生成：social --all  或  social --platforms linkedin instagram --out social.txt")
-        print("# 每条结果 → 官网 → 具名邮箱 → filter --against 查库 → 背调（S1/S2 证据）后才进发信。")
+            print(f"    Public query: {sp['tmpl'][0]}")
+            print(f"    Take from results: {sp['extract']}")
+            print(f"    Manual · login required (this skill does not do it): {sp['login']}")
+        print("\n# Generate:  social --all   or   social --platforms linkedin instagram --out social.txt")
+        print("# Each result → website → named mailbox → filter --against (DB check) → research (S1/S2 evidence) before any sending.")
         return
     regions = _resolve_regions(args.regions)
     titles = _sp.titles_for(args.tier, RUNTIME.get("buyer_titles") or [])
@@ -912,7 +912,7 @@ def cmd_social(args):
     for pid, q in qs:
         if pid != cur:
             sp = _sp.PLATFORMS[pid]
-            lines.append(f"# ---- {sp['name']} {sp['star']} · {sp['stage']} · 取：{sp['extract']}")
+            lines.append(f"# ---- {sp['name']} {sp['star']} · {sp['stage']} · take: {sp['extract']}")
             cur = pid
         lines.append(q)
         if pid == "youtube" and args.urls:
@@ -920,10 +920,10 @@ def cmd_social(args):
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
-        print(f"OK: 生成 {len(qs)} 条社媒公开搜索式（{len(plats)} 平台 · {len(regions)} 地区 · tier={args.tier}）→ {args.out}")
+        print(f"OK: generated {len(qs)} social public queries ({len(plats)} platforms · {len(regions)} regions · tier={args.tier}) → {args.out}")
     else:
         print("\n".join(lines))
-        print(f"\n# 共 {len(qs)} 条（{len(plats)} 平台）。只读公开搜索：不登录、不私信、不自动加好友。", file=sys.stderr)
+        print(f"\n# {len(qs)} queries ({len(plats)} platforms). Read-only public search: no login, no DMs, no auto-connect.", file=sys.stderr)
 
 
 def cmd_filter(args):
@@ -939,9 +939,9 @@ def cmd_filter(args):
         db_index = (emails_set, domains_set, codes_set)
     else:
         print("=" * 48)
-        print("⚠️  你没有传 --against 查库！可能在做重复劳动。")
-        print("    客户库里很可能已有这些客户，不查库=白搜+白背调。")
-        print("    正确用法： filter results.json --against 全量客户数据库.csv")
+        print("⚠️  You did not pass --against for a DB check. You may be repeating work.")
+        print("    These accounts are probably already in your customer DB; skipping the check = wasted search and research.")
+        print("    Correct usage:  filter results.json --against customer_db.csv")
         print("=" * 48)
 
     candidates, stats = filter_and_grade(results, db_index=db_index)
@@ -954,42 +954,42 @@ def cmd_filter(args):
         w.writeheader()
         w.writerows(candidates)
 
-    print("===== 搜索候选分级结果 =====")
-    print(f"输入结果            : {stats['input']}")
+    print("===== Search candidate grading =====")
+    print(f"Input results              : {stats['input']}")
     if args.against:
-        since_txt = f"（≥{args.since} 近期数据）" if args.since else "（全量）"
-        print(f"客户管家库比对      : 已加载 {db_loaded} 条{since_txt}")
-        print(f"库内已有 去重       : {stats['dup_in_db_skip']}  ← 避免重复开发已有客户")
-    print(f"平台/集市 过滤      : {stats['platform_skip']}")
-    print(f"目录/媒体/政府 过滤 : {stats['nonlead_skip']}")
-    print(f"非目标词 过滤       : {stats['nontarget_skip']}  ← profile exclude_keywords")
-    print(f"竞品特征 过滤       : {stats['competitor_skip']}  ← profile competitor_markers")
-    print(f"域名重复 过滤       : {stats['dup_domain_skip']}")
+        since_txt = f" (recent data ≥{args.since})" if args.since else " (full)"
+        print(f"Customer DB compared       : {db_loaded} rows loaded{since_txt}")
+        print(f"Already in DB, removed     : {stats['dup_in_db_skip']}  ← avoids re-working existing accounts")
+    print(f"Platforms/marketplaces     : {stats['platform_skip']}")
+    print(f"Directories/media/gov      : {stats['nonlead_skip']}")
+    print(f"Non-target terms           : {stats['nontarget_skip']}  ← profile exclude_keywords")
+    print(f"Competitor markers         : {stats['competitor_skip']}  ← profile competitor_markers")
+    print(f"Duplicate domains          : {stats['dup_domain_skip']}")
     print(f"-------------------------------")
-    print(f"入库候选            : {stats['candidates']}")
-    print(f"  ├─ A级(企业具名邮箱): {stats['A']}")
-    print(f"  ├─ B级(通用/免费邮箱): {stats['B']}")
-    print(f"  └─ 无邮箱(需补)     : {stats['no_email']}")
-    print(f"→ 候选明细已写入      : {out}")
+    print(f"Candidates entered         : {stats['candidates']}")
+    print(f"  ├─ A-tier (corporate named mailbox): {stats['A']}")
+    print(f"  ├─ B-tier (generic/free mailbox)   : {stats['B']}")
+    print(f"  └─ no e-mail (to fill)             : {stats['no_email']}")
+    print(f"→ Candidate details written to: {out}")
 
     ratios = print_funnel(stats)
     save_funnel_history(args.state, stats, ratios)
 
-    print("\n下一步：对 A/B 级候选逐个走【背调→非目标复核→查重】后入 pipeline。")
+    print("\nNext: take each A/B candidate through research → non-target review → de-dup, then into the pipeline.")
 
 
 # ============================================================
-# 八、非目标品类复核（数据质量：只标不改，由 profile 排除词驱动）
+# 8. Non-target category review (data quality: flags only, never edits; driven by profile exclusion terms)
 # ============================================================
 def cmd_audit_exclude(args):
-    """挑出候选 CSV 中疑似命中非目标排除词/竞品特征词的记录，人工确认后再处理。
-    绝不自动改动数据（删除/改动须负责人同意）。"""
+    """Pick records in the candidate CSV that look like non-target / competitor hits, for human confirmation.
+    Never changes data automatically (deletion/edits require the owner's approval)."""
     rules = [("exclude_keywords", k) for k in RUNTIME["exclude_keywords"]]
     rules += [("competitor_markers", k) for k in RUNTIME["competitor_markers"]]
     if not rules:
-        print("profile 未配置 targeting.exclude_keywords / competitor_markers，"
-              "没有行业过滤词可供复核。")
-        print("（平台/目录/政府/媒体/免费邮箱等技术性过滤不在本复核范围内。）")
+        print("The profile has no targeting.exclude_keywords / competitor_markers, "
+              "so there are no industry filter terms to review.")
+        print("(Technical filters such as platforms/directories/government/media/free mailboxes are outside this review.)")
         return
     suspicious = []
     with open(args.csv, "r", encoding="utf-8-sig", newline="") as f:
@@ -1002,35 +1002,35 @@ def cmd_audit_exclude(args):
             hits = [f"{src}:{k}" for src, k in rules if str(k).lower() in blob]
             if hits:
                 suspicious.append((i, row.get("brand") or row.get("domain"), hits))
-    print(f"===== 非目标/竞品复核（共扫 {args.csv}）=====")
+    print(f"===== Non-target / competitor review (scanned {args.csv}) =====")
     if not suspicious:
-        print("未发现命中非目标词/竞品特征词的可疑记录。")
+        print("No suspicious records hit non-target or competitor terms.")
     else:
-        print(f"发现 {len(suspicious)} 条可疑记录（请人工背调复核，本工具不自动改）：")
+        print(f"Found {len(suspicious)} suspicious records (please verify by research; this tool does not edit):")
         for ln, brand, hits in suspicious:
-            print(f"  行{ln}: {brand} | 命中: {', '.join(sorted(set(hits)))}")
-        print("\n→ 确认非目标/竞品的请移入黑名单/跳过，不要发信。")
+            print(f"  row {ln}: {brand} | hits: {', '.join(sorted(set(hits)))}")
+        print("\n→ Move confirmed non-targets/competitors to the blacklist or skip them; do not send.")
 
 
 # ============================================================
-# 九、自循环引擎（保底补池 + 四维轮换：高度 / 广度 / 深度 / 远度 + 内置调度）
+# 9. Self-replenishing engine (pool floor + four-axis rotation: height / breadth / depth / reach + built-in scheduler)
 # ============================================================
-# 四个维度（每次运行只取每维的一个档位，逐次推进，长线全覆盖、不一次打光）：
-#   深度 depth   —— 同一片市场挖多深：d1 公司级发现 → d2 决策人穿透（采购链职位词）
-#                   → d3 存量深挖（成交客户/参照品牌的同类、已发未回账户的其他角色）；转得最快，
-#                   同一「地区×层级」连续三次运行由浅到深挖透，再换下一片。
-#   远度 region  —— 市场半径：profile.targeting.target_regions 的顺序即「由近到远」
-#                   （把已成交/最熟/时差最近的市场写在前面）；深度挖完一轮后换下一个地区。
-#   高度 level   —— 客户价值梯队：profile.targeting.customer_levels 的顺序即「由高到低」
-#                   （高价值/大客户层写在前面）；所有地区跑完一圈后降一档。
-#   广度 breadth —— 搜索面宽窄：core 核心组合 → wide +场景/意图轴 → max +全部侧翼轴；转得最慢。
+# Four axes (each run takes one level per axis and steps forward; long-run full coverage, never all at once):
+#   depth   —— how deep to dig in one market: d1 company-level discovery → d2 decision-maker penetration (procurement-chain titles)
+#              → d3 installed-base deep dive (peers of won customers / reference brands, other roles at sent-but-silent accounts); turns fastest,
+#              the same region × tier is dug shallow→deep over three consecutive runs, then the next slice.
+#   reach   —— market radius: the order of profile.targeting.target_regions is "near → far"
+#              (put won / most familiar / closest-time-zone markets first); after one depth cycle, move to the next region.
+#   height  —— customer value tier: the order of profile.targeting.customer_levels is "high → low"
+#              (high-value / key-account tiers first); after all regions complete one cycle, step down one tier.
+#   breadth —— how wide the search is: core combinations → wide (+scene/intent axes) → max (+all flank axes); turns slowest.
 DEFAULT_STATE = "search_state.json"
 DATA_DIR = os.environ.get("B2B_DATA_DIR", "data")
 DEFAULT_POOL = os.path.join(DATA_DIR, "customer_db.csv")
 DEPTHS = ["d1_company", "d2_decision", "d3_stock"]
 BREADTHS = ["core", "wide", "max"]
-DIM_LABELS = {"region": "远度", "level": "高度", "depth": "深度", "breadth": "广度"}
-# 客户库里这些关系不进入冷开发可发池（老客户走生命周期，不当陌生人开发）
+DIM_LABELS = {"region": "reach", "level": "height", "depth": "depth", "breadth": "breadth"}
+# These relations in the customer DB never enter the cold-outreach sendable pool (existing customers go through lifecycle, not cold outreach)
 NON_COLD_RELATIONS = {"existing_customer", "do_not_contact", "competitor", "lost_do_not_contact"}
 
 
@@ -1044,7 +1044,7 @@ def _load_state(path):
             state = None
     if not isinstance(state, dict):
         state = {}
-    # 兼容 v3.0 旧状态文件（没有 depth_idx）：补齐字段，不丢历史
+    # compatibility with v3.0 state files (no depth_idx): fill the field, keep history
     for k, v in (("region_idx", 0), ("level_idx", 0), ("depth_idx", 0), ("breadth_idx", 0),
                  ("run_count", 0), ("last_run", ""), ("history", [])):
         state.setdefault(k, v)
@@ -1057,7 +1057,7 @@ def _save_state(path, state):
 
 
 def _rotate_plan(state):
-    """四维梯次轮换：深度(d1/d2/d3，最快) × 远度(地区) × 高度(层级) × 广度(core/wide/max，最慢)。"""
+    """Four-axis stepped rotation: depth (d1/d2/d3, fastest) × reach (regions) × height (tiers) × breadth (core/wide/max, slowest)."""
     regions = RUNTIME["regions"]
     levels = list(RUNTIME["spectrum"].keys())
     r = state["region_idx"] % len(regions)
@@ -1069,7 +1069,7 @@ def _rotate_plan(state):
 
 
 def _advance_state(state):
-    """深度转得最快（同一片市场连挖 d1→d2→d3）→ 远度（地区由近到远）→ 高度（层级由高到低）→ 广度（最慢）。"""
+    """Depth turns fastest (same market dug d1→d2→d3) → reach (regions near→far) → height (tiers high→low) → breadth (slowest)."""
     regions_n = len(RUNTIME["regions"])
     levels_n = len(RUNTIME["spectrum"])
     state["depth_idx"] = (state.get("depth_idx", 0) + 1) % len(DEPTHS)
@@ -1095,7 +1095,7 @@ def _read_rows(path):
 
 
 def _stock_seeds():
-    """d3 存量深挖的种子：成交客户品牌 + 参照品牌 + 已发≥2 封仍未回复的账户。"""
+    """Seeds for the d3 installed-base deep dive: won customer brands + reference brands + accounts with ≥2 e-mails sent and no reply."""
     won = [r.get("brand", "").strip() for r in _read_rows(os.path.join(DATA_DIR, "success_cases.csv"))]
     refs = list(RUNTIME.get("competitors") or [])
     quiet = []
@@ -1133,11 +1133,11 @@ def _depth_titles(limit=8):
 
 
 def build_depth_queries(depth, region, level, breadth):
-    """按深度档生成今日搜索词。返回 (queries, note)。"""
+    """Generate today's queries for the current depth level. Returns (queries, note)."""
     base = build_queries(spectrum_keys=[level], regions=[region], breadth=breadth)
     cats = RUNTIME["categories"][:3]
     if depth == "d1_company":
-        return base, "d1 公司级发现：先找对的公司"
+        return base, "d1 company-level discovery: find the right companies first"
     titles = _depth_titles()
     d2 = []
     for cat in cats:
@@ -1145,7 +1145,7 @@ def build_depth_queries(depth, region, level, breadth):
             d2.append(f'site:linkedin.com/in "{t}" {cat} {region}')
             d2.append(f'{region} {cat} "{t}" contact')
     if depth == "d2_decision":
-        return _dedup_keep(base[:40] + d2), "d2 决策人穿透：在已知公司类型里找到具体拍板人/执行人"
+        return _dedup_keep(base[:40] + d2), "d2 decision-maker penetration: find the actual approver/operator inside the known company types"
     won, refs, quiet = _stock_seeds()
     d3 = []
     for seed in (won + refs)[:10]:
@@ -1155,9 +1155,9 @@ def build_depth_queries(depth, region, level, breadth):
         for t in titles[:3]:
             d3.append(f'site:linkedin.com/in "{brand}" "{t}"')
     if not d3:
-        return _dedup_keep(base[:40] + d2), ("d3 存量深挖暂无种子（无成交案例/参照品牌/已发未回账户）"
-                                             "→ 本轮回落为 d2；导入客户库或首单成交后自动生效")
-    return _dedup_keep(d3 + d2[:20]), "d3 存量深挖：成交客户/参照品牌的同类 + 已发未回账户的其他角色"
+        return _dedup_keep(base[:40] + d2), ("d3 installed-base deep dive has no seeds yet (no won cases / reference brands / sent-but-silent accounts)"
+                                             "→ falling back to d2 for this run; it activates automatically after a DB import or the first win")
+    return _dedup_keep(d3 + d2[:20]), "d3 installed-base deep dive: peers of won customers / reference brands + other roles at sent-but-silent accounts"
 
 
 def _dedup_keep(seq):
@@ -1170,7 +1170,7 @@ def _dedup_keep(seq):
 
 
 def _count_sendable_pool(pool_csv):
-    """数客户库里【现在可发】的冷开发候选：有邮箱 + 未发过 + 不是老客户/禁联。"""
+    """Count cold-outreach candidates in the customer DB that are sendable now: has e-mail + never sent + not an existing customer / do-not-contact."""
     sendable = 0
     total = 0
     if not os.path.exists(pool_csv):
@@ -1182,7 +1182,7 @@ def _count_sendable_pool(pool_csv):
             email = (row.get("email") or "").strip()
             est = (row.get("email_status") or "").strip().lower()
             rel = (row.get("relation") or "").strip().lower()
-            sent = est in ("sent", "已发", "replied", "已回复", "bounced", "退信")
+            sent = est in ("sent", "已发", "replied", "已回复", "bounced", "退信")  # Chinese aliases accepted in imported data
             if email and "@" in email and not sent and rel not in NON_COLD_RELATIONS \
                     and email.lower() not in already:
                 sendable += 1
@@ -1190,46 +1190,46 @@ def _count_sendable_pool(pool_csv):
 
 
 def cmd_replenish(args):
-    """保底补池：检查可发池是否低于红线，低于则按四维轮换生成今日搜索轮次。"""
+    """Pool floor: check whether the sendable pool is below the red line; if so, generate today's search round by four-axis rotation."""
     if not RUNTIME["regions"]:
-        print("ERROR: profile 未配置 targeting.target_regions，无法轮换远度（地区）。"
-              "请先在 company_profile.json 填写目标地区（由近到远排序）。")
+        print("ERROR: the profile has no targeting.target_regions, so the reach axis (regions) cannot rotate. "
+              "Fill the target regions in company_profile.json first (ordered near → far).")
         sys.exit(2)
     floor = args.floor
     daily = args.daily_target
     state = _load_state(args.state)
     sendable, total = _count_sendable_pool(args.pool)
 
-    print("===== 客户池保底检查（自循环引擎）=====")
-    print(f"客户库              : {args.pool}" + ("" if os.path.exists(args.pool) else
-          "（不存在：安装时请先跑 data_import.py 导入自有客户库，或在档案里声明 none）"))
-    print(f"库总量              : {total}")
-    print(f"可发冷开发候选（有邮箱·未发·非老客户）: {sendable}")
-    print(f"保底红线            : {floor}   ｜每日发送目标: {daily}")
+    print("===== Customer pool floor check (self-replenishing engine) =====")
+    print(f"Customer DB            : {args.pool}" + ("" if os.path.exists(args.pool) else
+          " (missing: run data_import.py at install to import your own customer DB, or declare none in the profile)"))
+    print(f"Total rows             : {total}")
+    print(f"Sendable cold candidates (has e-mail · never sent · not existing customer): {sendable}")
+    print(f"Floor red line         : {floor}   | daily send target: {daily}")
 
     days_left = sendable // daily if daily else 0
     below_floor = sendable < floor
     below_ahead = days_left < args.ahead_days
     need_replenish = below_floor or below_ahead
     if below_floor:
-        print(f"\n[!] 低于硬红线：可发 {sendable} < {floor}，只够 ~{days_left} 天，需立即补池。")
+        print(f"\n[!] Below the hard red line: sendable {sendable} < {floor}, only ~{days_left} days left; replenish now.")
     elif below_ahead:
-        print(f"\n[!] 低于提前储备线：只够发 ~{days_left} 天（<提前量 {args.ahead_days} 天），提前补池。")
+        print(f"\n[!] Below the advance reserve line: only ~{days_left} days of sending left (< {args.ahead_days} days ahead); replenishing early.")
     else:
-        print(f"\n[OK] 池位充足：可支撑 ~{days_left} 天发送。")
+        print(f"\n[OK] Pool is sufficient: supports ~{days_left} days of sending.")
 
     plan = _rotate_plan(state)
     if need_replenish or args.force:
         qs, note = build_depth_queries(plan["depth"], plan["region"], plan["level"], plan["breadth"])
-        print(f"\n【今日四维轮换】远度={plan['region']} × 高度={plan['level']} × "
-              f"深度={plan['depth']} × 广度={plan['breadth']}")
+        print(f"\n[Today's four-axis rotation] reach={plan['region']} × height={plan['level']} × "
+              f"depth={plan['depth']} × breadth={plan['breadth']}")
         print(f"  {note}")
-        print(f"生成搜索词 {len(qs)} 条（四维梯次，不重打；全覆盖一轮 = {_cycle_len()} 次运行）")
+        print(f"Generated {len(qs)} queries (stepped four-axis rotation, no repeats; one full cycle = {_cycle_len()} runs)")
         if args.emit:
             with open(args.emit, "w", encoding="utf-8") as f:
                 f.write("\n".join(qs))
-            print(f"→ 今日搜索词已写入：{args.emit}")
-            print("  下一步：抽取后用 filter 子命令 --against 本库去重分级→非目标复核→背调→入 pipeline。")
+            print(f"→ Today's queries written to: {args.emit}")
+        print("  Next: after collecting results, run filter --against this DB (de-dup + grading) → non-target review → research → pipeline.")
         from datetime import datetime as _dt
         state["run_count"] += 1
         state["last_run"] = _dt.now().strftime("%Y-%m-%d %H:%M")
@@ -1240,50 +1240,50 @@ def cmd_replenish(args):
         _advance_state(state)
         _save_state(args.state, state)
     else:
-        print("\n本日无需补池（如需强制轮换搜索加 --force）。")
+        print("\nNo replenishment needed today (add --force to rotate the search anyway).")
 
     if need_replenish and args.warn_file:
-        reason = f"可发{sendable}<硬红线{floor}" if below_floor else f"仅够{days_left}天<提前量{args.ahead_days}天"
+        reason = f"sendable {sendable} < hard red line {floor}" if below_floor else f"only {days_left} days left < {args.ahead_days} days ahead"
         with open(args.warn_file, "w", encoding="utf-8") as f:
-            f.write(f"[{state.get('last_run','')}] 客户池保底预警：{reason}。已触发补池轮换。")
-        print(f"→ 预警已写入：{args.warn_file}")
+            f.write(f"[{state.get('last_run','')}] Customer pool floor warning: {reason}. Replenishment rotation triggered.")
+        print(f"→ Warning written to: {args.warn_file}")
     _print_level_hint()
 
 
 def cmd_status(args):
-    """看四维轮换进度：下次该跑哪里 + 历史轨迹。"""
+    """Show four-axis rotation progress: where the next run goes + history."""
     if not RUNTIME["regions"]:
-        print("ERROR: profile 未配置 targeting.target_regions，无轮换计划。")
+        print("ERROR: the profile has no targeting.target_regions; no rotation plan.")
         sys.exit(2)
     state = _load_state(args.state)
     plan = _rotate_plan(state)
-    print("===== 四维轮换进度（高度 / 广度 / 深度 / 远度）=====")
-    print(f"已跑次数      : {state.get('run_count',0)}   ｜全覆盖一轮 = {_cycle_len()} 次运行")
-    print(f"上次运行      : {state.get('last_run','') or '从未'}")
-    print(f"下次将跑      : 远度={plan['region']} × 高度={plan['level']} × "
-          f"深度={plan['depth']} × 广度={plan['breadth']}")
-    print(f"远度梯次      : {' → '.join(RUNTIME['regions'])}（profile 顺序 = 由近到远）")
-    print(f"高度梯次      : {' → '.join(RUNTIME['spectrum'].keys())}（profile 顺序 = 由高到低）")
-    print(f"深度梯次      : {' → '.join(DEPTHS)}（转得最快：同一片市场连挖三层）")
-    print(f"广度梯次      : {' → '.join(BREADTHS)}")
+    print("===== Four-axis rotation progress (height / breadth / depth / reach) =====")
+    print(f"Runs so far       : {state.get('run_count',0)}   | one full cycle = {_cycle_len()} runs")
+    print(f"Last run          : {state.get('last_run','') or 'never'}")
+    print(f"Next run          : reach={plan['region']} × height={plan['level']} × "
+          f"depth={plan['depth']} × breadth={plan['breadth']}")
+    print(f"Reach ladder      : {' → '.join(RUNTIME['regions'])} (profile order = near → far)")
+    print(f"Height ladder     : {' → '.join(RUNTIME['spectrum'].keys())} (profile order = high → low)")
+    print(f"Depth ladder      : {' → '.join(DEPTHS)} (turns fastest: three levels in the same market)")
+    print(f"Breadth ladder    : {' → '.join(BREADTHS)}")
     hist = state.get("history", [])
     if hist:
-        print("\n最近 8 次轮换：")
+        print("\nLast 8 rotations:")
         for h in hist[-8:]:
             print(f"  {h['t']}  {h['region']:<10} {h['level']:<14} {h.get('depth','d1_company'):<12} "
-                  f"{h['breadth']:<5} → {h['queries']}词（当时可发{h.get('sendable_before','?')}）")
+                  f"{h['breadth']:<5} → {h['queries']} queries (sendable at the time: {h.get('sendable_before','?')})")
     else:
-        print("\n尚无轮换历史。先跑 replenish 或 schedule。")
+        print("\nNo rotation history yet. Run replenish or schedule first.")
     _print_level_hint()
 
 
 # ============================================================
-# 互斥标签组：同一字段内这些取值不可共存，新旧不一致=冲突。
-# variant_tag 为产品变体泛化标签（具体含义由使用方定义）；
-# need_tag 为客户需求向标签。
-# 默认不预置任何行业的互斥关系；由 profile.positioning.conflict_groups 定义，例如
+# Mutually exclusive tag groups: within one field these values cannot coexist; old ≠ new = conflict.
+# variant_tag is a generalised product-variant tag (meaning defined by the user);
+# need_tag is the customer-need tag.
+# No industry exclusivity is pre-set; it is defined by profile.positioning.conflict_groups, e.g.
 #   {"need_tag": [["line_a"], ["line_b"]], "variant_tag": [["variant_a"], ["variant_b"]]}
-# 未定义的字段：新旧值不同即提示（仍只标不改）。
+# Fields not defined there: any old/new difference is flagged (still flag-only, never edited).
 CONFLICT_GROUPS = {"need_tag": [], "variant_tag": [], "solution_tag": []}
 
 
@@ -1301,8 +1301,8 @@ def _norm_tag(v):
 
 
 def _tags_conflict(field, old, new):
-    """判断同一字段的旧标签 old 与新背调结论 new 是否矛盾。
-    两者都非空且不相等，且分属互斥组 → 冲突。need_review/空 不算冲突。"""
+    """Decide whether the old tag and the new research conclusion for the same field contradict each other.
+    Both non-empty, different, and in different exclusive groups → conflict. need_review / empty never counts."""
     o, n = _norm_tag(old), _norm_tag(new)
     if not o or not n or o == n:
         return False
@@ -1318,7 +1318,7 @@ def _tags_conflict(field, old, new):
 
 
 def _load_db_rows(csv_path, since=None):
-    """加载客户库整行，建 email/域名/customer_code → row 索引（保留旧标签供比对）。"""
+    """Load full customer DB rows and index email/domain/customer_code → row (old tags kept for comparison)."""
     by_email, by_domain, by_code = {}, {}, {}
     with open(csv_path, "r", encoding="utf-8-sig", newline="") as f:
         for row in csv.DictReader(f):
@@ -1340,7 +1340,7 @@ def _load_db_rows(csv_path, since=None):
 
 
 def _match_db_row(new_rec, by_email, by_domain, by_code):
-    """按 email → 域名 → customer_code 优先级在库里找到同一客户的旧行。"""
+    """Find the old row of the same customer in the DB, by email → domain → customer_code."""
     direct = (new_rec.get("email") or "").strip().lower()
     cand_emails = ([direct] if direct else []) + extract_emails(new_rec)
     for e in cand_emails:
@@ -1357,12 +1357,12 @@ def _match_db_row(new_rec, by_email, by_domain, by_code):
 
 
 def cmd_conflict_check(args):
-    """标签冲突校正：背调新结论 vs 库内旧标签。
-    两种模式：
-      (A) 传 --new：把新背调结论文件（JSON/CSV，含 variant_tag/need_tag）
-          与 --against 客户库逐条比对，找出同一客户新旧标签矛盾的。
-      (B) 不传 --new：只扫 --against 库自身，找 variant_tag 与 need_tag 内部矛盾。
-    一律【只标不改】，输出冲突清单交人工拍板（AI 只建议，人工决定）。"""
+    """Tag conflict check: new research conclusion vs. old tag in the DB.
+    Two modes:
+      (A) with --new: compare a new research-conclusion file (JSON/CSV with variant_tag/need_tag)
+          against the --against DB row by row, and find customers whose old and new tags contradict.
+      (B) without --new: scan the --against DB alone for internal variant_tag vs need_tag contradictions.
+    Always flag-only: outputs a conflict list for human sign-off (AI suggests, a human decides)."""
     by_email, by_domain, by_code = _load_db_rows(args.against, since=args.since)
     db_rows = list({id(r): r for r in list(by_email.values())
                     + list(by_domain.values()) + list(by_code.values())}.values())
@@ -1390,12 +1390,12 @@ def cmd_conflict_check(args):
                 old_v = old_row.get(fld)
                 if _tags_conflict(fld, old_v, new_v):
                     conflicts.append((name, fld, old_v, new_v,
-                                      "新背调结论与库内旧标签矛盾"))
+                                      "new research conclusion contradicts the old tag in the DB"))
     else:
-        # 库内自洽检查：规则全部来自 profile.positioning.tag_rules，不预置任何行业规则
+        # Internal consistency check: all rules come from profile.positioning.tag_rules; no industry rules are built in
         if not rules:
-            print("ℹ️  profile.positioning.tag_rules 未配置：库内自洽检查无规则可用，"
-                  "只能用 --new 做新旧比对。")
+            print("ℹ️  profile.positioning.tag_rules is not configured: no rules for the internal check; "
+                  "only the --new old-vs-new comparison is possible.")
         for row in db_rows:
             name = row.get("brand") or row.get("customer_name") or "?"
             for r in rules:
@@ -1403,35 +1403,35 @@ def cmd_conflict_check(args):
                 bval = _norm_tag(row.get(r.get("forbid_field", "")))
                 if a and a == _norm_tag(r.get("equals")) and bval in {_norm_tag(x) for x in r.get("values", [])}:
                     conflicts.append((name, f"{r['if_field']}×{r['forbid_field']}", f"{r['if_field']}={a}",
-                                      f"{r['forbid_field']}={bval}", r.get("reason") or "违反 tag_rules"))
+                                      f"{r['forbid_field']}={bval}", r.get("reason") or "violates tag_rules"))
     print("=" * 52)
-    print("标签冲突校正：背调结论 vs 库内旧标签（只标不改）")
+    print("Tag conflict check: research conclusion vs. old tag in the DB (flag only, never edit)")
     print("=" * 52)
     if not conflicts:
-        print("✅ 未发现标签冲突。")
+        print("✅ No tag conflicts found.")
     else:
-        print(f"⚠️  发现 {len(conflicts)} 条标签冲突（本工具绝不自动改，请背调复核后拍板）：\n")
+        print(f"⚠️  Found {len(conflicts)} tag conflicts (this tool never edits automatically; verify by research and decide):\n")
         for name, fld, old_v, new_v, why in conflicts:
-            print(f"  ▸ {name} | {fld}：旧=[{old_v or '空'}] ≠ 新=[{new_v or '空'}] → {why}")
+            print(f"  ▸ {name} | {fld}: old=[{old_v or 'empty'}] ≠ new=[{new_v or 'empty'}] → {why}")
         if args.out:
             with open(args.out, "w", encoding="utf-8-sig", newline="") as f:
                 w = csv.writer(f)
                 w.writerow(["name", "field", "old_tag", "new_tag", "reason", "decision"])
                 for name, fld, old_v, new_v, why in conflicts:
-                    w.writerow([name, fld, old_v, new_v, why, "pending_人工拍板"])
-            print(f"\n→ 冲突清单已写入：{args.out}（decision 列留空，逐条定夺后才回写）")
-    print("\n原则：标签冲突只提醒不自改；AI 只建议，最终由人工拍板。")
+                    w.writerow([name, fld, old_v, new_v, why, "pending_human_decision"])
+            print(f"\n→ Conflict list written to: {args.out} (decision column left empty; write back only after each case is decided)")
+    print("\nPrinciple: tag conflicts are flagged, never auto-edited; AI suggests, a human makes the final call.")
 
 
 def cmd_funnel(args):
-    """看历史多次搜索的累计转化率趋势（诊断搜索效率是否在改善）。"""
+    """Show the cumulative conversion trend across past searches (is search efficiency improving?)."""
     state = _load_state(args.state)
     hist = state.get("funnel_history", [])
     if not hist:
-        print("尚无漏斗历史。先跑几次 filter（带 --against）积累数据。")
+        print("No funnel history yet. Run filter (with --against) a few times to collect data.")
         return
-    print("===== 搜索漏斗历史转化率趋势 =====")
-    print(f"{'时间':<18}{'输入':>6}{'入库':>6}{'入库率':>8}{'可直发率':>9}{'库重复率':>9}")
+    print("===== Search funnel conversion trend =====")
+    print(f"{'Time':<18}{'Input':>6}{'Entered':>8}{'Entry%':>8}{'Sendable%':>10}{'DB dup%':>9}")
     for h in hist[-15:]:
         print(f"{h['t']:<18}{h['input']:>6}{h['candidates']:>6}"
               f"{h['candidate_rate']*100:>7.0f}%{h['sendable_rate']*100:>8.0f}%{h['in_db_rate']*100:>8.0f}%")
@@ -1440,14 +1440,14 @@ def cmd_funnel(args):
     avg_send = sum(h["sendable_rate"] for h in hist) / n
     avg_db = sum(h["in_db_rate"] for h in hist) / n
     print("-" * 56)
-    print(f"{'历史均值':<18}{'':>6}{'':>6}{avg_cand*100:>7.0f}%{avg_send*100:>8.0f}%{avg_db*100:>8.0f}%")
-    print("\n💡 趋势解读：")
+    print(f"{'Average':<18}{'':>6}{'':>8}{avg_cand*100:>7.0f}%{avg_send*100:>9.0f}%{avg_db*100:>8.0f}%")
+    print("\n💡 Trend reading:")
     if avg_db > FUNNEL_DUP_DB_RED:
-        print(f"  🔴 库重复率均值 {avg_db*100:.0f}% 偏高 → 搜索词长期命中已开发区，该换新地区/产品词。")
+        print(f"  🔴 Average DB duplicate rate {avg_db*100:.0f}% is high → queries keep hitting worked territory; move to new regions / product terms.")
     if avg_send < FUNNEL_NAMED_EMAIL_RED:
-        print(f"  🔴 可直发率均值 {avg_send*100:.0f}% 偏低 → 长期具名邮箱不足，强化 email_guesser 补齐。")
+        print(f"  🔴 Average sendable rate {avg_send*100:.0f}% is low → named mailboxes are chronically short; lean on email_guesser.")
     if avg_db <= FUNNEL_DUP_DB_RED and avg_send >= FUNNEL_NAMED_EMAIL_RED:
-        print("  ✅ 历史转化率健康。")
+        print("  ✅ Historical conversion is healthy.")
 
 
 def cmd_schedule(args):
@@ -1465,22 +1465,22 @@ def cmd_schedule(args):
         force = True
 
     def _job():
-        print(f"\n⏰ [{_dt.now().strftime('%Y-%m-%d %H:%M')}] 自循环触发：检查池→补池→轮换")
+        print(f"\n⏰ [{_dt.now().strftime('%Y-%m-%d %H:%M')}] Self-replenishing run: check pool → replenish → rotate")
         cmd_replenish(_Args())
 
-    print("===== 内置调度器启动（自循环引擎）=====")
-    print(f"每日 {args.at} 自动跑 replenish 闭环｜保底红线 {args.floor}｜库 {args.pool}")
-    print("Ctrl+C 停止。启动时先立即跑一次。\n")
+    print("===== Built-in scheduler started (self-replenishing engine) =====")
+    print(f"Runs the replenish loop daily at {args.at} | floor red line {args.floor} | DB {args.pool}")
+    print("Ctrl+C to stop. Runs once immediately on start.\n")
     _job()
     try:
         from apscheduler.schedulers.blocking import BlockingScheduler  # type: ignore
         hh, mm = args.at.split(":")
         sched = BlockingScheduler()
         sched.add_job(_job, "cron", hour=int(hh), minute=int(mm))
-        print("（使用 APScheduler cron 调度）")
+        print("(using APScheduler cron)")
         sched.start()
     except ImportError:
-        print("（未装 APScheduler，使用零依赖 sleep 循环；pip install apscheduler 可升级）")
+        print("(APScheduler not installed; using a zero-dependency sleep loop; pip install apscheduler to upgrade)")
         last_day = _dt.now().strftime("%Y-%m-%d")
         target_h, target_m = map(int, args.at.split(":"))
         while True:
@@ -1494,72 +1494,72 @@ def cmd_schedule(args):
 
 def _build_parser():
     p = argparse.ArgumentParser(
-        description="通用 B2B 客户搜索候选生成器 + 自循环引擎（技能版本 v3.1 · 配置驱动·行业无关）")
+        description="Industry-agnostic B2B customer search candidate generator + self-replenishing engine (skill v3.1 · profile-driven)")
     sub = p.add_subparsers(dest="cmd")
 
-    pq = sub.add_parser("queries", help="生成搜索词全集（产品词×分层角色词×地区，词表来自 profile）")
+    pq = sub.add_parser("queries", help="Generate the full query set (product terms × tier role terms × regions; vocabulary from the profile)")
     pq.add_argument("--out")
-    pq.add_argument("--levels", help="只用部分层级，逗号分隔；层级名取自 profile customer_levels[].name")
-    pq.add_argument("--regions", help="只跑部分地区，逗号分隔；缺省用 profile target_regions")
+    pq.add_argument("--levels", help="Only some tiers, comma-separated; names from profile customer_levels[].name")
+    pq.add_argument("--regions", help="Only some regions, comma-separated; default = profile target_regions")
     pq.add_argument("--breadth", choices=["core", "wide", "max"], default="core")
     pq.set_defaults(func=cmd_queries)
 
-    pc = sub.add_parser("channels", help="新发现源：按渠道（社媒/地图/海关/招标/招聘/目录/评测/会议/竞品…）生成发现式；缺省按行业包/交付形态自动挑渠道")
+    pc = sub.add_parser("channels", help="New discovery sources: generate discovery queries per channel (social/maps/customs/tenders/hiring/directories/reviews/events/competitors…); default picks channels by industry pack / delivery type")
     pc.add_argument("--ch", nargs="+",
                     choices=list(CHANNEL_RECIPES.keys()),
-                    help="只生成指定渠道（空白则列出全部渠道说明）")
-    pc.add_argument("--regions", help="只跑部分地区，逗号分隔")
+                    help="Only the given channels (leave empty to list all channel descriptions)")
+    pc.add_argument("--regions", help="Only some regions, comma-separated")
     pc.add_argument("--out")
     pc.set_defaults(func=cmd_channels)
 
-    pso = sub.add_parser("social", help="10 平台社媒免登录公开搜索式（LinkedIn/IG/FB/YouTube/TikTok/Pinterest/X/Threads/WhatsApp/Lemon8）")
-    pso.add_argument("--platforms", nargs="+", help="只生成指定平台（缺省用 profile search.social_platforms，再缺省 10 个全开）")
-    pso.add_argument("--all", action="store_true", help="10 个平台全部生成")
+    pso = sub.add_parser("social", help="Public search queries for 10 social platforms without login (LinkedIn/IG/FB/YouTube/TikTok/Pinterest/X/Threads/WhatsApp/Lemon8)")
+    pso.add_argument("--platforms", nargs="+", help="Only the given platforms (default = profile search.social_platforms, else all 10)")
+    pso.add_argument("--all", action="store_true", help="Generate for all 10 platforms")
     pso.add_argument("--tier", choices=["decision", "execution", "influence", "all"], default="all",
-                     help="职位词档：决策层/执行层/影响层（LinkedIn 布尔式用）")
-    pso.add_argument("--regions", help="只跑部分地区，逗号分隔")
-    pso.add_argument("--titles", action="store_true", help="只打印 30 个采购链职位词库")
-    pso.add_argument("--urls", action="store_true", help="YouTube 额外给站内搜索链接（公开页面，无需登录）")
+                     help="Job-title level: decision / execution / influence (for LinkedIn boolean queries)")
+    pso.add_argument("--regions", help="Only some regions, comma-separated")
+    pso.add_argument("--titles", action="store_true", help="Print only the 30 procurement-chain job titles")
+    pso.add_argument("--urls", action="store_true", help="Also output YouTube on-site search links (public pages, no login)")
     pso.add_argument("--out")
     pso.set_defaults(func=cmd_social)
 
-    pf = sub.add_parser("filter", help="过滤+库增量去重+域名去重+非目标词/竞品特征门禁+分级")
+    pf = sub.add_parser("filter", help="Filter + incremental DB de-dup + domain de-dup + non-target/competitor gate + grading")
     pf.add_argument("results")
     pf.add_argument("--out")
-    pf.add_argument("--against", help="客户库 CSV（搜索前先查库去重）")
-    pf.add_argument("--since", help="只比对该日期起的近期库数据")
-    pf.add_argument("--state", default=DEFAULT_STATE, help="状态文件（存漏斗历史）")
+    pf.add_argument("--against", help="Customer DB CSV (check the DB before working a lead)")
+    pf.add_argument("--since", help="Only compare DB rows from this date on")
+    pf.add_argument("--state", default=DEFAULT_STATE, help="State file (stores funnel history)")
     pf.set_defaults(func=cmd_filter)
 
-    # 标签冲突校正：背调新结论 vs 库内旧标签（只标不改，人工拍板）
-    pcc = sub.add_parser("conflict-check", help="背调新结论 vs 库内旧标签 冲突检查（只标不改，交人工拍板）")
-    pcc.add_argument("--against", required=True, help="客户库 CSV 路径（旧标签来源）")
-    pcc.add_argument("--new", help="新背调结论文件（JSON/CSV，含 need_tag/solution_tag/variant_tag）；不传则按 profile.positioning.tag_rules 查库内自相矛盾")
-    pcc.add_argument("--since", help="只比对 updated_at/created_at ≥ 该日期(YYYY-MM-DD)的库记录")
-    pcc.add_argument("--out", help="把冲突清单写到 CSV（decision 列=pending_人工拍板）")
+    # Tag conflict check: new research conclusion vs. old DB tag (flag only, human decides)
+    pcc = sub.add_parser("conflict-check", help="Conflict check: new research conclusion vs. old tag in the DB (flag only, human sign-off)")
+    pcc.add_argument("--against", required=True, help="Customer DB CSV path (source of old tags)")
+    pcc.add_argument("--new", help="New research-conclusion file (JSON/CSV with need_tag/solution_tag/variant_tag); omit to scan the DB for internal contradictions per profile.positioning.tag_rules")
+    pcc.add_argument("--since", help="Only compare DB rows with updated_at/created_at ≥ this date (YYYY-MM-DD)")
+    pcc.add_argument("--out", help="Write the conflict list to CSV (decision column = pending_human_decision)")
     pcc.set_defaults(func=cmd_conflict_check)
 
-    pfn = sub.add_parser("funnel", help="看历史搜索累计转化率趋势 + 瓶颈诊断")
+    pfn = sub.add_parser("funnel", help="Cumulative conversion trend of past searches + bottleneck diagnosis")
     pfn.add_argument("--state", default=DEFAULT_STATE)
     pfn.set_defaults(func=cmd_funnel)
 
     pa = sub.add_parser("audit-exclude", aliases=["audit-category"],
-                        help="非目标/竞品复核（按 profile 排除词挑可疑记录，不自动改）")
-    pa.add_argument("csv", help="候选/客户库 CSV 路径")
+                        help="Non-target / competitor review (pick suspicious rows by profile exclusion terms; never edits)")
+    pa.add_argument("csv", help="Candidate / customer DB CSV path")
     pa.set_defaults(func=cmd_audit_exclude)
 
-    pr = sub.add_parser("replenish", help="保底补池：池<红线则按四维轮换（高度/广度/深度/远度）生成今日搜索词 + 预警")
-    pr.add_argument("--pool", default=DEFAULT_POOL, help="客户库 CSV（默认 $B2B_DATA_DIR/customer_db.csv，由 data_import.py 生成）")
-    pr.add_argument("--floor", type=int, default=100, help="硬保底红线，默认 100")
+    pr = sub.add_parser("replenish", help="Pool floor: when the pool is below the red line, generate today's queries by four-axis rotation (height/breadth/depth/reach) + warning")
+    pr.add_argument("--pool", default=DEFAULT_POOL, help="Customer DB CSV (default $B2B_DATA_DIR/customer_db.csv, produced by data_import.py)")
+    pr.add_argument("--floor", type=int, default=100, help="Hard floor red line, default 100")
     pr.add_argument("--daily-target", type=int, default=100, dest="daily_target")
     pr.add_argument("--ahead-days", type=int, default=30, dest="ahead_days")
     pr.add_argument("--state", default=DEFAULT_STATE)
-    pr.add_argument("--emit", help="把今日该跑的搜索词写到文件")
+    pr.add_argument("--emit", help="Write today's queries to a file")
     pr.add_argument("--warn-file", dest="warn_file")
     pr.add_argument("--force", action="store_true")
     pr.set_defaults(func=cmd_replenish)
 
-    ps = sub.add_parser("schedule", help="内置调度器：常驻每日定点自动跑 replenish 闭环")
+    ps = sub.add_parser("schedule", help="Built-in scheduler: resident process that runs the replenish loop daily at a fixed time")
     ps.add_argument("--pool", default=DEFAULT_POOL)
     ps.add_argument("--at", default="09:00")
     ps.add_argument("--floor", type=int, default=100)
@@ -1570,7 +1570,7 @@ def _build_parser():
     ps.add_argument("--warn-file", dest="warn_file", default="pool_warning.txt")
     ps.set_defaults(func=cmd_schedule)
 
-    pst = sub.add_parser("status", help="看四维轮换进度（高度/广度/深度/远度）")
+    pst = sub.add_parser("status", help="Show four-axis rotation progress (height/breadth/depth/reach)")
     pst.add_argument("--state", default=DEFAULT_STATE)
     pst.set_defaults(func=cmd_status)
 
@@ -1579,19 +1579,19 @@ def _build_parser():
 
 def main():
     p = _build_parser()
-    args = p.parse_args()  # -h/--help 由此直接输出用法并退出，无需档案
+    args = p.parse_args()  # -h/--help prints usage and exits here; no profile needed
     if not getattr(args, "cmd", None):
         p.print_help()
         sys.exit(0)
 
-    # 配置门禁：所有业务子命令必须先有完整公司档案
+    # Config gate: every business sub-command needs a complete company profile first
     if _cfg is None:
-        print("ERROR: 找不到 config.py 配置门禁，拒绝执行。")
+        print("ERROR: config.py gate not found; refusing to run.")
         sys.exit(2)
     try:
         profile = _cfg.load_profile(require_complete=True)
     except _cfg.ProfileNotConfigured as e:
-        print("ERROR: 公司档案未就绪，禁止执行。\n" + str(e))
+        print("ERROR: company profile not ready; execution blocked.\n" + str(e))
         sys.exit(2)
 
     RUNTIME.update(build_profile_context(profile))

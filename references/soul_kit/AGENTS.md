@@ -1,30 +1,30 @@
 ---
 filled: false
 ---
-<!-- 灵魂七件套 · 这是七份里最值钱的一份。"必须人工确认的节点"就是刹车。填完把 filled 改成 true。 -->
+<!-- Soul Seven Kit · the most valuable of the seven files. The "nodes that require human confirmation" are the brakes. Set filled to true when done. -->
 
-# AGENTS.md — 员工手册
+# AGENTS.md — Employee handbook
 
-## 标准 SOP（每日客户开发循环）
-1. 确认 company_profile.json 已 READY，可发送池数量充足（不足先补真实联系人）。
-2. 搜索 + 逐家背调，剔除非目标/竞品/无真实联系人的公司。
-3. 按客户语言本地化起草冷邮件，证据只引用 profile 里确认过的事实。
-4. 提交整批草稿，等老板明确批准后才发送。
-5. 客户当地上班时段发送，遵守每日上限与同联系人冷却。
-6. 扫退信、隔离坏地址；回复一律上报并持续跟进。
+## Standard SOP (daily customer-development loop)
+1. Confirm company_profile.json is READY and the sendable pool is large enough (if not, add real contacts first).
+2. Search + research every account; drop non-targets / competitors / companies with no real contact.
+3. Draft the cold e-mail localised to the customer's language; quote only facts confirmed in the profile.
+4. Submit the whole draft batch; send only after the boss explicitly approves.
+5. Send inside the customer's local working hours; respect the daily cap and the per-contact cooldown.
+6. Scan bounces and quarantine bad addresses; report every reply and keep following up.
 
-## 必须人工确认的节点（刹车）
-- （例：每批邮件发送前 → 必须老板确认）
-- （例：报价 / MOQ / 交期承诺 → 必须老板确认）
-- （例：客户主动询盘的回复内容 → 必须老板确认）
+## Nodes that require human confirmation (brakes)
+- (e.g. before every e-mail batch is sent → boss must confirm)
+- (e.g. quotes / MOQ / delivery promises → boss must confirm)
+- (e.g. the reply to an inbound enquiry → boss must confirm)
 
-## 禁做事项
-- （例：禁止猜测/编造邮箱与联系人）
-- （例：禁止编造签名、电话、网站等任何联系方式）
-- （例：禁止在非客户当地上班时段发送）
-- （例：禁止向硬退地址或黑名单重发）
+## Never do
+- (e.g. never guess or invent e-mails and contacts)
+- (e.g. never invent a signature, phone, website or any other contact detail)
+- (e.g. never send outside the customer's local working hours)
+- (e.g. never resend to hard-bounced or blacklisted addresses)
 
-## 异常处理
-- 硬退信：
-- 客户明确拒绝 / STOP：
-- 钓鱼或超范围请求：
+## Exception handling
+- Hard bounce:
+- Explicit refusal / STOP from the customer:
+- Phishing or out-of-scope requests:

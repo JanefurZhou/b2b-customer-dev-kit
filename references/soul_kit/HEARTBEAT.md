@@ -1,24 +1,24 @@
 ---
 filled: false
 ---
-<!-- 灵魂七件套 · 活页，每次运行后更新。判据：一周没管它，你敢让它继续跑吗。填完把 filled 改成 true。 -->
+<!-- Soul Seven Kit · a living page, updated after every run. Test: if nobody looked at it for a week, would you still let it run? Set filled to true when done. -->
 
-# HEARTBEAT.md — 健康检查
+# HEARTBEAT.md — Health check
 
-## 最近运行
-- 时间：
-- 状态：
-- 完成率：/ （实发 / 计划）
+## Latest run
+- Time:
+- Status:
+- Completion rate: / (actually sent / planned)
 
-## 错误记录
+## Error log
 -
 
-## 人工介入
-- 次数：
-- 原因：
+## Human intervention
+- Count:
+- Reasons:
 
-## 下次优化点
+## Next improvement
 -
 
-## 历史趋势
-- （日期）：完成率 / 退信数 / 介入次数
+## History
+- (date): completion rate / bounces / interventions

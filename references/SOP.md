@@ -1,265 +1,265 @@
-# B2B客户开发标准作业流程（SOP）
+# B2B Customer Development Standard Operating Procedure (SOP)
 
-**版本**：v3.1 | **更新日期**：2026-10-19  
-**适用范围**：所有B2B外贸冷邮件客户开发任务
+**Version**: v3.1 | **Updated**: 2026-10-19  
+**Scope**: every B2B cold-e-mail customer development task
 
 ---
 
-## 📋 总览：安装门禁 + 第零步 + 七步法主流程（v3.1）
+## 📋 Overview: Install Gate + Step 0 + the seven-step main flow (v3.1)
 
-> 安装后第一件事：`python3 scripts/onboarding.py start`（新装必做清单）→ 三关全过（公司档案必填 → 灵魂七件套体检 7/7 → 用户本人确认 attest）才进入下面的流程。
-> 每一步的「出口 / 回路」见 `references/sop_flowchart.md` 的闭环核对表——没有出口的步骤视为未完成。
+> First thing after installing: `python3 scripts/onboarding.py start` (new-install checklist) → pass all three checks (required profile fields → Soul Seven Kit health check 7/7 → the user's own confirmation via attest) before entering the flow below.
+> Every step's "exit / loop-back" is listed in the loop checklist of `references/sop_flowchart.md` — a step without an exit counts as unfinished.
 
 ```
-安装门禁（start → init → 档案必填 → kit-check 7/7 → check → attest = READY）
+Install Gate (start → init → required profile → kit-check 7/7 → check → attest = READY)
   ↓
-第零步 全渠道复盘 ─→ 第一步 搜索候选 ─→ 第二步 背景调查 ─→ 第三步 需求定位 ─→ 第四步 撰写内容
- success_cases      queries/channels   research_guide      need_tag +           email_templates
- wa_review          social · filter    S1/S2/S3            solution_tag         只引用 S1/S2
- MEMORY 本周结论     funnel             只有 S3→need_review  conflict-check
-  ↑                                                                               ↓
-第八步 成单复盘 + 七件套写回 ←─ 第七步 WhatsApp 触发 ←─ 第六步 跟进管理 ←─ 第五步 发送执行
- add_success → review_success   convert→validate→preview   imap_scanner(DRY_RUN)   三道关 → DRY_RUN
- 周复盘写回 → kit-check          →harness→send→audit        cooldown · 1-3-7-21     → 用户批准
- → 回到第零步                    200 条/天 STOP             退信/回复/成交/无回复     → 当地窗口内发
+Step 0 Omni-channel Review ─→ Step 1 Search Candidates ─→ Step 2 Background Research ─→ Step 3 Need Positioning ─→ Step 4 Write Content
+ success_cases                  queries/channels            research_guide                 need_tag +                  email_templates
+ wa_review                      social · filter             S1/S2/S3                       solution_tag                quote S1/S2 only
+ MEMORY weekly conclusions      funnel                      only S3 → need_review           conflict-check
+  ↑                                                                                                                      ↓
+Step 8 Win Review + Kit Write-back ←─ Step 7 WhatsApp Trigger ←─ Step 6 Follow-up Management ←─ Step 5 Send
+ add_success → review_success          convert→validate→preview   imap_scanner(DRY_RUN)          three checks → DRY_RUN
+ weekly write-back → kit-check         →harness→send→audit        cooldown · 1-3-7-21            → user approval
+ → back to Step 0                      200/day STOP               bounce/reply/won/no reply      → send inside local window
 ```
 
 ---
 
-## 🔄 详细SOP（含决策逻辑）
+## 🔄 Detailed SOP (with decision logic)
 
-### 第零步：全渠道复盘（成功案例 + WA 复盘 + 七件套本周结论，每次启动开发前必做）
+### Step 0: Omni-channel Review (success cases + WA review + this week's kit conclusions; mandatory before every development run)
 
-> v3.0：每周复盘同时做「七件套写回」——本周的错写回对应档案（`references/soul_kit/周复盘写回.md`），再跑 `onboarding.py kit-check`。复盘结论写进 `soul_seven_kit/MEMORY.md`，运行数据写进 `HEARTBEAT.md`。
+> v3.0: the weekly review also does the "kit write-back" — this week's mistakes are written back to the matching file (`references/soul_kit/weekly_writeback.md`), then run `onboarding.py kit-check`. Review conclusions go into `soul_seven_kit/MEMORY.md`, run data into `HEARTBEAT.md`.
 
-**输入**：success_cases.csv  
-**输出**：成功要点提炼 + 本轮开发策略参考
+**Input**: success_cases.csv  
+**Output**: distilled success points + strategy reference for this round
 
-**⚠️ 核心原则：痛点分析必须由用户确认后才生效，AI只做初步分析建议，不做最终判定。**
+**⚠️ Core principle: pain-point analysis only takes effect after the user confirms it; the AI gives preliminary suggestions, never the final verdict.**
 
 ```python
-# 伪代码逻辑
+# pseudocode
 review = csv_ops.review_success()
 
 IF review.total_cases == 0:
-    PRINT "暂无成功案例，正常启动开发流程"
+    PRINT "No success cases yet, starting the development flow normally"
 ELSE:
-    # === 痛点确认状态检查 ===
+    # === pain-point confirmation status ===
     pending_cases = [c for c in review.cases if not c.confirmed]
     
     IF pending_cases:
-        # 有未确认的痛点 → 必须先反馈给用户确认
-        PRINT "⚠️ 以下案例的痛点分析待您确认："
+        # unconfirmed pain points → must be fed back to the user first
+        PRINT "⚠️ The pain-point analysis of these cases awaits your confirmation:"
         FOR case IN pending_cases:
-            # AI列出候选痛点供用户选择，不自动判定
+            # the AI lists candidate pain points for the user to pick; it never decides on its own
             PRINT f"""
-品牌: {case.brand}
-客户: {case.contact} ({case.region})
-AI初步分析可能是以下痛点之一：
-  1. 合规/资质要求（客户提到 certification / compliance）→ compliance
-  2. 需要更快交付/上线（客户提到 urgent / deadline / go-live）→ speed
-  3. 需要定制方案（客户提到 custom / tailored / exclusive）→ exclusive_custom
-请确认是哪个痛点？（回复数字或补充说明）
+Brand: {case.brand}
+Customer: {case.contact} ({case.region})
+Preliminary analysis — probably one of these pain points:
+  1. Compliance / credential requirement (customer mentioned certification / compliance) → compliance
+  2. Needs faster delivery / go-live (customer mentioned urgent / deadline / go-live) → speed
+  3. Needs a custom solution (customer mentioned custom / tailored / exclusive) → exclusive_custom
+Which one is it? (reply with the number or add details)
 """
-        # ⏸️ 暂停等待用户确认
-        # 用户确认后 → 才把用户确认过的痛点写入 success_cases.csv 的 success_points 字段
+        # ⏸️ pause and wait for the user
+        # only after confirmation → write the confirmed pain point into the success_points field of success_cases.csv
         # csv_ops.py add_success <email> <brand> <contact> <amount> "<confirmed_points>" --hook_type <solution_tag>
         WAIT_FOR_USER_CONFIRMATION()
     
-    # === 按目标市场筛选相关案例 ===
+    # === filter relevant cases by target market ===
     relevant = [c for c in review.cases if c.region == target_region AND c.confirmed]
     
     IF relevant:
-        # 有同地区已确认案例 → 复制打法
+        # confirmed cases in the same region → copy the play
         best_hook = most_common_hook(relevant)
         best_language = most_common_language(relevant)
-        best_channel = most_common_channel(relevant)  # ⭐ 最有效获客渠道
-        PRINT f"同地区成功案例{len(relevant)}个（已确认），最有效钩子: {best_hook}"
-        PRINT f"最有效获客渠道: {best_channel} ({count_by_channel(relevant, best_channel)}单)"
+        best_channel = most_common_channel(relevant)  # ⭐ most effective acquisition channel
+        PRINT f"{len(relevant)} confirmed success cases in this region, most effective hook: {best_hook}"
+        PRINT f"Most effective acquisition channel: {best_channel} ({count_by_channel(relevant, best_channel)} deals)"
     ELSE:
-        # 无同地区案例 → 参考全局最佳（仅使用已确认的案例）
+        # no same-region cases → use the global best (confirmed cases only)
         confirmed_cases = [c for c in review.cases if c.confirmed]
         IF confirmed_cases:
             best_hook = review.top_patterns[0]
-            best_channel = review.by_source_channel[0]  # ⭐ 全局最有效渠道
-            PRINT f"无同地区案例，全局最佳钩子: {best_hook}"
-            PRINT f"全局最有效获客渠道: {best_channel}"
+            best_channel = review.by_source_channel[0]  # ⭐ globally most effective channel
+            PRINT f"No same-region cases, global best hook: {best_hook}"
+            PRINT f"Global most effective channel: {best_channel}"
         ELSE:
-            PRINT "无已确认的成功案例，使用通用策略启动开发"
+            PRINT "No confirmed success cases, starting with the generic strategy"
     
-    # === 提炼的要点必须应用到本轮开发中 ===
+    # === distilled points must be applied to this round ===
     success_patterns = extract_patterns(confirmed_cases)
     FOR candidate in new_candidates:
         candidate.apply_lessons(success_patterns)
 ```
 
-**痛点确认流程详解**：
+**Pain-point confirmation flow in detail**:
 
 ```
-客户回复/下单 → 检测成功事件
+customer replies / orders → success event detected
     ↓
-AI初步分析可能解决的痛点（列出3-5个候选项）
+AI preliminary analysis of the pain point probably solved (3–5 candidates)
     ↓
-反馈给用户确认：
-  "这个客户回复了，我分析可能是以下痛点之一：
-   1. 合规/资质要求（客户提到 certification / compliance）→ compliance
-   2. 需要更快交付/上线（客户提到 urgent / deadline / go-live）→ speed
-   3. 需要定制方案（客户提到 custom / tailored / exclusive）→ exclusive_custom
-   请确认是哪个痛点？"
+fed back to the user for confirmation:
+  "This customer replied; it is probably one of these pain points:
+   1. Compliance / credential requirement (certification / compliance mentioned) → compliance
+   2. Faster delivery / go-live (urgent / deadline / go-live mentioned) → speed
+   3. Custom solution (custom / tailored / exclusive mentioned) → exclusive_custom
+   Which one is it?"
     ↓
-用户确认 → 正式写入success_cases.csv
-    confirmed=true, success_points=用户确认的痛点
+user confirms → formally written to success_cases.csv
+    confirmed=true, success_points=the pain point confirmed by the user
     ↓
-⚠️ 未经用户确认的 → 不写入success_cases.csv
-    仅记录ai_analysis字段，confirmed=false
-    在看板中显示为 ⏳待确认
+⚠️ not confirmed by the user → not written to success_cases.csv
+    only the ai_analysis field is recorded, confirmed=false
+    shown as ⏳ pending in the dashboard
 ```
 
-**命令**：
-- AI 先在对话里给出痛点分析，**不写库**；用户确认后再写入：`csv_ops.py add_success <email> <brand> <contact> <amount> "<用户确认的痛点>" [--hook_type <solution_tag>] [--won_channel email|wa]`
-- 列出成功案例：`csv_ops.py list_success [--region XX] [--need_tag XX] [--channel XX]`
-- 复盘成功案例：`csv_ops.py review_success`
+**Commands**:
+- The AI gives the pain-point analysis in the conversation first, **without writing to the DB**; after confirmation write it: `csv_ops.py add_success <email> <brand> <contact> <amount> "<pain point confirmed by the user>" [--hook_type <solution_tag>] [--won_channel email|wa]`
+- List success cases: `csv_ops.py list_success [--region XX] [--need_tag XX] [--channel XX]`
+- Review success cases: `csv_ops.py review_success`
 
 ---
 
-### 第一步：搜索候选（关键词矩阵 · 15 个发现渠道 · 10 平台社媒公开搜索）
+### Step 1: Search Candidates (keyword matrix · 15 discovery channels · 10-platform social public search)
 
-**输入**：目标市场 + 行业关键词  
-**输出**：候选客户清单（JSON/CSV）
+**Input**: target market + industry keywords  
+**Output**: candidate list (JSON/CSV)
 
-**三类发现源，一个出口**（都只生成公开搜索式，不登录、不注册）：
-- 关键词矩阵：`search_customers.py queries`
-- 15 个发现渠道（含海关/展会/招标/招聘/竞品逆向…）：`search_customers.py channels`；海关免注册路径见 `references/海关数据操作指引.md`
-- 10 大社媒公开搜索 + 30 个采购链职位：`search_customers.py social`，打法见 `references/social_media_playbooks.md`
-- 出口统一：结果 → `search_customers.py filter results.json --against <客户库.csv>`（查库去重 + 漏斗诊断 + 待验证入池）
+**Three discovery sources, one exit** (all generate public search queries only; no login, no registration):
+- Keyword matrix: `search_customers.py queries`
+- 15 discovery channels (customs / exhibitions / tenders / hiring / competitor reverse-lookup …): `search_customers.py channels`; the registration-free customs path is in `references/customs_data_guide.md`
+- 10 social platforms public search + 30 procurement-chain titles: `search_customers.py social`, playbooks in `references/social_media_playbooks.md`
+- Unified exit: results → `search_customers.py filter results.json --against <customer_db.csv>` (DB de-dup + funnel diagnosis + pending-verification pool)
 
 ```python
-# 伪代码逻辑
+# pseudocode
 candidates = []
 
-for source in [Google, LinkedIn, 展会名单, 竞品客户]:
+for source in [Google, LinkedIn, exhibitor_lists, competitor_customers]:
     results = search(source, keywords, market)
     for brand in results:
-        # IF 已在黑名单 → 跳过
+        # IF already blacklisted → skip
         IF csv_ops.check(brand.email) == "blacklisted":
             CONTINUE
         
-        # IF 已确认停业 → 跳过
-        IF 公司状态 == "已关闭":
+        # IF confirmed out of business → skip
+        IF company_status == "closed":
             CONTINUE
         
-        # IF 纯C2C/个人卖家 → 跳过
-        IF 业务类型 == "C2C":
+        # IF pure C2C / individual seller → skip
+        IF business_type == "C2C":
             CONTINUE
         
-        # ⚠️ 不因公司名/品类名做排除！
-        # 名字看着不相关的公司可能有未被发现的需求
+        # ⚠️ never exclude by company name / category name!
+        # a company whose name looks irrelevant may have an undiscovered need
         
         candidates.append({
             "brand": brand.name,
             "website": brand.website,
             "email": brand.email,
             "region": brand.region,
-            "contact_person": brand.contact_name,  # 如有
-            "title": brand.contact_title,          # 如有
-            "whatsapp": brand.wa_number            # 如有
+            "contact_person": brand.contact_name,  # if any
+            "title": brand.contact_title,          # if any
+            "whatsapp": brand.wa_number            # if any
         })
 
-# 输出候选清单
+# output candidate list
 save(candidates, "candidates.json")
 ```
 
-**必采字段**：
-- ✅ 公司名、官网URL、国家/地区
-- ✅ 联系邮箱（优先级：具名个人 > 职能邮箱如 purchasing@/partners@ > info@）
-- ✅ WhatsApp号（如有）
-- ✅ 决策人姓名+职位（如有，用于后续邮箱猜测）
+**Mandatory fields**:
+- ✅ company name, website URL, country / region
+- ✅ contact e-mail (priority: named person > functional mailbox such as purchasing@/partners@ > info@)
+- ✅ WhatsApp number (if any)
+- ✅ decision-maker name + title (if any; used later for e-mail guessing)
 
-**搜索关键词模板**：
-- 通用：`{market} {product} {customer_type}`（customer_type 取 `targeting.channel_keywords`，如 distributor / contractor / startup / clinic chain）
-- 行业特定：见 `references/industry_playbooks.md`
-- 详细搜索渠道和流程：见 `references/SOP_客户搜索详细流程.md`
+**Search keyword templates**:
+- Generic: `{market} {product} {customer_type}` (customer_type from `targeting.channel_keywords`, e.g. distributor / contractor / startup / clinic chain)
+- Industry-specific: see `references/industry_playbooks.md`
+- Detailed channels and workflow: see `references/SOP_search_workflow.md`
 
 ---
 
-### 第二步：背景调查（⭐核心，不可跳过）
+### Step 2: Background Research (⭐ core, never skipped)
 
-**输入**：候选客户清单  
-**输出**：每家客户的调研结论 + need_tag + solution_tag
+**Input**: candidate list  
+**Output**: research conclusion + need_tag + solution_tag per account
 
 ```python
-# 伪代码逻辑
+# pseudocode
 for candidate in candidates:
     
-    # === 数据层查重（背调前同步完成）===
+    # === data-layer de-dup (done together with research) ===
     check_result = csv_ops.check(candidate.email)
     
     IF check_result == "blacklisted":
-        SKIP  # 已在黑名单，不开发
+        SKIP  # blacklisted, not developed
     ELIF check_result == "in_cooldown":
-        SKIP  # 在冷却期，暂不开发
+        SKIP  # in cooldown, not now
     ELIF check_result == "wa_only":
-        SKIP  # 已转WA渠道，不发邮件
+        SKIP  # moved to the WA channel, no e-mail
     
-    # IF 跨品牌排重不通过 → 跳过
+    # IF cross-brand de-dup fails → skip
     IF csv_ops.cross_brand_check(candidate.domain) == "duplicate":
         SKIP
     
-    # === 开始背调（5个信息源）===
+    # === start research (5 information sources) ===
     research = {}
     
-    # 1. 官网首页
+    # 1. website home page
     research["homepage"] = fetch(candidate.website)
     research["brand_positioning"] = extract_positioning(research["homepage"])
     research["main_categories"] = extract_categories(research["homepage"])
     
-    # 2. 产品/服务/解决方案页（先过范围门禁）
+    # 2. product / service / solution pages (scope gate first)
     research["products"] = fetch(candidate.website + "/products|/services|/solutions")
-    research["categories"] = extract_target_categories(research["products"], profile.targeting)  # need_tag 取值 = positioning.need_tags
-    research["solution_fit"] = detect_solution_fit(research["products"], profile.product)  # 现有方案与 differentiators 的关系
+    research["categories"] = extract_target_categories(research["products"], profile.targeting)  # need_tag values = positioning.need_tags
+    research["solution_fit"] = detect_solution_fit(research["products"], profile.product)  # relation of their current solution to our differentiators
     IF NOT is_within_targeting(research["main_categories"], research["categories"], profile.targeting):
-        REJECT(candidate, reason="不在建档 targeting 范围（命中建档配置的相邻无关业务）")
+        REJECT(candidate, reason="outside the profile's targeting scope (hit an adjacent irrelevant business configured at install)")
     
-    # 3. 采购/合规页（wholesale · vendor · partners · procurement · RFP · sustainability · compliance · careers）
+    # 3. buying / compliance pages (wholesale · vendor · partners · procurement · RFP · sustainability · compliance · careers)
     IF has_buying_or_policy_page(candidate.website):
         research["policy"] = fetch(candidate.website + "/sustainability|/compliance|/procurement")
-        research["certifications"] = extract_certifications(research["policy"])  # 你行业真实通行的认证（建档时列出）
-        research["buying_signal"] = extract_buying_signal(candidate.website)  # vendor application / partner program / RFP / 招聘
+        research["certifications"] = extract_certifications(research["policy"])  # certifications really used in your industry (listed at install)
+        research["buying_signal"] = extract_buying_signal(candidate.website)  # vendor application / partner program / RFP / hiring
     ELSE:
         research["policy"] = None
     
-    # 4. 新闻/社媒
+    # 4. news / social media
     research["news"] = search_news(candidate.brand_name)
-    research["recent_moves"] = extract_recent_strategy(research["news"])  # 新产品/扩张/融资/新项目/招聘
+    research["recent_moves"] = extract_recent_strategy(research["news"])  # new product / expansion / funding / new project / hiring
     
-    # === 调研结论三问 ===
+    # === three research questions ===
     conclusion = {
         "Q1_what_they_sell": research["categories"] + [research["solution_fit"]],
-        "Q2_channel_and_stance": research["buying_signal"] or "未声明",
+        "Q2_channel_and_stance": research["buying_signal"] or "not stated",
         "Q3_what_they_might_need": derive_need(research)
     }
     
-    # === 确定双标签 ===
+    # === set the two tags ===
     need_tag = determine_need_tag(conclusion)
     candidate["need_tag"] = need_tag
-    candidate["solution_tag"] = determine_solution_tag(conclusion)   # 11 个通用决策驱动，见 industry_playbooks §一
+    candidate["solution_tag"] = determine_solution_tag(conclusion)   # 11 generic decision drivers, see industry_playbooks §1
     candidate["research_notes"] = conclusion
     
-    # 保存调研结论
-    csv_ops.add_note(candidate.email, f"背调完成: {need_tag}")
+    # save the research conclusion
+    csv_ops.add_note(candidate.email, f"research done: {need_tag}")
 ```
 
-**need_tag判定规则**：
+**need_tag rules**:
 
 ```python
 def determine_need_tag(conclusion):
-    cats = conclusion["Q1_what_they_sell"]      # positioning.need_tags 中的取值 <line_a>/<line_b>
+    cats = conclusion["Q1_what_they_sell"]      # values from positioning.need_tags: <line_a>/<line_b>
     
-    # 范围门禁优先：不在建档 targeting 范围不进入
+    # scope gate first: outside the profile's targeting → not entered
     IF not is_within_targeting(cats, profile.targeting):
-        RETURN None  # 已在背调阶段拦截
+        RETURN None  # already blocked during research
     
-    # 按主营品类定 need_tag（可多品类）
+    # need_tag by main category (several possible)
     IF len(cats) >= 2:
         base = "multi"
     ELSE:
@@ -268,8 +268,8 @@ def determine_need_tag(conclusion):
 
 
 def determine_solution_tag(conclusion):
-    fit     = conclusion.get("solution_fit", "")   # 现有方案与我方 differentiators 的关系
-    signals = conclusion.get("Q3_signals", [])     # 背调信号：认证页/比价/小团队/节点/新方向/定制...
+    fit     = conclusion.get("solution_fit", "")   # relation of their current solution to our differentiators
+    signals = conclusion.get("Q3_signals", [])     # research signals: certification page / price comparison / small team / deadline / new direction / custom...
     tags = []
     IF "compliance_page" in signals or "tender_requires_cert" in signals: tags.append("compliance")
     IF fit == "uses_lower_grade_alternative":     tags.append("quality_upgrade")
@@ -277,36 +277,36 @@ def determine_solution_tag(conclusion):
     IF "deadline" in signals:                     tags.append("speed")
     IF "new_initiative" in signals:               tags.append("innovation")
     IF "wants_custom" in signals:                 tags.append("exclusive_custom")
-    # 只保留你档案里真实具备对应能力的标签（解决方案能力.md §二）
+    # keep only tags whose capability you really have in the profile (solution_capabilities.md §2)
     tags = [t for t in tags if capability_exists(t, profile)]
     RETURN "+".join(tags) or "unknown"
 ```
 
-**背调工具**：
-- `csv_ops.check <email>` — 查重+黑名单+冷却期
-- `csv_ops.cross_brand_check <domain>` — 跨品牌排重
-- `research_guide.md` — 详细调研方法论
+**Research tools**:
+- `csv_ops.check <email>` — de-dup + blacklist + cooldown
+- `csv_ops.cross_brand_check <domain>` — cross-brand de-dup
+- `research_guide.md` — detailed research methodology
 
 ---
 
-### 第三步：需求定位（need_tag → 推什么；solution_tag → 用什么钩子）
+### Step 3: Need Positioning (need_tag → what to pitch; solution_tag → which hook)
 
-**输入**：need_tag + solution_tag  
-**输出**：推荐线 + 邮件模板选择
+**Input**: need_tag + solution_tag  
+**Output**: recommended line + e-mail template choice
 
 ```python
-# 伪代码逻辑
+# pseudocode
 for candidate in candidates:
     need_tag = candidate["need_tag"]
     
-    # === need_tag → 推哪条线（取值与说明来自 positioning.need_tags / product_knowledge.md §一）===
+    # === need_tag → which line (values and meaning from positioning.need_tags / product_knowledge.md §1) ===
     line_map = {
-        "<line_a>": "主推<offer-line-A>，强调<differentiator>",
-        "<line_b>": "主推<offer-line-B>",
-        "multi":    "推整体方案/多线组合（仅当真实具备）",
-        "unknown":  "保守通用切入，跟进中确认需求",
+        "<line_a>": "lead with <offer-line-A>, stress <differentiator>",
+        "<line_b>": "lead with <offer-line-B>",
+        "multi":    "pitch the overall solution / multi-line combination (only when really available)",
+        "unknown":  "conservative generic entry, confirm the need during follow-up",
     }
-    # === solution_tag → 邮件模板（email_templates.md §一，全行业通用）===
+    # === solution_tag → e-mail template (email_templates.md §1, cross-industry) ===
     template_map = {
         "compliance": "1.1", "sustainability": "1.1",
         "quality_upgrade": "1.2", "exclusive_custom": "1.2",
@@ -320,58 +320,58 @@ for candidate in candidates:
     candidate["template"] = template_map.get(main_driver, "1.7")
 ```
 
-**输出**：每家客户的 `product_strategy` + `template` 已确定
+**Output**: `product_strategy` + `template` fixed for every account
 
 ---
 
-### 第四步：撰写内容（邮件）
+### Step 4: Write Content (e-mail)
 
-**输入**：候选客户 + product_strategy + template  
-**输出**：个性化邮件（标题+正文）
+**Input**: candidate + product_strategy + template  
+**Output**: personalised e-mail (subject + body)
 
 ```python
-# ========== 第4.0步：产品信息确认（if/else决策逻辑）==========
-# 在使用钩子模板前，必须先确认产品信息
+# ========== Step 4.0: product-fact confirmation (if/else decision logic) ==========
+# product facts must be confirmed before any hook template is used
 
-# ⭐ 唯一事实来源：首次建档生成的 config/company_profile.json（见 SKILL.md 首次建档门禁）
-profile = config.load_profile(require_complete=True)   # 档案不完整则退出，不允许用占位词发信
-# 产品知识库 references/product_knowledge.md 是这些字段的人工展开版，供查阅话术素材
+# ⭐ single source of truth: config/company_profile.json created at first install (see the Install Gate in SKILL.md)
+profile = config.load_profile(require_complete=True)   # exits when the profile is incomplete; no sending with placeholders
+# the knowledge base references/product_knowledge.md is the human-readable expansion of these fields, for wording material
 product_info = {
-    "keywords":       profile["product"]["primary_keywords"],      # 核心产品/服务词（建档填写）
-    "one_liner":      profile["product"]["one_liner_en"],           # 一句话定位
-    "entry_offer":    profile["offer"]["entry_offer"],              # 低门槛起步：样品/试用/诊断/试点…
-    "key_facts":      config.offer_facts(profile),                  # 真实短事实（MOQ/上线周期/认证/时效…）
-    "cta":            config.cta_question(profile),                 # 收尾问句
-    "usp":            profile["product"]["differentiators"],        # 可验证差异化卖点列表
-    "certifications": profile["product"].get("certifications", [])  # 真实持有证书，无则空
+    "keywords":       profile["product"]["primary_keywords"],      # core product / service terms (filled at install)
+    "one_liner":      profile["product"]["one_liner_en"],           # one-line positioning
+    "entry_offer":    profile["offer"]["entry_offer"],              # low-commitment entry: sample / trial / diagnosis / pilot …
+    "key_facts":      config.offer_facts(profile),                  # real short facts (MOQ / go-live time / certification / lead time …)
+    "cta":            config.cta_question(profile),                 # closing question
+    "usp":            profile["product"]["differentiators"],        # verifiable differentiators
+    "certifications": profile["product"].get("certifications", [])  # certificates really held, else empty
 }
-# 密钥不进档案：SMTP/IMAP 凭据只走环境变量 SMTP_* / IMAP_*
+# keys never in the profile: SMTP/IMAP credentials only via environment variables SMTP_* / IMAP_*
 
-IF 档案缺失或关键字段为空:
-    → 停止并引导完成首次建档（onboarding_questions.md），不得自行编造产品事实/联系方式
+IF profile missing or key fields empty:
+    → stop and guide the user through first install (onboarding_questions.md); never invent product facts / contact details
 
-# === 第4.1步：选择模板 + 填入产品信息 ===
+# === Step 4.1: pick the template + fill in product facts ===
 for candidate in candidates:
     
-    # === 选择模板 ===
+    # === pick the template ===
     template = load_template(candidate["template"])
     
-    # === 个性化变量（从product_info提取） ===
+    # === personalisation variables (from product_info) ===
     variables = {
         "brand_name": candidate["brand"],
         "contact_name": candidate.get("contact_person", "there"),
         "region": candidate["region"],
-        "product": product_info["keywords"][0],  # 主推产品关键词
+        "product": product_info["keywords"][0],  # lead product keyword
         "product_hook": get_product_hook(candidate["solution_tag"], product_info),
-        "entry_offer": product_info["entry_offer"],   # 无默认值：必须来自建档真实事实
+        "entry_offer": product_info["entry_offer"],   # no default: must be a real fact from the profile
         "key_facts": product_info["key_facts"],
         "cta": product_info["cta"],
         "usp": product_info.get("usp", ""),
         "website": candidate.get("website", "")
     }
     
-    # === 多语种本地化问候 ===
-    # 核心原则：按收件人母语撰写整封邮件，不是只改问候语！
+    # === multilingual localisation ===
+    # core principle: write the WHOLE e-mail in the recipient's native language, not just the greeting!
     language_map = {
         "IT": "italian",
         "DE": "german", 
@@ -384,263 +384,245 @@ for candidate in candidates:
     
     IF candidate["region"] in language_map:
         language = language_map[candidate["region"]]
-        # 使用完整母语模板（见email_templates.md §6.x）
+        # use the full native-language template (see email_templates.md)
         email_body = load_localized_template(language, variables)
     ELSE:
-        # 默认英文
+        # English by default
         email_body = f"Hi {variables['contact_name']},\n\n{template.format(**variables)}"
     
-    # === 标题生成 ===
-    subject = f"{variables['product']} for {variables['brand_name']}"   # 或按模板主题骨架
+    # === subject ===
+    subject = f"{variables['product']} for {variables['brand_name']}"   # or the template's subject skeleton
     
-    # === 合规检查 ===
+    # === compliance check ===
     IF len(email_body) > 120 words:
-        WARN "邮件超长，需精简"
+        WARN "e-mail too long, shorten it"
     
     IF any(word in subject.lower() for word in ["partnership", "collaboration", "free", "discount", "oem"]):
-        ERROR "标题含禁用词，需替换"
+        ERROR "subject contains a banned word, replace it"
     
     IF any(word in email_body.lower() for word in ["competitive pricing", "partner", "oem", "factory direct"]):
-        ERROR "正文含禁用词，需替换"
+        ERROR "body contains a banned word, replace it"
     
-    # === 输出邮件 ===
+    # === output ===
     candidate["email_subject"] = subject
     candidate["email_body"] = email_body
 ```
 
-**禁用词表**：
-- **标题禁**：Partnership / Collaboration / Free / Discount / OEM / ODM
-- **正文禁**：competitive pricing / partner / OEM / factory direct / world-class / guaranteed / 任何无法证明的绝对化承诺
-- **行业专属禁用词**（如医疗疗效、食品健康功效、金融收益承诺、你的品类里容易被误解的工艺词）写进 `rules.notes` 与 `soul_seven_kit/SOUL.md`，按同样规则拦截
+**Banned words**:
+- **Subject**: Partnership / Collaboration / Free / Discount / OEM / ODM
+- **Body**: competitive pricing / partner / OEM / factory direct / world-class / guaranteed / any absolute promise that cannot be proven
+- **Industry-specific banned words** (medical efficacy, food health claims, financial return promises, process terms in your category that are easily misread) go into `rules.notes` and `soul_seven_kit/SOUL.md` and are blocked by the same rule
 
-**模板库**：`references/email_templates.md`
+**Template bank**: `references/email_templates.md`
 
 ---
 
-### 第五步：发送执行
+### Step 5: Send
 
-**输入**：候选客户 + 邮件内容  
-**输出**：发送记录 + 数据回写
+**Input**: candidates + e-mail content  
+**Output**: sending records + data write-back
 
-**按收件人当地时间发（脚本强制）**：联系人带 `region`（或 `tz`）时，`batch_sender.py` / `decision_maker_sender.py` 只在收件人当地**工作日** `rules.local_send_window`（默认 `09:00-11:00,14:00-16:00`）内发送，窗口外本轮延后（报告 `deferred_window`，不写发送历史）。
+**Send by recipient-local time (enforced by the scripts)**: when a contact carries `region` (or `tz`), `batch_sender.py` / `decision_maker_sender.py` send only inside the recipient's local **working-day** window `rules.local_send_window` (default `09:00-11:00,14:00-16:00`); outside the window the contact is deferred for this run (reported as `deferred_window`, no sending history written).
 
-| 市场 | 当地窗口 | 怎么换算成你本地时间 |
+| Market | Local window | How to convert to your local time |
 |---|---|---|
-| 美国东部 / 加拿大东部 | 09:00-11:00, 14:00-16:00 | `python3 scripts/send_window.py table --me <你的时区>` 实时换算（含夏令时） |
-| 英国 / 爱尔兰 / 葡萄牙 | 同上 | 同上 |
-| 德法意西荷等欧洲大陆 | 同上 | 同上 |
-| 中东（阿联酋/沙特） | 同上（注意周五/周六周末习惯，必要时用 `SEND_WINDOW` 调整） | 同上 |
-| 澳大利亚 / 新西兰 | 同上 | 同上 |
-| 日本 / 韩国 / 东南亚 | 同上 | 同上 |
+| US East / Canada East | 09:00-11:00, 14:00-16:00 | `python3 scripts/send_window.py table --me <your tz>` real-time conversion (DST included) |
+| UK / Ireland / Portugal | same | same |
+| Continental Europe (DE/FR/IT/ES/NL …) | same | same |
+| Middle East (UAE / Saudi Arabia) | same (mind the Friday / Saturday weekend; adjust with `SEND_WINDOW` when needed) | same |
+| Australia / New Zealand | same | same |
+| Japan / Korea / South-East Asia | same | same |
 
-> 不再写死「北京时间几点发哪国」：夏令时会让固定时差表每年错两次。以 `send_window.py table` 的实时结果为准；`send_window.py check DE` 返回单个市场当前是否可发。
+> No more hard-coded "send to country X at hour Y of your local time": daylight-saving time breaks a fixed offset table twice a year. The real-time output of `send_window.py table` is authoritative; `send_window.py check DE` tells whether a single market can be sent to right now.
 
 ```python
-# === 发送前最后三道关（缺一不可）===
+# === the three pre-send checks (none may be skipped) ===
 
 for candidate in candidates:
     
-    # ========== 第一道：邮箱验证 ==========
+    # ========== check 1: mailbox verification ==========
     
-    # IF 通用邮箱（info@/contact@等）→ 拦截
+    # IF generic mailbox (info@/contact@ …) → block
     IF is_generic_email(candidate["email"]):
-        # 通用邮箱不对应具体决策人：本技能规则是不发冷邮件（经验规则，非统计数字）
-        # 必须找决策人具名邮箱
+        # a generic mailbox does not map to a decision maker: this skill's rule is no cold e-mail to it (experience rule, not a statistic)
+        # a named decision-maker mailbox is required
         IF candidate.get("contact_person"):
-            # 用邮箱猜测工具推导具名邮箱
+            # derive the named mailbox with the e-mail guesser
             guessed = email_guesser.guess(candidate["contact_person"], candidate["domain"])
             candidate["email"] = guessed
         ELSE:
-            SKIP "无决策人信息，先通过LinkedIn找人"
+            SKIP "no decision-maker info, find the person on LinkedIn first"
     
-    # DNS/MX验证
+    # DNS/MX verification
     mx_valid = dns_validator.validate(candidate["email"])
     IF not mx_valid:
-        SKIP "邮箱域名MX无效"
+        SKIP "mailbox domain has no valid MX"
     
-    # ========== 第二道：查重 ==========
+    # ========== check 2: de-dup ==========
     
     check_result = csv_ops.check(candidate["email"])
     
     IF check_result == "blacklisted":
-        SKIP "已在黑名单"
+        SKIP "blacklisted"
     ELIF check_result == "in_cooldown":
-        SKIP "在冷却期"
+        SKIP "in cooldown"
     ELIF check_result == "wa_only":
-        SKIP "已转WA渠道"
+        SKIP "moved to the WA channel"
     ELIF check_result == "duplicate":
-        SKIP "重复发送"
+        SKIP "duplicate send"
     
-    # 跨品牌排重
+    # cross-brand de-dup
     IF csv_ops.cross_brand_check(candidate["domain"]) == "duplicate":
-        SKIP "跨品牌重复"
+        SKIP "cross-brand duplicate"
     
-    # ========== 第三道：检查备注信息 ==========
+    # ========== check 3: notes ==========
     
     notes = csv_ops.get_notes(candidate["email"])
     
     IF notes:
-        # IF 有历史备注，按备注调整策略
-        IF "客户说Q3再联系" in notes:
-            IF current_month < 7:  # Q3=7-9月
-                SKIP "等到Q3再联系"
-        IF "客户对价格敏感" in notes:
+        # IF there are historical notes, adjust the strategy accordingly
+        IF "customer said contact again in Q3" in notes:
+            IF current_month < 7:  # Q3 = July–September
+                SKIP "wait until Q3"
+        IF "customer is price-sensitive" in notes:
             adjust_pricing_hook(candidate)
-        IF "退信原因：邮箱不存在" in notes:
-            SKIP "邮箱已失效"
+        IF "bounce reason: mailbox does not exist" in notes:
+            SKIP "mailbox invalid"
     
-    # IF 背调未完成 → 不发送
+    # IF research not done → do not send
     IF not candidate.get("need_tag"):
-        SKIP "背调未完成"
+        SKIP "research not done"
     
-    # IF 邮件内容不合规 → 不发送
+    # IF content not compliant → do not send
     IF not is_compliant(candidate["email_body"]):
-        SKIP "邮件内容不合规"
+        SKIP "e-mail content not compliant"
     
-    # === 最终确认 ===
+    # === final confirmation ===
     IF len(candidate["email_body"]) > 120 words:
-        ERROR "邮件超长"
+        ERROR "e-mail too long"
     IF same_day_sent_count(candidate["email"]) >= 1:
-        SKIP "同客户同天已发过"
+        SKIP "same customer already contacted today"
     
-    # === 开始发送 ===
+    # === start sending ===
     
-    # 方式A：手动发送（小批量）
+    # mode A: manual sending (small batch)
     IF batch_size < 50:
         send_email_manual(candidate)
         csv_ops.add_sent(candidate["email"], candidate["brand"], candidate["subject"], candidate["need_tag"])
     
-    # 方式B：SMTP批量发信（大批量）
+    # mode B: SMTP batch sending (large batch)
     ELSE:
-        # 决策人具名发信（推荐）
+        # named decision-maker sending (recommended)
         IF candidate.get("contact_person"):
             decision_maker_sender.send([candidate])
         ELSE:
             batch_sender.send([candidate])
         
-        # 发信铁律：
-        # - 30秒间隔防风控
-        # - 每日限额200封
-        # - **按收件人当地时间发送**（当地时间9:00-11:00或14:00-16:00，见全球时区表）
-        # - 禁止统一按发件人时区批量发送
+        # sending iron rules:
+        # - 30-second interval against spam filters
+        # - daily limit 200 e-mails
+        # - **send by recipient-local time** (local 9:00-11:00 or 14:00-16:00, see the window table above)
+        # - never batch-send on the sender's time zone
     
-    # === 发后必写 ===
+    # === write back after sending, always ===
     csv_ops.add_sent(candidate["email"], candidate["brand"], candidate["subject"], candidate["need_tag"])
 ```
 
-**发信时间建议**（按收件人当地时间）：
-- US：北京21:00-23:00
-- UK：北京16:00-18:00
-- IT/DE/FR：北京15:00-17:00
-- JP：北京08:00-10:00
+**⚠️ Sending-time iron rule**: every outreach e-mail follows the working hours of the recipient's country (local 9:00-11:00 or 14:00-16:00); never send on the sender's time zone. Use `python3 scripts/send_window.py table --me <your tz>` for the live conversion instead of a fixed offset table.
 
-**⚠️ 发信时间铁律**：所有开发信必须以收件人所在国家的工作时间为准（当地时间9:00-11:00或14:00-16:00），禁止统一按发件人时区发送。具体时区对照见下方。
-
-**全球时区发送时间对照表**（北京时间→当地时间）：
-| 地区 | 时差 | 最佳发送时段（北京时间） | 当地时间 |
-|------|------|------------------------|---------|
-| US（美西） | -16h | 次日01:00-03:00 | 9:00-11:00 |
-| US（美东） | -13h | 22:00-00:00 | 9:00-11:00 |
-| UK | -8h | 17:00-19:00 | 9:00-11:00 |
-| EU（IT/DE/FR/ES/NL/PT） | -7h | 16:00-18:00 | 9:00-11:00 |
-| JP/KR | +1h | 08:00-10:00 | 9:00-11:00 |
-| AU（东澳） | +2h | 07:00-09:00 | 9:00-11:00 |
-| 中东（UAE/SA） | -4h | 13:00-15:00 | 9:00-11:00 |
-| 东南亚（TH/ID/MY） | -1h | 09:00-11:00 | 10:00-12:00 |
-| LATAM（BR/MX） | -11h | 20:00-22:00 | 9:00-11:00 |
-
-**发送工具**：
-- `dns_validator.py` — MX验证
-- `email_guesser.py` — 邮箱格式猜测
-- `decision_maker_sender.py` — 决策人具名发信（推荐）
-- `batch_sender.py` — 批量发信
+**Sending tools**:
+- `dns_validator.py` — MX verification
+- `email_guesser.py` — e-mail pattern guessing
+- `decision_maker_sender.py` — named decision-maker sending (recommended)
+- `batch_sender.py` — batch sending
+- `send_window.py` — recipient-local window check
 
 ---
 
-### 第六步：跟进管理
+### Step 6: Follow-up Management
 
-**输入**：已发送客户清单  
-**输出**：跟进邮件 + 数据更新
+**Input**: list of contacted customers  
+**Output**: follow-up e-mails + data updates
 
-**两套节奏分工，不叠加**：邮件按下面的 5 级冷却（`csv_ops.py cooldown` 计算）；社媒私信（人工）按 **1-3-7-21**（Day1 破冰 → Day3 价值 → Day7 案例 → Day21 换渠道），见 `references/social_media_playbooks.md` 第六节。同一客户同一天只走一个渠道。
+**Two cadences with separate roles, never stacked**: e-mail follows the 5-level cooldown below (computed by `csv_ops.py cooldown`); social DMs (manual) follow **1-3-7-21** (Day 1 ice-breaker → Day 3 value → Day 7 case → Day 21 switch channel), see `references/social_media_playbooks.md` section 6. One customer, one channel per day.
 
 ```python
-# === 每日执行 ===
+# === daily ===
 
-# 1. 扫描退信/回复（IMAP自动）
-imap_scanner.scan()  # 自动更新黑名单 + 标记bounced/replied
+# 1. scan bounces / replies (IMAP, automatic)
+imap_scanner.scan()  # updates the blacklist + marks bounced/replied
 
-# 2. 检查冷却期
+# 2. check cooldowns
 for email in sent_history:
     record = csv_ops.check(email)
     
     IF record["status"] == "bounced":
-        # 退信=永久拉黑，不跟进
+        # bounce = permanent blacklist, no follow-up
         CONTINUE
     
     IF record["status"] == "replied":
-        # 收到回复 → 人工跟进
-        NOTIFY "收到回复，请人工处理"
+        # reply received → manual follow-up
+        NOTIFY "reply received, handle manually"
         CONTINUE
     
     IF record["status"] == "wa_only":
-        # 已转WA → 不发邮件
+        # moved to WA → no e-mail
         CONTINUE
     
-    # === 冷却期判断 ===
+    # === cooldown decision ===
     followup_count = record["followup_count"]
     days_since_last = days_since(record["last_followup_date"])
     
-    # 5级递进冷却期规则（以 csv_ops.py 的 COOLDOWN_RULES / MAX_GENERIC_FOLLOWUP /
-    # MAX_TOTAL_FOLLOWUP 为准；followup_count 从 0 计 = 最近一封是第 N+1 封）
-    # 实际判断一律调用：csv_ops.py cooldown <email>，读返回的 action / can_followup
-    IF followup_count == 0:          # 已发第1封
+    # 5-level progressive cooldown rules (authoritative: COOLDOWN_RULES / MAX_GENERIC_FOLLOWUP /
+    # MAX_TOTAL_FOLLOWUP in csv_ops.py; followup_count starts at 0 = the latest e-mail is number N+1)
+    # the real decision always calls: csv_ops.py cooldown <email>, reading the returned action / can_followup
+    IF followup_count == 0:          # 1st e-mail sent
         cooldown_days = 3            # COOLDOWN_RULES[0]
         IF days_since_last >= cooldown_days:
             send_followup(email, hook="different_angle")
-    ELIF followup_count == 1:        # 已发第2封
+    ELIF followup_count == 1:        # 2nd e-mail sent
         cooldown_days = 3            # COOLDOWN_RULES[1]
         IF days_since_last >= cooldown_days:
             send_followup(email, hook="new_information")
-    ELIF followup_count == 2:        # 已发第3封
+    ELIF followup_count == 2:        # 3rd e-mail sent
         cooldown_days = 10           # COOLDOWN_RULES[2]
         IF days_since_last >= cooldown_days:
             send_followup(email, hook="last_attempt")
-    ELIF followup_count == 3:        # 已发4封 → action = stop_generic
-        # 停通用邮箱 → 仅 LinkedIn/个人邮箱
+    ELIF followup_count == 3:        # 4 e-mails sent → action = stop_generic
+        # stop generic mailboxes → LinkedIn / personal mailbox only
         IF has_linkedin(email):
             reach_via_linkedin(email)
-    ELIF followup_count >= 4:        # 已发5封及以上 → action = stop_all
-        # 邮件永久停发 → 仅 WA/个人邮箱；用 csv_ops.py mark_wa_only <email> <wa_number> <brand> <contact> 记录
+    ELIF followup_count >= 4:        # 5+ e-mails sent → action = stop_all
+        # e-mail stopped permanently → WA / personal mailbox only; record with csv_ops.py mark_wa_only <email> <wa_number> <brand> <contact>
         IF has_whatsapp(email):
             reach_via_whatsapp(email)
     
-    # === 跟进内容必须差异化 ===
+    # === Follow-up content must differ ===
     IF sending_followup:
         IF content == previous_content:
-            ERROR "跟进内容必须完全差异化"
+            ERROR "follow-up content must be completely different"
         IF not has_new_information(content):
-            ERROR "跟进必须带新信息"
+            ERROR "a follow-up must carry new information"
 ```
 
-**跟进铁律**：
-- ✅ 每封跟进必须带新信息（新案例/新数据/新版本/新角度/行业动态）
-- ✅ 完全差异化，不复用之前措辞
-- ✅ 4封无回复 → 转LinkedIn/个人邮箱
-- ✅ 5封无回复 → 转WA
-- ❌ 退信不再跟进（永久拉黑）
+**Follow-up iron rules**:
+- ✅ every follow-up carries new information (new case / new data / new version / new angle / industry news)
+- ✅ completely different wording, never reuse earlier phrasing
+- ✅ 4 e-mails without reply → LinkedIn / personal mailbox
+- ✅ 5 e-mails without reply → WA
+- ❌ no follow-up after a bounce (permanent blacklist)
 
 ---
 
-### 客户成交时：收集完整客户档案
+### When a customer closes: collect the full customer file
 
-**触发条件**：客户确认下单/付款  
-**输出**：完整的客户背景信息档案
+**Trigger**: customer confirms the order / payment  
+**Output**: complete customer background file
 
 ```python
-# === 客户成交后，收集完整背景信息 ===
+# === after the deal, collect the full background ===
 
-# 1. 基础信息（已有）
+# 1. basic info (already known)
 basic_info = {
     "email": contact.email,
     "brand": contact.brand,
@@ -648,32 +630,32 @@ basic_info = {
     "region": contact.region,
     "order_amount": order.amount,
     "order_date": today,
-    "source_channel": contact.source_channel  # 这个客户是从哪个渠道找到的
+    "source_channel": contact.source_channel  # which channel this customer came from
 }
 
-# 2. 公司背景信息（需调研补充）
+# 2. company background (research to complete)
 company_info = {
-    "company_name": "",  # 公司全称
-    "founded_year": "",  # 成立年份
-    "company_size": "",  # 员工规模/年营业额
-    "main_business": "",  # 主营业务描述
-    "business_model": "",  # B2B/B2C/混合
-    "target_market": ""  # 目标市场（他们卖给谁）
+    "company_name": "",  # full legal name
+    "founded_year": "",  # year founded
+    "company_size": "",  # headcount / annual revenue
+    "main_business": "",  # main business
+    "business_model": "",  # B2B / B2C / mixed
+    "target_market": ""  # target market (who they sell to)
 }
 
-# 3. 联系方式（需补充完整）
+# 3. contact details (to complete)
 contact_info = {
-    "contact_phone": "",  # 决策人电话
-    "company_address": "",  # 公司地址
-    "whatsapp": "",  # WhatsApp号码
-    "wechat": "",  # 微信号（如有）
-    "other_contact": ""  # 其他联系方式
+    "contact_phone": "",  # decision-maker phone
+    "company_address": "",  # company address
+    "whatsapp": "",  # WhatsApp number
+    "wechat": "",  # WeChat (if any)
+    "other_contact": ""  # other channels
 }
 
-# 4. 社媒账号（需搜索补充）
+# 4. social accounts (search to complete)
 social_media = {
-    "website": "",  # 官网
-    "social_linkedin": "",  # LinkedIn公司页/个人主页
+    "website": "",  # website
+    "social_linkedin": "",  # LinkedIn company page / profile
     "social_instagram": "",  # Instagram
     "social_facebook": "",  # Facebook
     "social_twitter": "",  # Twitter/X
@@ -682,35 +664,35 @@ social_media = {
     "social_tiktok": ""  # TikTok
 }
 
-# 5. 业务信息（需调研）
+# 5. business info (research)
 products_info = {
-    "main_offerings": "",  # 主营产品/服务
-    "size_or_budget": "",  # 规模/价位段/预算信号
-    "current_solution": "",  # 目前在用的方案或供应方（与你 differentiators 的关系）
-    "positioning": "",  # 定位（高端/中端/大众；企业/中小）
-    "key_categories": ""  # 核心业务线
+    "main_offerings": "",  # main products / services
+    "size_or_budget": "",  # size / price band / budget signals
+    "current_solution": "",  # current solution or supplier (relation to your differentiators)
+    "positioning": "",  # positioning (premium / mid / mass; enterprise / SME)
+    "key_categories": ""  # core business lines
 }
 
-# === 收集方式 ===
-# 方式1：背调时已收集（第二步背调时补充完整）
+# === how to collect ===
+# way 1: collected during research (completed in Step 2)
 IF research_complete:
     company_info = extract_from_research(research_data)
     social_media = extract_social_from_website(candidate.website)
 
-# 方式2：成交后补充（客户主动提供或进一步调研）
+# way 2: completed after the deal (customer provides it or further research)
 IF customer_confirmed_order:
-    # 主动询问客户
-    ASK customer: "方便提供公司官网、地址、WhatsApp吗？方便后续沟通"
-    # 或自行搜索补充
+    # ask the customer
+    ASK customer: "Could you share your website, address and WhatsApp for easier communication?"
+    # or search
     social_media = search_social_media(brand_name)
 
-# === 写入成功案例档案 ===
+# === write the success case ===
 csv_ops.add_success(
     email=email,
     brand=brand,
     contact=contact_name,
     order_amount=amount,
-    success_points=confirmed_pain_points,  # 用户确认的痛点
+    success_points=confirmed_pain_points,  # pain points confirmed by the user
     company_info=json.dumps(company_info),
     contact_phone=contact_phone,
     company_address=company_address,
@@ -724,103 +706,103 @@ csv_ops.add_success(
 )
 ```
 
-**客户档案用途**：
-1. **复盘学习**：分析成功客户的共同特征
-2. **二次开发**：同一公司不同品牌/联系人
-3. **转介绍**：客户推荐新客户时，有完整背景
-4. **长期跟进**：分享行业动态、新版本/新案例时，知道对方背景
+**What the customer file is for**:
+1. **Review and learning**: common traits of won customers
+2. **Second development**: other brands / contacts of the same company
+3. **Referrals**: full background when a customer refers a new one
+4. **Long-term follow-up**: knowing their background when sharing industry news, new versions / cases
 
-> ⭐ **成交时必标成单渠道**：`add_success` 务必带 `--won_channel email` 或 `--won_channel wa`。这是 WA 复盘（下方第七步）区分“邮件成的”还是“WA 成的”的唯一依据；不标就无法算 WA 渠道贡献。
+> ⭐ **Always tag the winning channel at close**: `add_success` must carry `--won_channel email` or `--won_channel wa`. It is the only basis for the WA review (Step 7 below) to tell "won by e-mail" from "won by WA"; without it the WA contribution cannot be computed.
 
 ---
 
-### 第七步：WhatsApp 触发 + 群发 + 专属复盘（邮件链的收口与自循环）⭐
+### Step 7: WhatsApp Trigger + bulk send + dedicated review (closing the e-mail chain, self-looping) ⭐
 
-**定位**：邮件链负责“广播触达”，WA 链负责“邮件未回的难客收口”，两链共用一个客户表，形成闭环。完整方法论见 `references/wa_bulk_guide.md`（七·二 模板库 / 七·三 触发链 / 十五 复盘闭环）。
+**Role**: the e-mail chain does "broadcast reach", the WA chain "closes the hard accounts that never replied to e-mail"; both share one customer table, forming a loop. Full methodology in `references/wa_bulk_guide.md` (7.2 template bank / 7.3 trigger chain / 15 review loop).
 
 ```python
-# === WA 触发：看板命中任一信号 → 进 WA 名单 ===
+# === WA trigger: any signal hit in the dashboard → WA list ===
 FOR record IN dashboard:
-    IF (record.followup_count >= 2 AND record.status != "replied")   # ① 邮件多轮未回
-       OR record.status == "bounced"                                 # ② 退信/邮箱无效
-       OR (record.high_value AND record.public_wa)                   # ③ 高价值+有公开WA
-       OR record.wa_from_expo:                                       # ④ 展会/主动留号
-        SUGGEST add_to_wa_targets(record)     # 只建议，你拍板（元需求 2）；信号不足标 need_review
+    IF (record.followup_count >= 2 AND record.status != "replied")   # ① several e-mail rounds, no reply
+       OR record.status == "bounced"                                 # ② bounced / invalid mailbox
+       OR (record.high_value AND record.public_wa)                   # ③ high value + public WA
+       OR record.wa_from_expo:                                       # ④ trade show / number given voluntarily
+        SUGGEST add_to_wa_targets(record)     # suggestion only, you decide (meta-need 2); weak signal → need_review
 
-# === 触发链（五步）===
-# ① 导出 WA 名单: email_dashboard.py 筛 pending/未回 → wa_targets.json
-# ② 套模板:     七·二 7钩子 WA 版，{intro} 逐家生成（防封核心）→ Format B contacts.json
-# ③ 群发:       wa_bulk_sender.py validate → preview → send（逐条截图验证，200/天防封）
-# ④ 回写:       csv_ops.py mark_wa_only ；客户回复→ wa_contacts.csv status 回写 replied
-# ⑤ 复盘:       wa_review.py review --html --compare-email（只读不改，14 铁律）
+# === trigger chain (five steps) ===
+# ① export the WA list: email_dashboard.py filter pending / no reply → wa_targets.json
+# ② apply templates:   7.2 WA versions of the 7 hooks, {intro} generated per account (anti-ban core) → Format B contacts.json
+# ③ bulk send:         wa_bulk_sender.py validate → preview → send (screenshot verification per message, 200/day anti-ban)
+# ④ write back:        csv_ops.py mark_wa_only; customer replies → wa_contacts.csv status → replied
+# ⑤ review:            wa_review.py review --html --compare-email (read-only, 14 iron rules)
 
-# === 自循环：复盘反哺下一轮触发 ===
+# === self-loop: the review feeds the next trigger round ===
 review = wa_review.review()
-#   哪个 region / hook_type / need_tag 在 WA 上成单多 → 下轮 WA 名单向它加权
-#   wa_review --compare-email 告诉你：邮件 vs WA 哪条渠道更值得加预算
+#   which region / hook_type / need_tag wins most on WA → weight the next WA list towards it
+#   wa_review --compare-email tells you: e-mail vs WA, which channel deserves more budget
 ```
 
-**WA 闭环铁律**：
-- ✅ 触发信号命中只是“建议进名单”，真发/发多少/先发谁由你拍板（元需求 2）
-- ✅ 每人 `{intro}` 不同（防封核心）；只用小号；禁 wa.me 进正文
-- ✅ 成交必带 `--won_channel wa`，否则复盘口径不准
-- ✅ wa_review 只读不改客户数据（符合 14 铁律）；结论仅供参考
-- ❌ 不得因为“想发 WA”就绕过 4 个触发信号拍脑袋群发
+**WA loop iron rules**:
+- ✅ a trigger hit is only a "suggestion to list"; whether / how many / who first is your call (meta-need 2)
+- ✅ a different `{intro}` per person (anti-ban core); the outreach number only; no wa.me in the body
+- ✅ wins must carry `--won_channel wa`, otherwise the review is wrong
+- ✅ wa_review is read-only on customer data (per the 14 iron rules); conclusions are advisory
+- ❌ never bypass the 4 trigger signals and bulk-send "because we feel like WA"
 
 ---
 
-### 第八步：成单复盘 + 七件套写回（闭环收口 · 每周）
+### Step 8: Win Review + Kit Write-back (closing the loop · weekly)
 
-**输入**：成交客户（邮件或 WA）、本周发送/退信/回复数据、本周 AI 出错记录
-**输出**：成功案例入库、全渠道归因结论、七件套规则更新 → 下一轮第零步的起点
+**Input**: won customers (e-mail or WA), this week's send / bounce / reply data, this week's AI mistakes
+**Output**: success cases stored, omni-channel attribution, kit rules updated → the starting point of the next Step 0
 
 ```python
-# 1. 成交入库：AI 只给带证据的痛点候选，用户确认后才写入（见上文「客户成交时：收集完整客户档案」）
+# 1. store the win: the AI gives evidence-backed pain-point candidates only; written after user confirmation (see "When a customer closes" above)
 csv_ops.add_success(..., won_channel="email" | "wa")
-# 2. 全渠道复盘（只读）
-csv_ops.review_success()                 # 按地区 / need_tag / hook_type 拆解
-email_dashboard.py                       # 邮件漏斗 + 成功案例模块
-wa_review.py review --compare-email      # 邮件 vs WA 哪条渠道成单多
-# 3. 七件套周复盘写回（references/soul_kit/周复盘写回.md）
-#    答错 / 漏做 / 越界 → 归因到唯一一份档案 → 改规则（不只改这一句）→ 更新 HEARTBEAT
-onboarding.py kit-check                  # 必须 7/7；改过档案后需重新回读确认 → attest
-# 4. 结论写进 soul_seven_kit/MEMORY.md「本周结论」→ 回到第零步开始下一轮
+# 2. omni-channel review (read-only)
+csv_ops.review_success()                 # by region / need_tag / hook_type
+email_dashboard.py                       # e-mail funnel + success-case module
+wa_review.py review --compare-email      # e-mail vs WA, which channel wins more
+# 3. weekly kit write-back (references/soul_kit/weekly_writeback.md)
+#    wrong answer / missed step / overreach → attributed to exactly one file → change the rule (not just the sentence) → update HEARTBEAT
+onboarding.py kit-check                  # must be 7/7; after editing a file, read back, confirm → attest
+# 4. conclusions into soul_seven_kit/MEMORY.md "This week's conclusions" → back to Step 0 for the next round
 ```
 
 ---
 
-## 📊 每日/每周例行任务
+## 📊 Daily / weekly routines
 
-### 每日任务（发信时间由收件人当地窗口决定，先跑 send_window.py table 看哪些市场可发）
+### Daily (sending time decided by the recipient's local window; run send_window.py table first to see which markets are open)
 
 ```python
-# 1. 批量发信（日目标默认 100 封，硬上限 200 封；脚本自动跳过当地窗口外的收件人，下一轮再发）
+# 1. batch sending (daily target default 100, hard limit 200; the script skips recipients outside their local window and retries next run)
 batch_sender.send(max_count=100)
 
-# 2. IMAP扫描退信（24-48小时后）
+# 2. IMAP bounce scan (24–48 hours later)
 imap_scanner.scan()
 
-# 3. 更新数据看板
+# 3. refresh the dashboard
 email_dashboard.generate(sent_history, blacklist)
 
-# 4. 检查冷却期 + 发跟进邮件
+# 4. check cooldowns + send follow-ups
 followup_manager.check_and_send()
 
-# 5. ⭐ 每日汇报（任务完成后必做）
-# 生成邮件追踪看板 + 提炼3-5个要点，向用户汇报当日工作成果
+# 5. ⭐ daily report (mandatory after the task)
+# generate the tracking dashboard + distil 3–5 points, report the day's results to the user
 daily_report()
 ```
 
-**每日汇报流程**：
+**Daily report flow**:
 
 ```python
 def daily_report():
-    """任务完成后生成邮件看板 + 提炼3-5个要点"""
+    """after the task: generate the dashboard + distil 3–5 points"""
     
-    # 1. 生成当日邮件追踪看板
-    dashboard = email_dashboard.generate(sent_history, blacklist, title="每日发信追踪")
+    # 1. today's tracking dashboard
+    dashboard = email_dashboard.generate(sent_history, blacklist, title="Daily sending tracker")
     
-    # 2. 汇总当日数据
+    # 2. today's numbers
     today_data = {
         "sent_count": count_sent_today(),
         "bounced_count": count_bounced_today(),
@@ -829,148 +811,148 @@ def daily_report():
         "pipeline_ready": csv_ops.pipeline_check()["ready_count"]
     }
     
-    # 3. 提炼3-5个关键要点
+    # 3. distil 3–5 key points
     key_points = []
-    key_points.append(f"今日发送: {today_data['sent_count']}封")
+    key_points.append(f"Sent today: {today_data['sent_count']}")
     
     IF today_data['bounced_count'] > 0:
-        key_points.append(f"退信: {today_data['bounced_count']}封（已自动加入黑名单）")
+        key_points.append(f"Bounces: {today_data['bounced_count']} (blacklisted automatically)")
     
     IF today_data['replied_count'] > 0:
-        key_points.append(f"收到回复: {today_data['replied_count']}封（需人工跟进）")
+        key_points.append(f"Replies: {today_data['replied_count']} (manual follow-up needed)")
     
-    # 从成功案例/背调中提炼业务洞察
+    # business insights from success cases / research
     insights = extract_daily_insights(today_data)
-    FOR insight IN insights[:2]:  # 最多2条业务洞察
+    FOR insight IN insights[:2]:  # at most 2 business insights
         key_points.append(insight)
     
     IF today_data['pipeline_ready'] < 100:
-        key_points.append(f"⚠️ 备用池不足：当前{today_data['pipeline_ready']}家，建议补充")
+        key_points.append(f"⚠️ Reserve pool low: {today_data['pipeline_ready']} accounts, replenish")
     
-    # 4. 向用户汇报
+    # 4. report to the user
     REPORT_TO_USER(
         dashboard=dashboard,
-        summary="📊 今日客户开发工作汇报",
-        key_points=key_points[:5]  # 确保3-5个要点
+        summary="📊 Today's customer development report",
+        key_points=key_points[:5]  # 3–5 points
     )
 ```
 
-### 每周任务
+### Weekly
 
 ```python
-# 1. 复盘成功案例（检查待确认痛点）
+# 1. review success cases (check pending pain points)
 csv_ops.review_success()
 
-# 1.5 ⭐ 灵魂七件套周复盘写回（references/soul_kit/周复盘写回.md）
-#     答错/漏做/越界 → 归因到唯一一份档案 → 改规则 → 更新 HEARTBEAT → onboarding.py kit-check
+# 1.5 ⭐ Soul Seven Kit weekly write-back (references/soul_kit/weekly_writeback.md)
+#     wrong answer / missed step / overreach → attributed to one file → change the rule → update HEARTBEAT → onboarding.py kit-check
 
-# 2. 生成邮件追踪看板（含成功案例复盘模块）
+# 2. tracking dashboard (with the success-case review module)
 email_dashboard.generate(weekly_data)
 
-# 3. 审查黑名单 + 清理过期数据
+# 3. blacklist review + stale-data cleanup
 blacklist_review()
 
-# 4. ⭐ 检查备用池储备量（每周日/周一）
+# 4. ⭐ reserve pool check (Sunday / Monday)
 pipeline_status = csv_ops.pipeline_check()
-IF pipeline_status["ready_count"] < 100:  # 最低100家（7天储备）
+IF pipeline_status["ready_count"] < 100:  # minimum 100 accounts (7-day reserve)
     shortage = 100 - pipeline_status["ready_count"]
-    PRINT f"⚠️ 备用池不足！当前{pipeline_status['ready_count']}家，需补充{shortage}家"
-    # 启动补充任务：搜索+背调+需求定位
+    PRINT f"⚠️ Reserve pool low! {pipeline_status['ready_count']} accounts, {shortage} needed"
+    # start the replenish task: search + research + need positioning
     create_supplement_task(count=shortage)
 ```
 
-### ⭐ 备用池管理（v5新增）
+### ⭐ Reserve pool management
 
-**最低储备量**：100家（7天储备），建议储备300-500家（月度储备）
+**Minimum reserve**: 100 accounts (7-day reserve); recommended 300–500 (monthly reserve)
 
-**检查频率**：
-- 每周日 22:00 — 全面检查备用池
-- 每日发送前 — 确认可用客户充足
-- 储备低于50%时 — 立即补充
+**Check frequency**:
+- Sunday 22:00 — full reserve pool check
+- before each daily send — confirm enough sendable accounts
+- below 50% of the reserve — replenish immediately
 
-**备用池命令**：
+**Reserve pool commands**:
 ```bash
-# 检查备用池状态
+# reserve pool status
 python3 scripts/csv_ops.py pipeline_check
 
-# 添加到备用池（已完成背调）
+# add to the reserve pool (research done)
 python3 scripts/csv_ops.py add_pipeline <email> <brand> <region> <need_tag> [priority]
 
-# 列出备用池
+# list the reserve pool
 python3 scripts/csv_ops.py list_pipeline [--status ready] [--region US]
 
-# 从备用池取出发送
+# take from the reserve pool for sending
 python3 scripts/csv_ops.py use_pipeline <email>
 ```
 
-**备用池与发送协同**：
+**Reserve pool and sending together**:
 ```
-备用池储备（100家）→ 每日发送消耗（100家/天）→ 储备降至0 → 补充任务启动
-     ↑                                                        ↓
-     └──────────────── 补充完成 ────────────────────────────────┘
+reserve pool (100) → daily sending consumes (100/day) → reserve drops to 0 → replenish task starts
+     ↑                                                                      ↓
+     └──────────────────────── replenish done ──────────────────────────────┘
 ```
 
 ---
 
-## 🚫 绝对禁令（14条铁律）
+## 🚫 Absolute prohibitions (the 14 iron rules)
 
-1. **公司名/品牌名不决定需求，调研才决定** — 不做粗筛
-2. **不推客户明确不能用的东西** — solution_tag=compliance 的客户只推有对应资质的线；`positioning.tag_rules` 里的禁配组合一律不发
-3. **WA专属客户绝不发邮件** — wa_only状态禁发邮件
-4. **发前必查数据层+必做背调** — 不查就发=违规
-5. **发后必写数据层** — 不发不写=数据断层
-6. **不替客户判断大小** — 只展示能力，不主观判断
-7. **付款提醒绝不自动发邮件** — 需人工确认
-8. **跨品牌绝不重复触达** — 同一老板多品牌不重复
-9. **暂停/停/不用了=立即停止一切操作** — 用户指令优先
-10. **CSV操作必须用csv_ops.py脚本** — 禁止手动编辑
-11. **删除技能/文件必须老板同意** — 不可擅自删除
-12. **通用邮箱（info@/contact@等）绝不发冷邮件** — 不对应具体决策人，冷邮件进这类邮箱通常无人跟进（本技能经验规则，非统计数字）
-13. **退信=永久拉黑，绝不重试** — bounced=永不触达
-14. **发纯文本、不加追踪像素、带退订方式** — 本技能不引用无出处的「进箱率」数字；可核实的硬条件是 Gmail 发件人要求：所有发件人至少配 SPF 或 DKIM、垃圾邮件率保持在 0.3% 以下；每天给 Gmail 发约 5000 封以上的批量发件人需 SPF+DKIM+DMARC 且营销邮件支持一键退订（[Google 发件人指南](https://support.google.com/mail/answer/81126?hl=en)）。脚本已自动加 `List-Unsubscribe` 头和正文退订提示，详见 `references/mail_setup.md`
+1. **Company / brand name never decides the need; research does** — no coarse filtering
+2. **Never pitch what the customer clearly cannot use** — solution_tag=compliance customers only get lines with the matching credentials; forbidden combinations in `positioning.tag_rules` are never sent
+3. **WA-only customers never get e-mail** — wa_only status blocks e-mail
+4. **Check the data layer + do research before sending** — sending without checking = violation
+5. **Write the data layer after sending** — sending without writing = data gap
+6. **Never judge the customer's size for them** — show capability, no subjective judgement
+7. **Payment reminders are never sent automatically** — manual confirmation required
+8. **Never contact across brands twice** — one owner with several brands is contacted once
+9. **"Pause / stop / no more" = stop everything immediately** — user instructions prevail
+10. **CSV operations only through csv_ops.py** — no manual editing
+11. **Deleting skills / files needs the boss's consent** — never delete on your own
+12. **Generic mailboxes (info@/contact@ …) never get cold e-mail** — they map to no decision maker and cold e-mail there is usually not followed up (this skill's experience rule, not a statistic)
+13. **Bounce = permanent blacklist, never retry** — bounced = never contacted again
+14. **Plain text, no tracking pixel, with an unsubscribe route** — this skill quotes no unsourced "inbox rate" numbers; the verifiable hard requirements are Google's sender guidelines: every sender needs at least SPF or DKIM and a spam rate below 0.3%; bulk senders of about 5,000+ e-mails a day to Gmail need SPF+DKIM+DMARC and one-click unsubscribe for marketing mail ([Google sender guidelines](https://support.google.com/mail/answer/81126?hl=en)). The scripts add the `List-Unsubscribe` header and a body unsubscribe line automatically, see `references/mail_setup.md`
 
 ---
 
-## 🛠️ 工具速查表
+## 🛠️ Tool quick reference
 
-| 步骤 | 工具 | 命令 |
+| Step | Tool | Command |
 |------|------|------|
-| 查重+黑名单 | csv_ops.py | `check <email>` |
-| 跨品牌排重 | csv_ops.py | `cross_brand_check <domain>` |
-| 追加发送 | csv_ops.py | `add_sent <email> <brand> <subject> <need_tag>` |
-| 追加备注 | csv_ops.py | `add_note <email> <note>` |
-| 标记退信 | csv_ops.py | `mark_bounced <email>` |
-| 标记回复 | csv_ops.py | `mark_replied <email>` |
-| 转WA渠道 | csv_ops.py | `mark_wa_only <email> <wa> <brand> <name>` |
-| ⭐WA 专属复盘 | wa_review.py | `review [--html out.html] [--compare-email]` / `funnel`（只读不改） |
-| ⭐WA 开发触发 | 方法论 | 看板命中 4 信号→进 WA 名单（wa_bulk_guide 七·三） |
-| 冷却期查询 | csv_ops.py | `cooldown <email>` |
-| 数据统计 | csv_ops.py | `stats` |
-| 添加成功案例 | csv_ops.py | `add_success <email> <brand> <contact> <amount> <success_points> [--won_channel email\|wa --region --need_tag --hook_type --whatsapp --website ...]` |
-| 列出成功案例 | csv_ops.py | `list_success [--region XX] [--need_tag XX] [--channel XX]` |
-| 复盘成功案例 | csv_ops.py | `review_success` |
-| MX验证 | dns_validator.py | `<input.json> [output.json]` |
-| 邮箱猜测 | email_guesser.py | `<input.json> [output.json]` |
-| 决策人发信 | decision_maker_sender.py | `<contacts.json> [report_dir]` |
-| 批量发信 | batch_sender.py | `[max] [input.json] [report_dir]` |
-| IMAP扫描 | imap_scanner.py | `[max_scan]` |
-| 邮件追踪看板 | email_dashboard.py | `<data.json> [output.html] [title]` |
+| de-dup + blacklist | csv_ops.py | `check <email>` |
+| cross-brand de-dup | csv_ops.py | `cross_brand_check <domain>` |
+| record a send | csv_ops.py | `add_sent <email> <brand> <subject> <need_tag>` |
+| add a note | csv_ops.py | `add_note <email> <note>` |
+| mark bounce | csv_ops.py | `mark_bounced <email>` |
+| mark reply | csv_ops.py | `mark_replied <email>` |
+| move to WA | csv_ops.py | `mark_wa_only <email> <wa> <brand> <name>` |
+| ⭐ WA review | wa_review.py | `review [--html out.html] [--compare-email]` / `funnel` (read-only) |
+| ⭐ WA trigger | methodology | 4 dashboard signals → WA list (wa_bulk_guide 7.3) |
+| cooldown query | csv_ops.py | `cooldown <email>` |
+| statistics | csv_ops.py | `stats` |
+| add success case | csv_ops.py | `add_success <email> <brand> <contact> <amount> <success_points> [--won_channel email\|wa --region --need_tag --hook_type --whatsapp --website ...]` |
+| list success cases | csv_ops.py | `list_success [--region XX] [--need_tag XX] [--channel XX]` |
+| review success cases | csv_ops.py | `review_success` |
+| MX verification | dns_validator.py | `<input.json> [output.json]` |
+| e-mail guessing | email_guesser.py | `<input.json> [output.json]` |
+| decision-maker sending | decision_maker_sender.py | `<contacts.json> [report_dir]` |
+| batch sending | batch_sender.py | `[max] [input.json] [report_dir]` |
+| IMAP scan | imap_scanner.py | `[max_scan]` |
+| tracking dashboard | email_dashboard.py | `<data.json> [output.html] [title]` |
 
 ---
 
-## 📚 参考文档
+## 📚 Reference documents
 
-- `references/product_knowledge.md` — ⭐ 你自己的产品库建档模板（品类详情 + 核心卖点，首次建档后即成为开发前必读事实源）
-- `references/research_guide.md` — 背调方法论详细指南
-- `references/email_templates.md` — 邮件模板库（占位符模板，按 need_tag/solution_tag 分类；发送前用建档事实替换占位符）
-- `references/industry_playbooks.md` — 通用B2B行业话术手册（7种钩子类型+8地区策略+产品信息确认流程）
-- `references/SOP_客户搜索详细流程.md` — 15 种方法客户搜索详细SOP
-- `references/csv_guide.md` — CSV字段和脚本参数说明
-- `references/dashboard_guide.md` — 看板使用指南
+- `references/product_knowledge.md` — ⭐ your own product / service knowledge base template (the fact source to read before every development run once filled)
+- `references/research_guide.md` — detailed research methodology
+- `references/email_templates.md` — e-mail template bank (placeholder templates by need_tag / solution_tag; replace placeholders with profile facts before sending)
+- `references/industry_playbooks.md` — generic B2B playbook (7 hook types + 8 regional strategies + product-fact confirmation flow)
+- `references/SOP_search_workflow.md` — detailed customer search SOP, 15 methods
+- `references/csv_guide.md` — CSV fields and script parameters
+- `references/dashboard_guide.md` — dashboard guide
 
 ---
 
-**SOP版本**：v3.1  
-**最后更新**：2026-10-19  
-**更新内容**：安装门禁三关（kit-check + 内容指纹）、第一步三类发现源（含 10 平台社媒公开搜索）、S1/S2/S3 证据分级、收件人当地窗口发信、1-3-7-21 与 3/3/10 分工、第八步七件套周复盘写回；v3.1 新增数据接入层（data_import / mail_setup / crm_sync）、数据触发口（triggers）与四维轮换补池（详见 CHANGELOG v3.1）  
-**维护者**：B2B客户开发AI业务搭子
+**SOP version**: v3.1  
+**Last updated**: 2026-10-19  
+**Changes**: three-check Install Gate (kit-check + content fingerprint), three discovery sources in Step 1 (incl. 10-platform social public search), S1/S2/S3 evidence tiers, recipient-local sending window, 1-3-7-21 and 3/3/10 separation, Step 8 weekly kit write-back; v3.1 adds the Data Access Layer (data_import / mail_setup / crm_sync), Data Triggers (triggers) and four-axis rotation replenishment (see CHANGELOG v3.1)  
+**Maintainer**: B2B customer development AI co-pilot

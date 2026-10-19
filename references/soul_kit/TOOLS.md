@@ -1,25 +1,25 @@
 ---
 filled: false
 ---
-<!-- 灵魂七件套 · 每件工具三行：何时用 / 怎么用 / 坏了怎么办。填完把 filled 改成 true。 -->
+<!-- Soul Seven Kit · three lines per tool: when to use / how to use / what to do when it breaks. Set filled to true when done. -->
 
-# TOOLS.md — 工具包
+# TOOLS.md — Toolkit
 
-## 工具一：搜索与背调（web search / fetch / LinkedIn 布尔）
-- 何时用：补池、找真实决策人邮箱、核验公司是否目标客户时。
-- 怎么用：用 profile 的产品词×角色词×渠道词组合；只收录有来源的真实邮箱。
-- 坏了怎么办：换搜索词/换渠道；连续两轮补不足额就上报老板，不拿通用邮箱凑数。
+## Tool 1: search and research (web search / fetch / LinkedIn boolean)
+- When to use: replenishing the pool, finding real decision-maker e-mails, verifying that a company is a target customer.
+- How to use: combine the profile's product terms × role terms × channel terms; record only real e-mails with a source.
+- When it breaks: change terms / channels; if two rounds in a row fall short, report to the boss instead of padding with generic mailboxes.
 
-## 工具二：批量发信（scripts/batch_sender.py）
-- 何时用：草稿获批、邮箱过 DNS 校验、处于客户当地上班窗口时。
-- 怎么用：SMTP 凭证走环境变量；DRY_RUN=1 先预览；遵守日上限与冷却。
-- 坏了怎么办：工具失败一次即停，换策略或上报，不盲目重试。
+## Tool 2: bulk sending (scripts/batch_sender.py)
+- When to use: drafts approved, addresses passed DNS validation, inside the customer's local working window.
+- How to use: SMTP credentials via environment variables; DRY_RUN=1 first; respect the daily cap and cooldown.
+- When it breaks: stop after one failure; change strategy or report, never retry blindly.
 
-## 工具三：退信扫描（scripts/imap_scanner.py）
-- 何时用：发信后 24–48 小时。
-- 怎么用：按 IMAP 环境变量扫描；硬退隔离、同域多退拉黑。
-- 坏了怎么办：
+## Tool 3: bounce scanning (scripts/imap_scanner.py)
+- When to use: 24–48 hours after sending.
+- How to use: scan via the IMAP environment variables; quarantine hard bounces, blacklist domains with repeated bounces.
+- When it breaks:
 
-## 通用兜底
-- 失败重试次数与上限：同一操作最多重试 1 次。
-- 连续失败后交给谁：上报老板，附上卡点，不静默。
+## General fallback
+- Retry count and limit: at most 1 retry per operation.
+- Who takes over after repeated failures: report to the boss with the blocker; never stay silent.

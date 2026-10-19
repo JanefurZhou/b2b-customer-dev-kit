@@ -1,33 +1,33 @@
 #!/usr/bin/env python3
-"""邮箱格式猜测脚本（零外部依赖，仅用 Python 标准库）
+"""E-mail pattern guesser (zero external dependencies, Python standard library only)
 
-用法:
+Usage:
     python3 scripts/email_guesser.py <input.json> [output.json]
 
-输入 JSON（数组）:
+Input JSON (array):
 [
   {"brand": "Brand A", "contact_person": "Hannah Smith", "website": "https://branda.example"},
   {"brand": "Brand B", "contact_person": "Marie Dubois", "website": "brandb.example",
    "known_format": "flast"}
 ]
 
-功能:
-    - 根据决策人姓名 + 域名，按 9 种常见企业邮箱格式生成候选邮箱。
-    - 若提供 known_format（该公司已知的邮箱格式），优先用该格式。
-    - 复用 dns_validator 对域名做 MX 验证，MX 无效的域名标记后不建议发信。
+What it does:
+    - Generates candidate addresses from the decision maker's name + domain using 9 common corporate e-mail patterns.
+    - If known_format (the company's known pattern) is given, that pattern comes first.
+    - Reuses dns_validator for MX validation; domains with invalid MX are flagged and sending is not recommended.
 
-支持的格式关键字（known_format 可选值）:
+Supported pattern keywords (known_format values):
     first.last / firstlast / flast / first_last / f.last /
     first / last / lastf / first-last
 """
 import json, sys, os, re, importlib.util
-for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+for _s in (sys.stdout, sys.stderr):  # keep non-ASCII output safe when redirected or on legacy Windows consoles
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
 
-# 动态加载同目录下的 dns_validator（避免包结构约束）
+# Load dns_validator from the same directory dynamically (avoids package-structure constraints)
 _here = os.path.dirname(os.path.abspath(__file__))
 _spec = importlib.util.spec_from_file_location("dns_validator", os.path.join(_here, "dns_validator.py"))
 _dns = importlib.util.module_from_spec(_spec)
@@ -39,7 +39,7 @@ def _clean(s):
 
 
 def _split_name(full_name):
-    """把姓名拆成 first / last（取首末词，忽略中间名）。"""
+    """Split a name into first / last (first and last word; middle names ignored)."""
     parts = [p for p in re.split(r"\s+", (full_name or "").strip()) if p]
     if not parts:
         return "", ""
@@ -60,7 +60,7 @@ FORMAT_BUILDERS = {
     "first-last": lambda f, l: f"{f}-{l}" if l else f,
 }
 
-# 默认猜测顺序（可靠性从高到低）
+# Default guessing order (most to least reliable)
 DEFAULT_ORDER = ["first.last", "flast", "firstlast", "first_last",
                  "f.last", "first", "lastf", "first-last", "last"]
 
@@ -98,7 +98,7 @@ def main():
                             "note": "missing_domain_or_contact"})
             continue
 
-        # MX 验证（带缓存）
+        # MX validation (cached)
         if domain not in mx_cache:
             mx_cache[domain] = _dns.validate_domain(domain)
         mx = mx_cache[domain]
@@ -111,7 +111,7 @@ def main():
             if local:
                 candidates.append({"format": known, "email": f"{local}@{domain}",
                                    "priority": "known_format"})
-        # 补充默认格式候选
+        # Add the default pattern candidates
         for fmt, email in guess_for(contact, domain):
             if not any(c["email"] == email for c in candidates):
                 candidates.append({"format": fmt, "email": email, "priority": "guessed"})
@@ -135,7 +135,7 @@ def main():
     if outfile:
         with open(outfile, "w", encoding="utf-8") as f:
             f.write(output)
-        print(f"OK: 为 {len(results)} 位联系人生成候选邮箱 → {outfile}")
+        print(f"OK: generated candidate addresses for {len(results)} contacts → {outfile}")
     else:
         print(output)
 

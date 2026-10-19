@@ -1,138 +1,138 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-social_platforms.py — 10 大海外社媒「免登录公开搜索」配方 + 采购链职位词库（30 个，三档）
+social_platforms.py — public, login-free search recipes for 10 overseas social platforms + a 30-title procurement-chain vocabulary (three tiers)
 
-只做一件事：生成可直接粘进 Google / Bing 的公开搜索式（site: 运算符），
-从搜索引擎已公开索引的页面里找「目标公司 / 决策人主页 / 行业群组 / 评论区信号」。
-- 不登录、不注册、不调用任何平台接口、不自动加好友 / 私信 / 进群 / 关注。
-- 需要登录才能做的动作（连接请求、DM、进群、看粉丝列表）一律列为「人工 · 需登录」，
-  本技能不执行，只在 references/social_media_playbooks.md 给方法。
-- 每条结果仍要走：官网 → 具名邮箱 → filter --against 查库去重 → 背调（S1/S2 证据）。
+Does one thing: generates public search queries (site: operator) you can paste straight into Google / Bing,
+to find target companies / decision-maker profiles / industry groups / comment-section signals on pages the search engines have already indexed.
+- No login, no sign-up, no platform API calls, no automatic friend requests / DMs / group joins / follows.
+- Anything that needs a login (connection requests, DMs, joining groups, viewing follower lists) is listed as "manual · login required";
+  this skill does not perform it and only documents the method in references/social_media_playbooks.md.
+- Every result still goes through: official website → named mailbox → filter --against de-dup → background research (S1/S2 evidence).
 
-被 search_customers.py social 子命令调用；也可单独 import。
-纯标准库。
+Called by the search_customers.py social sub-command; can also be imported on its own.
+Standard library only.
 """
 
 from urllib.parse import quote_plus
 import sys
-for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+for _s in (sys.stdout, sys.stderr):  # keep non-ASCII output safe when redirected or on legacy Windows consoles
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
 
-# ---------------- 采购链职位词库：决策层 / 执行层 / 影响层 各 10 个 ----------------
+# ---------------- Procurement-chain titles: decision / execution / influence tiers, 10 each ----------------
 TITLE_TIERS = {
-    "decision": [  # 拍板、批预算
+    "decision": [  # sign off, approve budget
         "Owner", "Founder", "CEO", "Managing Director", "General Manager",
         "Head of Purchasing", "Procurement Director", "VP Operations",
         "Commercial Director", "Category Director",
     ],
-    "execution": [  # 具体找供应商、比价、下单
+    "execution": [  # actually source suppliers, compare prices, place orders
         "Buyer", "Senior Buyer", "Purchasing Manager", "Procurement Manager",
         "Sourcing Manager", "Category Manager", "Supply Chain Manager",
         "Product Manager", "Merchandiser", "Vendor Manager",
     ],
-    "influence": [  # 提需求、做评估、影响选型
+    "influence": [  # raise needs, evaluate, influence selection
         "Operations Manager", "Quality Manager", "Technical Director",
         "Engineering Manager", "Project Manager", "Product Development Manager",
         "Brand Manager", "Marketing Manager", "IT Manager", "Office Manager",
     ],
 }
-TIER_CN = {"decision": "决策层", "execution": "执行层", "influence": "影响层"}
+TIER_CN = {"decision": "decision tier", "execution": "execution tier", "influence": "influence tier"}
 
-# ---------------- 10 平台配方 ----------------
-# tmpl 占位：{cat} 品类/客户行业词 · {role} 角色词 · {region} 地区 · {t3} 三个职位的 OR 组
-#           {tag} 话题标签词（由品类词生成）· {competitor} 参照/竞品品牌
+# ---------------- 10-platform recipes ----------------
+# tmpl placeholders: {cat} category / customer-industry term · {role} role term · {region} region · {t3} OR group of three titles
+#           {tag} hashtag term (derived from the category term) · {competitor} reference / competitor brand
 PLATFORMS = {
     "linkedin": {
-        "name": "LinkedIn", "star": "⭐⭐⭐⭐⭐", "stage": "找决策人",
+        "name": "LinkedIn", "star": "⭐⭐⭐⭐⭐", "stage": "find decision makers",
         "tmpl": [
             'site:linkedin.com/in ({t3}) "{cat}" "{region}"',
             'site:linkedin.com/company "{cat}" {role} "{region}"',
             'site:linkedin.com/posts "{cat}" ("looking for" OR sourcing OR RFQ OR tender) "{region}"',
         ],
-        "extract": "姓名、职位、公司名、公司官网（公司页 About）；帖子里的采购/招标信号",
-        "login": "连接请求、InMail、看完整履历、Sales Navigator 筛选",
+        "extract": "name, title, company name, company website (company page About); procurement / tender signals in posts",
+        "login": "connection requests, InMail, full profile view, Sales Navigator filters",
     },
     "instagram": {
-        "name": "Instagram", "star": "⭐⭐⭐⭐", "stage": "找品牌/门店",
+        "name": "Instagram", "star": "⭐⭐⭐⭐", "stage": "find brands / stores",
         "tmpl": [
             'site:instagram.com "{cat}" ({role} OR stockist OR wholesale OR distributor) "{region}"',
             'site:instagram.com "#{tag}" "{region}"',
             'site:instagram.com "{competitor}" (stockist OR retailer OR "available at" OR partner)',
         ],
-        "extract": "账号简介里的官网链接、Email 按钮文字、城市；是否标注 stockist/wholesale",
-        "login": "看粉丝/关注列表、话题页滚动、DM、点赞评论",
+        "extract": "website link in the bio, Email button text, city; whether stockist/wholesale is mentioned",
+        "login": "viewing follower/following lists, scrolling hashtag pages, DMs, likes and comments",
     },
     "facebook": {
-        "name": "Facebook", "star": "⭐⭐⭐", "stage": "找群组/商家页",
+        "name": "Facebook", "star": "⭐⭐⭐", "stage": "find groups / business pages",
         "tmpl": [
             'site:facebook.com/groups "{cat}" (buyers OR wholesale OR B2B OR procurement OR sourcing) "{region}"',
             'site:facebook.com "{cat}" {role} "{region}" (email OR contact)',
         ],
-        "extract": "公开群组名与主题（判断买家聚集地）、商家页 About 里的官网/邮箱/地址",
-        "login": "进群、群内发帖、Messenger 私信",
+        "extract": "public group names and topics (where buyers gather), website / e-mail / address in the business page About",
+        "login": "joining groups, posting in groups, Messenger DMs",
     },
     "youtube": {
-        "name": "YouTube", "star": "⭐⭐⭐", "stage": "评论区/频道挖买家",
+        "name": "YouTube", "star": "⭐⭐⭐", "stage": "buyers from comments / channels",
         "tmpl": [
             'site:youtube.com "{cat}" (review OR unboxing OR "how to choose" OR "factory tour" OR demo) "{region}"',
             'site:youtube.com "{cat}" {role}',
         ],
         "url": "https://www.youtube.com/results?search_query={q}",
-        "extract": "频道简介「商务合作」邮箱、频道外链官网；视频标题里的行业/地区；评论区自报身份的买家",
-        "login": "评论、订阅、社区帖互动",
+        "extract": "business-enquiry e-mail in the channel About, channel website link; industry / region in video titles; self-identified buyers in comments",
+        "login": "commenting, subscribing, community-post interaction",
     },
     "tiktok": {
-        "name": "TikTok", "star": "⭐⭐⭐", "stage": "短视频/评论区信号",
+        "name": "TikTok", "star": "⭐⭐⭐", "stage": "short-video / comment signals",
         "tmpl": [
             'site:tiktok.com "{cat}" (wholesale OR supplier OR "small business" OR {role}) "{region}"',
             'site:tiktok.com "#{tag}"',
         ],
-        "extract": "账号简介官网链接、品牌名；评论区里问「哪里进货 / 供应商」的账号",
-        "login": "评论、私信、关注",
+        "extract": "website link in the bio, brand name; accounts asking \"where to source / supplier\" in comments",
+        "login": "commenting, DMs, following",
     },
     "pinterest": {
-        "name": "Pinterest", "star": "⭐⭐⭐", "stage": "图版/长尾找品牌",
+        "name": "Pinterest", "star": "⭐⭐⭐", "stage": "boards / long-tail brand discovery",
         "tmpl": [
             'site:pinterest.com "{cat}" (wholesale OR catalog OR lookbook OR supplier OR {role})',
         ],
-        "extract": "Pin 指向的外链域名（真实品牌/店铺官网）、图版名称里的细分品类",
-        "login": "收藏、关注、私信",
+        "extract": "external domain the Pin points to (real brand / store website), sub-category in board names",
+        "login": "saving, following, DMs",
     },
     "x": {
-        "name": "X (Twitter)", "star": "⭐⭐", "stage": "需求对话监听",
+        "name": "X (Twitter)", "star": "⭐⭐", "stage": "listening for need conversations",
         "tmpl": [
             'site:x.com "{cat}" ("looking for" OR "recommend a" OR supplier OR vendor OR RFQ) "{region}"',
         ],
-        "extract": "发需求帖的账号与其简介官网；行业会议/展会话题下的公司账号",
-        "login": "回复、私信、关注",
+        "extract": "accounts posting needs and the website in their bio; company accounts under industry conference / trade-show hashtags",
+        "login": "replying, DMs, following",
     },
     "threads": {
-        "name": "Threads", "star": "⭐⭐", "stage": "与 IG 联动",
+        "name": "Threads", "star": "⭐⭐", "stage": "linked with IG",
         "tmpl": [
             'site:threads.net "{cat}" ({role} OR supplier OR wholesale OR sourcing)',
         ],
-        "extract": "账号名（通常与 IG 同名，可回 IG 公开页取官网）",
-        "login": "回复、私信",
+        "extract": "account name (usually the same as IG; go back to the public IG page for the website)",
+        "login": "replying, DMs",
     },
     "whatsapp": {
-        "name": "WhatsApp", "star": "⭐⭐⭐⭐", "stage": "转化/跟进主场（不是搜索源）",
+        "name": "WhatsApp", "star": "⭐⭐⭐⭐", "stage": "conversion / follow-up home base (not a search source)",
         "tmpl": [
             '"{cat}" {role} "{region}" ("wa.me" OR "WhatsApp Business" OR "WhatsApp us")',
         ],
-        "extract": "官网/目录页公开的 WhatsApp 商务号（只记录，不立即发；按第七步 WhatsApp 触发条件进 WA 名单）",
-        "login": "所有发送动作都走 wa_bulk 引擎的人工确认 + 防封铁律",
+        "extract": "WhatsApp business numbers published on websites / directories (record only, do not message yet; enter the WA list via the Step 7 WhatsApp Trigger conditions)",
+        "login": "every sending action goes through the wa_bulk engine's human confirmation + anti-ban iron rules",
     },
     "lemon8": {
-        "name": "Lemon8", "star": "⭐⭐", "stage": "图文种草/新锐品牌",
+        "name": "Lemon8", "star": "⭐⭐", "stage": "visual posts / emerging brands",
         "tmpl": [
             'site:lemon8-app.com "{cat}" "{region}"',
         ],
-        "extract": "帖子提到的品牌名/店铺名 → 回搜官网",
-        "login": "评论、私信、关注",
+        "extract": "brand / store names mentioned in posts → search back for the website",
+        "login": "commenting, DMs, following",
     },
 }
 PLATFORM_ORDER = list(PLATFORMS.keys())
@@ -142,7 +142,7 @@ TAG_SUFFIXES = ("", "wholesale", "supplier", "b2b", "store", "brand", "design", 
 
 
 def tag_terms(cat, region=""):
-    """品类词 → 9 组话题标签：#品类 / #品类wholesale / supplier / b2b / store / brand / design / trade / #地区品类"""
+    """Category term → 9 hashtag groups: #category / #categorywholesale / supplier / b2b / store / brand / design / trade / #regioncategory"""
     base = "".join(ch for ch in cat.lower() if ch.isalnum())
     if not base:
         return []
@@ -154,7 +154,7 @@ def tag_terms(cat, region=""):
 
 
 def titles_for(tier="all", profile_titles=None):
-    """profile 的 buyer_titles 优先；词库补位。tier=decision/execution/influence/all"""
+    """Profile buyer_titles first; the vocabulary fills the gaps. tier=decision/execution/influence/all"""
     lib = []
     tiers = TIER_CN.keys() if tier in ("", "all", None) else [tier]
     for t in tiers:
@@ -169,7 +169,7 @@ def titles_for(tier="all", profile_titles=None):
 
 
 def build(platforms, regions, cats, roles, titles, competitors, max_cats=3, max_roles=2, max_tags=9):
-    """返回 [(platform_id, query)]，已去重。"""
+    """Return [(platform_id, query)], de-duplicated."""
     out, seen = [], set()
     cats = [c for c in cats if c][:max_cats] or [""]
     roles = [r for r in roles if r][:max_roles] or [""]

@@ -1,19 +1,19 @@
 {
   "schema_version": 1,
-  "note": "行业包只提供『方法层』建议（分层、角色、渠道、意图词、信号）。它不包含也不得替代任何公司事实；应用后所有建议仍需使用者逐项确认。",
+  "note": "Industry packs provide method-level suggestions only (tiers, roles, channels, intent terms, signals). They contain no company facts and must never replace them; after applying a pack every suggestion still needs item-by-item confirmation by the user.",
   "offer_types": {
-    "physical_product": "有形产品",
-    "software": "软件/SaaS/IT",
-    "service": "人力交付的专业服务",
-    "project": "项目型（按项目成交）",
-    "other": "其他/混合"
+    "physical_product": "physical products",
+    "software": "software / SaaS / IT",
+    "service": "people-delivered professional services",
+    "project": "project-based (closed per project)",
+    "other": "other / mixed"
   },
   "packs": [
     {
       "id": "physical_export",
-      "name": "实体商品外贸/出口制造",
+      "name": "Physical goods export / export manufacturing",
       "offer_type": "physical_product",
-      "suits": "工厂/贸易公司向海外进口商、批发商、品牌方、零售商出口有形产品（消费品、家居、礼品、五金、包装等）",
+      "suits": "Factories / trading companies exporting physical products (consumer goods, home, gifts, hardware, packaging …) to overseas importers, wholesalers, brands and retailers",
       "buyer_titles": [
         "buyer",
         "purchasing manager",
@@ -31,7 +31,7 @@
       "customer_levels": [
         {
           "name": "L1_importers",
-          "desc": "进口商/批发商/分销商",
+          "desc": "importers / wholesalers / distributors",
           "keyword_suffixes": [
             "importer",
             "wholesale",
@@ -41,7 +41,7 @@
         },
         {
           "name": "L2_brands",
-          "desc": "自有品牌方/私牌",
+          "desc": "own brands / private label",
           "keyword_suffixes": [
             "brand",
             "private label",
@@ -50,7 +50,7 @@
         },
         {
           "name": "L3_retail",
-          "desc": "连锁零售/独立零售",
+          "desc": "chain retail / independent retail",
           "keyword_suffixes": [
             "retailer",
             "store chain",
@@ -59,7 +59,7 @@
         },
         {
           "name": "L4_ecommerce",
-          "desc": "电商/独立站卖家",
+          "desc": "e-commerce / independent online sellers",
           "keyword_suffixes": [
             "online store",
             "DTC brand",
@@ -68,7 +68,7 @@
         },
         {
           "name": "L5_projects",
-          "desc": "项目/机构/企业采购",
+          "desc": "project / institutional / corporate procurement",
           "keyword_suffixes": [
             "corporate procurement",
             "project buyer",
@@ -98,10 +98,10 @@
         "media"
       ],
       "demand_signals": [
-        "官网有 wholesale/trade/vendor 页",
-        "海关数据显示持续进口同类货",
-        "展会参展/买家名录",
-        "上新、开店、拓品类新闻"
+        "website has a wholesale / trade / vendor page",
+        "customs data shows continuous imports of similar goods",
+        "exhibitor / buyer lists of trade shows",
+        "news of new products, new stores, category expansion"
       ],
       "entry_offer_examples": [
         "free sample",
@@ -130,13 +130,13 @@
         "job",
         "news"
       ],
-      "compliance_notes": "目标市场的产品安全/标签/认证要求（如 CE、FCC、REACH、FDA、CPSIA 等）按你品类真实适用的写，不适用不写。"
+      "compliance_notes": "Product safety / labelling / certification requirements of the target market (CE, FCC, REACH, FDA, CPSIA …): write only what really applies to your category."
     },
     {
       "id": "industrial_b2b",
-      "name": "工业品/零部件/原材料",
+      "name": "Industrial goods / components / raw materials",
       "offer_type": "physical_product",
-      "suits": "向 OEM 整机厂、维修与集成商、工程公司供应零部件、原材料、设备与耗材",
+      "suits": "Supplying components, raw materials, equipment and consumables to OEMs, maintenance and integration firms, engineering companies",
       "buyer_titles": [
         "procurement manager",
         "purchasing engineer",
@@ -154,7 +154,7 @@
       "customer_levels": [
         {
           "name": "L1_oem",
-          "desc": "整机/设备制造商",
+          "desc": "machine / equipment manufacturers",
           "keyword_suffixes": [
             "OEM",
             "equipment manufacturer",
@@ -163,7 +163,7 @@
         },
         {
           "name": "L2_distributors",
-          "desc": "工业品分销商",
+          "desc": "industrial distributors",
           "keyword_suffixes": [
             "industrial distributor",
             "MRO supplier",
@@ -172,7 +172,7 @@
         },
         {
           "name": "L3_integrators",
-          "desc": "系统集成/工程商",
+          "desc": "system integrators / engineering firms",
           "keyword_suffixes": [
             "system integrator",
             "EPC contractor",
@@ -181,7 +181,7 @@
         },
         {
           "name": "L4_end_users",
-          "desc": "终端工厂/运维",
+          "desc": "end plants / maintenance",
           "keyword_suffixes": [
             "plant",
             "maintenance department",
@@ -211,10 +211,10 @@
         "social"
       ],
       "demand_signals": [
-        "发布 RFQ/招标",
-        "招聘采购/供应链岗位",
-        "新厂/扩产新闻",
-        "在用竞品型号（可替代）"
+        "publishes RFQs / tenders",
+        "hiring procurement / supply-chain roles",
+        "new plant / capacity expansion news",
+        "uses a competitor model (replaceable)"
       ],
       "entry_offer_examples": [
         "sample parts",
@@ -241,13 +241,13 @@
         "consumer",
         "news"
       ],
-      "compliance_notes": "常见门槛：ISO 9001/IATF 16949/AS9100、RoHS/REACH、材料证明、出口管制。只写你真实持有的。"
+      "compliance_notes": "Common thresholds: ISO 9001 / IATF 16949 / AS9100, RoHS / REACH, material certificates, export controls. Write only what you really hold."
     },
     {
       "id": "brand_distribution",
-      "name": "消费品牌招商/渠道分销",
+      "name": "Consumer brand distribution / channel partners",
       "offer_type": "physical_product",
-      "suits": "已有品牌的公司寻找海外代理、分销商、零售渠道（食品饮料除外，见 food_agri）",
+      "suits": "Companies with an existing brand looking for overseas agents, distributors and retail channels (food and beverage excluded, see food_agri)",
       "buyer_titles": [
         "category manager",
         "buyer",
@@ -265,7 +265,7 @@
       "customer_levels": [
         {
           "name": "L1_distributors",
-          "desc": "国家/区域总代、分销商",
+          "desc": "national / regional master agents, distributors",
           "keyword_suffixes": [
             "distributor",
             "exclusive agent",
@@ -274,7 +274,7 @@
         },
         {
           "name": "L2_chains",
-          "desc": "连锁零售/百货/专业店",
+          "desc": "chain retail / department stores / specialty stores",
           "keyword_suffixes": [
             "retail chain",
             "department store",
@@ -283,7 +283,7 @@
         },
         {
           "name": "L3_independent",
-          "desc": "独立门店/精品店",
+          "desc": "independent stores / boutiques",
           "keyword_suffixes": [
             "independent retailer",
             "concept store",
@@ -292,7 +292,7 @@
         },
         {
           "name": "L4_online",
-          "desc": "线上零售商/平台大卖",
+          "desc": "online retailers / large marketplace sellers",
           "keyword_suffixes": [
             "online retailer",
             "marketplace seller",
@@ -319,10 +319,10 @@
         "directory"
       ],
       "demand_signals": [
-        "代理同类竞品",
-        "新开门店/扩张",
-        "社媒征集新品牌",
-        "参加行业展会"
+        "represents similar competitor brands",
+        "new stores / expansion",
+        "calls for new brands on social media",
+        "attends industry trade shows"
       ],
       "entry_offer_examples": [
         "starter order",
@@ -344,13 +344,13 @@
         "review",
         "coupon"
       ],
-      "compliance_notes": "商标在目标国注册状态、独家授权条款、标签/进口资质。"
+      "compliance_notes": "Trademark registration status in the target country, exclusivity terms, labelling / import licences."
     },
     {
       "id": "saas_software",
-      "name": "SaaS/软件/IT 服务",
+      "name": "SaaS / software / IT services",
       "offer_type": "software",
-      "suits": "向企业销售软件订阅、平台、API、IT 外包与系统集成服务",
+      "suits": "Selling software subscriptions, platforms, APIs, IT outsourcing and system integration to companies",
       "buyer_titles": [
         "CTO",
         "head of engineering",
@@ -369,7 +369,7 @@
       "customer_levels": [
         {
           "name": "L1_ideal_fit",
-          "desc": "与你理想客户画像(ICP)高度吻合的公司",
+          "desc": "companies closely matching your ideal customer profile (ICP)",
           "keyword_suffixes": [
             "company",
             "platform",
@@ -378,7 +378,7 @@
         },
         {
           "name": "L2_stack_users",
-          "desc": "使用相邻/竞品工具的公司",
+          "desc": "companies using adjacent / competitor tools",
           "keyword_suffixes": [
             "uses <adjacent-tool>",
             "<competitor> customer",
@@ -387,7 +387,7 @@
         },
         {
           "name": "L3_growth_signal",
-          "desc": "在招聘/融资/扩张的公司",
+          "desc": "companies hiring / raising funds / expanding",
           "keyword_suffixes": [
             "hiring",
             "raised funding",
@@ -396,7 +396,7 @@
         },
         {
           "name": "L4_partners",
-          "desc": "代理/实施伙伴/咨询公司",
+          "desc": "agencies / implementation partners / consultancies",
           "keyword_suffixes": [
             "implementation partner",
             "consultancy",
@@ -429,10 +429,10 @@
         "social"
       ],
       "demand_signals": [
-        "招聘与你解决问题相关的岗位",
-        "刚融资/换 CTO",
-        "在评测站点比较同类工具",
-        "公开抱怨现有工具"
+        "hiring roles related to the problem you solve",
+        "recently funded / new CTO",
+        "comparing similar tools on review sites",
+        "publicly complaining about current tools"
       ],
       "entry_offer_examples": [
         "free trial",
@@ -460,13 +460,13 @@
         "course",
         "job board"
       ],
-      "compliance_notes": "数据保护（GDPR、CCPA）、数据驻留、安全认证；冷邮件须提供退订方式。"
+      "compliance_notes": "Data protection (GDPR, CCPA), data residency, security certifications; cold e-mail must offer an unsubscribe route."
     },
     {
       "id": "professional_services",
-      "name": "专业服务（咨询/营销/设计/法律财税/人力）",
+      "name": "Professional services (consulting / marketing / design / legal & tax / HR)",
       "offer_type": "service",
-      "suits": "代理机构、咨询公司、设计/营销/翻译/法律/会计/招聘等以人力交付的 B2B 服务",
+      "suits": "Agencies, consultancies, design / marketing / translation / legal / accounting / recruiting and other people-delivered B2B services",
       "buyer_titles": [
         "founder",
         "CEO",
@@ -485,7 +485,7 @@
       "customer_levels": [
         {
           "name": "L1_sme",
-          "desc": "中小企业决策人",
+          "desc": "SME decision makers",
           "keyword_suffixes": [
             "SME",
             "small business",
@@ -494,7 +494,7 @@
         },
         {
           "name": "L2_growth",
-          "desc": "扩张期/新进市场公司",
+          "desc": "expanding / market-entering companies",
           "keyword_suffixes": [
             "expanding to",
             "new office",
@@ -503,7 +503,7 @@
         },
         {
           "name": "L3_mid_market",
-          "desc": "中大型企业职能负责人",
+          "desc": "function heads in mid-size and large companies",
           "keyword_suffixes": [
             "head of",
             "director",
@@ -512,7 +512,7 @@
         },
         {
           "name": "L4_referral",
-          "desc": "可转介的伙伴",
+          "desc": "referral partners",
           "keyword_suffixes": [
             "partner agency",
             "consultancy",
@@ -542,10 +542,10 @@
         "social"
       ],
       "demand_signals": [
-        "招聘你能外包替代的岗位",
-        "发布 RFP/招标",
-        "进入新市场/开新办公室",
-        "官网/内容明显缺你擅长的能力"
+        "hiring roles you could replace through outsourcing",
+        "publishes RFPs / tenders",
+        "entering a new market / opening a new office",
+        "website / content clearly lacks the capability you excel at"
       ],
       "entry_offer_examples": [
         "free audit",
@@ -572,13 +572,13 @@
         "free tool",
         "job"
       ],
-      "compliance_notes": "执业资质（律师、会计、医疗等）以真实为准；不承诺结果；案例需客户授权或脱敏。"
+      "compliance_notes": "Professional licences (law, accounting, medical …) must be real; no promised results; cases need customer authorisation or de-identification."
     },
     {
       "id": "logistics_supply_chain",
-      "name": "物流/货代/供应链服务",
+      "name": "Logistics / freight forwarding / supply-chain services",
       "offer_type": "service",
-      "suits": "国际货代、海外仓、报关清关、第三方物流、供应链金融",
+      "suits": "International freight forwarding, overseas warehouses, customs clearance, 3PL, supply-chain finance",
       "buyer_titles": [
         "logistics manager",
         "supply chain manager",
@@ -596,7 +596,7 @@
       "customer_levels": [
         {
           "name": "L1_importers",
-          "desc": "进口商/贸易公司",
+          "desc": "importers / trading companies",
           "keyword_suffixes": [
             "importer",
             "trading company"
@@ -604,7 +604,7 @@
         },
         {
           "name": "L2_ecommerce",
-          "desc": "跨境电商卖家",
+          "desc": "cross-border e-commerce sellers",
           "keyword_suffixes": [
             "Amazon seller",
             "ecommerce brand",
@@ -613,7 +613,7 @@
         },
         {
           "name": "L3_manufacturers",
-          "desc": "出口制造商",
+          "desc": "exporting manufacturers",
           "keyword_suffixes": [
             "exporter",
             "manufacturer"
@@ -621,7 +621,7 @@
         },
         {
           "name": "L4_projects",
-          "desc": "项目物流/大件",
+          "desc": "project logistics / oversized cargo",
           "keyword_suffixes": [
             "project cargo",
             "EPC",
@@ -647,10 +647,10 @@
         "media"
       ],
       "demand_signals": [
-        "海关数据显示稳定进出口量",
-        "新开仓/进入新市场",
-        "招聘物流岗位",
-        "抱怨延误/费用"
+        "customs data shows steady import / export volumes",
+        "new warehouse / new market",
+        "hiring logistics roles",
+        "complaints about delays / costs"
       ],
       "entry_offer_examples": [
         "free quote",
@@ -675,13 +675,13 @@
         "job",
         "courier near me"
       ],
-      "compliance_notes": "货代/报关资质、保险、危险品资质；报价有效期与附加费说明清楚。"
+      "compliance_notes": "Forwarding / customs licences, insurance, dangerous-goods qualifications; quote validity and surcharges stated clearly."
     },
     {
       "id": "healthcare_lab",
-      "name": "医疗器械/实验室/制药耗材（强监管）",
+      "name": "Medical devices / laboratory / pharma consumables (heavily regulated)",
       "offer_type": "physical_product",
-      "suits": "医疗器械、诊断试剂、实验室设备与耗材、原料药/辅料",
+      "suits": "Medical devices, diagnostic reagents, laboratory equipment and consumables, APIs / excipients",
       "buyer_titles": [
         "procurement manager",
         "lab manager",
@@ -699,7 +699,7 @@
       "customer_levels": [
         {
           "name": "L1_distributors",
-          "desc": "持证医疗/实验室分销商",
+          "desc": "licensed medical / laboratory distributors",
           "keyword_suffixes": [
             "medical distributor",
             "lab supplies distributor",
@@ -708,7 +708,7 @@
         },
         {
           "name": "L2_institutions",
-          "desc": "医院集团/实验室/科研机构",
+          "desc": "hospital groups / laboratories / research institutions",
           "keyword_suffixes": [
             "hospital group",
             "laboratory",
@@ -717,7 +717,7 @@
         },
         {
           "name": "L3_brands",
-          "desc": "贴牌/OEM 品牌方",
+          "desc": "private-label / OEM brands",
           "keyword_suffixes": [
             "private label",
             "OEM brand"
@@ -741,10 +741,10 @@
         "competitor"
       ],
       "demand_signals": [
-        "公开招标",
-        "代理竞品",
-        "注册新产品",
-        "扩张到新国家"
+        "public tenders",
+        "represents competitor products",
+        "registering new products",
+        "expanding to new countries"
       ],
       "entry_offer_examples": [
         "sample for evaluation",
@@ -768,13 +768,13 @@
         "pharmacy near me",
         "job"
       ],
-      "compliance_notes": "强监管：注册证/认证必须逐字准确，不得做疗效宣称；目标国注册状态未明确前不得暗示可直接销售。"
+      "compliance_notes": "Heavily regulated: registrations / certifications must be quoted exactly, no efficacy claims; never imply direct sale before the registration status in the target country is clear."
     },
     {
       "id": "food_agri",
-      "name": "食品/饮料/农产品",
+      "name": "Food / beverage / agricultural products",
       "offer_type": "physical_product",
-      "suits": "食品饮料、农产品、配料原料的出口与渠道开发",
+      "suits": "Export and channel development for food and beverage, agricultural products, ingredients",
       "buyer_titles": [
         "category buyer",
         "purchasing manager",
@@ -792,7 +792,7 @@
       "customer_levels": [
         {
           "name": "L1_importers",
-          "desc": "食品进口商/分销商",
+          "desc": "food importers / distributors",
           "keyword_suffixes": [
             "food importer",
             "distributor",
@@ -801,7 +801,7 @@
         },
         {
           "name": "L2_retail",
-          "desc": "商超/专业食品店/线上",
+          "desc": "supermarkets / specialty food stores / online",
           "keyword_suffixes": [
             "supermarket buyer",
             "specialty food store",
@@ -810,7 +810,7 @@
         },
         {
           "name": "L3_foodservice",
-          "desc": "餐饮/酒店/团餐",
+          "desc": "restaurants / hotels / catering",
           "keyword_suffixes": [
             "food service",
             "HoReCa",
@@ -819,7 +819,7 @@
         },
         {
           "name": "L4_ingredients",
-          "desc": "以你产品为原料的生产商",
+          "desc": "manufacturers using your product as an ingredient",
           "keyword_suffixes": [
             "food manufacturer",
             "ingredient buyer",
@@ -844,10 +844,10 @@
         "directory"
       ],
       "demand_signals": [
-        "海关进口记录",
-        "上新/自有品牌计划",
-        "参加食品展",
-        "菜单/配方变化"
+        "customs import records",
+        "new products / private-label plans",
+        "attends food trade shows",
+        "menu / recipe changes"
       ],
       "entry_offer_examples": [
         "sample box",
@@ -871,13 +871,13 @@
         "restaurant review",
         "calories"
       ],
-      "compliance_notes": "食品安全认证、进口国标签与添加剂法规、检疫证书；不得做健康功效宣称。"
+      "compliance_notes": "Food safety certifications, labelling and additive rules of the importing country, quarantine certificates; no health-benefit claims."
     },
     {
       "id": "construction_projects",
-      "name": "建材/工程/项目型销售",
+      "name": "Building materials / engineering / project-based sales",
       "offer_type": "project",
-      "suits": "建材、幕墙、照明、暖通、装配式等以项目为单位成交的产品与服务",
+      "suits": "Building materials, façades, lighting, HVAC, prefabrication and other products and services closed per project",
       "buyer_titles": [
         "procurement manager",
         "project manager",
@@ -895,7 +895,7 @@
       "customer_levels": [
         {
           "name": "L1_contractors",
-          "desc": "总包/分包",
+          "desc": "main contractors / subcontractors",
           "keyword_suffixes": [
             "general contractor",
             "subcontractor",
@@ -904,7 +904,7 @@
         },
         {
           "name": "L2_specifiers",
-          "desc": "建筑师/设计院/顾问",
+          "desc": "architects / design institutes / consultants",
           "keyword_suffixes": [
             "architect",
             "design firm",
@@ -913,7 +913,7 @@
         },
         {
           "name": "L3_developers",
-          "desc": "开发商/业主",
+          "desc": "developers / owners",
           "keyword_suffixes": [
             "developer",
             "property group",
@@ -922,7 +922,7 @@
         },
         {
           "name": "L4_distributors",
-          "desc": "建材分销/安装商",
+          "desc": "building-material distributors / installers",
           "keyword_suffixes": [
             "building materials distributor",
             "installer"
@@ -947,10 +947,10 @@
         "social"
       ],
       "demand_signals": [
-        "项目中标/获批新闻",
-        "招标公告",
-        "设计方案公示",
-        "新开发计划"
+        "project award / approval news",
+        "tender notices",
+        "published design schemes",
+        "new development plans"
       ],
       "entry_offer_examples": [
         "sample board",
@@ -975,13 +975,13 @@
         "home owner",
         "job"
       ],
-      "compliance_notes": "当地建筑规范/防火/能效认证，项目参考需授权。"
+      "compliance_notes": "Local building codes / fire safety / energy certifications; project references need authorisation."
     },
     {
       "id": "energy_cleantech",
-      "name": "新能源/光伏储能/清洁技术",
+      "name": "New energy / solar & storage / clean tech",
       "offer_type": "project",
-      "suits": "光伏组件、储能、充电桩、节能改造等产品与 EPC 服务",
+      "suits": "PV modules, energy storage, EV chargers, energy-efficiency retrofits and EPC services",
       "buyer_titles": [
         "procurement manager",
         "project developer",
@@ -999,7 +999,7 @@
       "customer_levels": [
         {
           "name": "L1_installers",
-          "desc": "安装商/集成商",
+          "desc": "installers / integrators",
           "keyword_suffixes": [
             "solar installer",
             "integrator",
@@ -1008,7 +1008,7 @@
         },
         {
           "name": "L2_epc",
-          "desc": "EPC/开发商",
+          "desc": "EPC / developers",
           "keyword_suffixes": [
             "EPC",
             "project developer",
@@ -1017,7 +1017,7 @@
         },
         {
           "name": "L3_distributors",
-          "desc": "分销商",
+          "desc": "distributors",
           "keyword_suffixes": [
             "distributor",
             "wholesaler"
@@ -1025,7 +1025,7 @@
         },
         {
           "name": "L4_c_and_i",
-          "desc": "工商业业主",
+          "desc": "commercial and industrial owners",
           "keyword_suffixes": [
             "commercial rooftop",
             "factory energy",
@@ -1051,10 +1051,10 @@
         "hiring"
       ],
       "demand_signals": [
-        "新项目备案/并网",
-        "补贴政策变化",
-        "招标",
-        "扩张新区域"
+        "new project filings / grid connection",
+        "subsidy policy changes",
+        "tenders",
+        "expansion to new regions"
       ],
       "entry_offer_examples": [
         "datasheet + certificates",
@@ -1077,13 +1077,13 @@
         "calculator",
         "job"
       ],
-      "compliance_notes": "IEC/UL/本地并网认证、贸易救济（反倾销）与原产地规则要事先核实。"
+      "compliance_notes": "IEC / UL / local grid certifications, trade remedies (anti-dumping) and rules of origin must be verified in advance."
     },
     {
       "id": "education_training",
-      "name": "企业培训/教育服务",
+      "name": "Corporate training / education services",
       "offer_type": "service",
-      "suits": "企业内训、在线课程平台、语言与职业培训、学校/机构合作",
+      "suits": "In-company training, online course platforms, language and vocational training, school / institution partnerships",
       "buyer_titles": [
         "HR director",
         "L&D manager",
@@ -1101,7 +1101,7 @@
       "customer_levels": [
         {
           "name": "L1_corporate",
-          "desc": "企业 HR/L&D",
+          "desc": "corporate HR / L&D",
           "keyword_suffixes": [
             "L&D",
             "HR department",
@@ -1110,7 +1110,7 @@
         },
         {
           "name": "L2_institutions",
-          "desc": "学校/大学/培训机构",
+          "desc": "schools / universities / training institutes",
           "keyword_suffixes": [
             "school",
             "university",
@@ -1119,7 +1119,7 @@
         },
         {
           "name": "L3_associations",
-          "desc": "行业协会/商会",
+          "desc": "industry associations / chambers of commerce",
           "keyword_suffixes": [
             "association",
             "chamber of commerce"
@@ -1143,10 +1143,10 @@
         "media"
       ],
       "demand_signals": [
-        "招聘 L&D/HR",
-        "新政策需要培训",
-        "扩张/并购",
-        "公开招标"
+        "hiring L&D / HR",
+        "new policy requires training",
+        "expansion / M&A",
+        "public tenders"
       ],
       "entry_offer_examples": [
         "free workshop",
@@ -1168,13 +1168,13 @@
         "homework",
         "free course"
       ],
-      "compliance_notes": "资质与认证、学员数据隐私、不承诺就业或通过率。"
+      "compliance_notes": "Accreditations and certifications, learner data privacy; no promised employment or pass rates."
     },
     {
       "id": "packaging_materials",
-      "name": "包装材料/包装容器",
+      "name": "Packaging materials / containers",
       "offer_type": "physical_product",
-      "suits": "玻璃瓶罐、塑料/金属容器、纸盒彩盒、软包装、标签与包装辅料等，卖给品牌方、灌装/代工厂、包装分销商",
+      "suits": "Glass bottles and jars, plastic / metal containers, folding cartons, flexible packaging, labels and packaging accessories sold to brands, fillers / co-packers and packaging distributors",
       "buyer_titles": [
         "packaging buyer",
         "packaging manager",
@@ -1192,7 +1192,7 @@
       "customer_levels": [
         {
           "name": "L1_brand_owners",
-          "desc": "品牌方（饮料/食品/美妆/日化/保健品/香氛等自有品牌）",
+          "desc": "brands (beverage / food / beauty / household / supplements / fragrance own brands)",
           "keyword_suffixes": [
             "brand",
             "beauty brand",
@@ -1202,7 +1202,7 @@
         },
         {
           "name": "L2_fillers",
-          "desc": "灌装厂/代工厂/OEM 生产商",
+          "desc": "fillers / co-packers / OEM manufacturers",
           "keyword_suffixes": [
             "contract filler",
             "co-packer",
@@ -1212,7 +1212,7 @@
         },
         {
           "name": "L3_distributors",
-          "desc": "包装分销商/包装贸易商",
+          "desc": "packaging distributors / traders",
           "keyword_suffixes": [
             "packaging distributor",
             "packaging supplier",
@@ -1221,7 +1221,7 @@
         },
         {
           "name": "L4_startups",
-          "desc": "新锐/众筹/小批量品牌（低起订量切入）",
+          "desc": "emerging / crowdfunded / small-batch brands (low-MOQ entry)",
           "keyword_suffixes": [
             "startup brand",
             "small batch",
@@ -1251,11 +1251,11 @@
         "rfq"
       ],
       "demand_signals": [
-        "新品上市/换包装/品牌重塑新闻",
-        "官网或电商出现新 SKU、新规格",
-        "招聘包装工程师/包装开发岗位",
-        "参加包装或终端行业展会",
-        "海关数据显示持续进口同类容器"
+        "new product launch / repackaging / rebranding news",
+        "new SKUs or sizes on the website or online store",
+        "hiring packaging engineers / packaging development roles",
+        "attends packaging or end-industry trade shows",
+        "customs data shows continuous imports of similar containers"
       ],
       "entry_offer_examples": [
         "stock-mould samples",
@@ -1285,13 +1285,13 @@
         "job",
         "news"
       ],
-      "compliance_notes": "食品接触/化妆品接触材料合规（如 EU 1935/2004、FDA 21 CFR、LFGB）、包装与包装废弃物法规（如欧盟 PPWR、EPR 注册）、回收标识要求——只写你产品真实适用并能出具证明的。"
+      "compliance_notes": "Food-contact / cosmetic-contact material compliance (EU 1935/2004, FDA 21 CFR, LFGB), packaging and packaging-waste rules (EU PPWR, EPR registration), recycling labelling — write only what really applies to your product and can be evidenced."
     },
     {
       "id": "custom",
-      "name": "自定义（以上都不贴切）",
+      "name": "Custom (none of the above fits)",
       "offer_type": "other",
-      "suits": "空白骨架：所有分层、渠道、意图词由你在建档时自己填写",
+      "suits": "Blank skeleton: all tiers, channels and intent terms are filled in by you at install",
       "buyer_titles": [],
       "channel_keywords": [],
       "customer_levels": [],
@@ -1311,7 +1311,7 @@
       "key_fact_examples": [],
       "competitor_marker_examples": [],
       "exclude_keyword_examples": [],
-      "compliance_notes": "按你行业的真实法规填写。"
+      "compliance_notes": "Fill in the real regulations of your industry."
     }
   ]
 }

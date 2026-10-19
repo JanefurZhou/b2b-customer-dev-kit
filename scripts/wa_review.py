@@ -1,38 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-wa_review.py — WhatsApp 渠道专属复盘脚本（通用版，行业无关）
+wa_review.py — WhatsApp channel review script (generic edition, industry-agnostic)
 
-【定位】把 WhatsApp 这条开发渠道单独拉出来复盘，回答三个问题：
-  1. WA 漏斗跑得怎么样？（触达 → 回复 → 成单，各级转化率）
-  2. WA 成单都长什么样？（地区/需求标签/钩子/材质分布，最有效的开场词）
-  3. WA 和邮件比，哪条渠道更值得加码？（--compare-email）
+[Purpose] Review the WhatsApp outreach channel on its own and answer three questions:
+  1. How is the WA funnel performing? (reached → replied → won, conversion at each level)
+  2. What do WA wins look like? (region / need tag / hook / variant split, the most effective opening words)
+  3. WA vs e-mail: which channel deserves more investment? (--compare-email)
 
-【铁律遵守】
-  - 只读，绝不改任何客户数据（14 数据铁律）。本脚本不写 success_cases.csv / wa_contacts.csv / wa_progress.json。
-  - 只出建议（actionable_insights），最终由你拍板（元需求2）。信号不足会明说 NEED_MORE_DATA。
+[Iron rules]
+  - Read-only; never changes customer data (data rule 14). This script does not write success_cases.csv / wa_contacts.csv / wa_progress.json.
+  - Suggestions only (actionable_insights); you make the final call. With too little signal it says NEED_MORE_DATA.
 
-【WA 成单如何识别】双通道并用：
-  A2（首选，精确）：success_cases.csv 里 won_channel == 'wa' 的行。
-  A1（兜底，关联）：success_cases.csv 里 brand 出现在 wa_contacts.csv 中（且该 WA 联系人 status 含 'wa'），
-                    但该行 won_channel 为空时，视为「疑似 WA 成单」并单列出来提示你补 won_channel。
+[How WA wins are identified] two channels combined:
+  A2 (preferred, exact): rows in success_cases.csv with won_channel == 'wa'.
+  A1 (fallback, by association): rows in success_cases.csv whose brand appears in wa_contacts.csv (and that WA contact's status contains 'wa'),
+                    but won_channel is empty → treated as a "suspected WA win" and listed separately so you can fill won_channel.
 
-【数据来源】统一走 B2B_DATA_DIR（默认 ./data）：
-  - success_cases.csv   成功案例（含 won_channel / whatsapp / hook_type / need_tag / region ...）
-  - wa_contacts.csv     WA 联系人（wa_number/brand/contact_name/source_date/status）
-  - wa_progress.json    群发进度（total/sent/skipped/last_index；sent 可为字符串或含 phone/brand 的字典）
+[Data sources] all under B2B_DATA_DIR (default ./data):
+  - success_cases.csv   success cases (won_channel / whatsapp / hook_type / need_tag / region ...)
+  - wa_contacts.csv     WA contacts (wa_number/brand/contact_name/source_date/status)
+  - wa_progress.json    bulk-send progress (total/sent/skipped/last_index; sent may be a string or a dict with phone/brand)
 
-【用法】
-  python3 scripts/wa_review.py review                     # WA 成单复盘（JSON 到 stdout）
-  python3 scripts/wa_review.py review --html out.html     # 额外产出可视化 HTML 报告
-  python3 scripts/wa_review.py review --compare-email     # 追加「邮件 vs WA」对比板块
-  python3 scripts/wa_review.py funnel                     # 只看 WA 漏斗（触达→回复→成单）
+[Usage]
+  python3 scripts/wa_review.py review                     # WA win review (JSON to stdout)
+  python3 scripts/wa_review.py review --html out.html     # also produce a visual HTML report
+  python3 scripts/wa_review.py review --compare-email     # add the "e-mail vs WA" comparison section
+  python3 scripts/wa_review.py funnel                     # WA funnel only (reached → replied → won)
   python3 scripts/wa_review.py funnel --html funnel.html
 """
 
 import os
 import sys
-for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+for _s in (sys.stdout, sys.stderr):  # keep non-ASCII output safe when redirected or on legacy Windows consoles
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
@@ -47,7 +47,7 @@ from datetime import datetime
 DATA_DIR = os.environ.get("B2B_DATA_DIR", "data")
 
 
-# ---------- 只读 IO ----------
+# ---------- read-only IO ----------
 def _path(name):
     return os.path.join(DATA_DIR, name)
 
@@ -82,23 +82,23 @@ def _norm(s):
     return (s or '').strip().lower()
 
 
-# ---------- 成单渠道识别 ----------
+# ---------- won-channel identification ----------
 def _wa_brands(wa_contacts):
-    """返回 {规范化brand: status原文}，仅收 status 含 'wa' 的联系人（wa_only / wa 等）。"""
+    """Return {normalised brand: raw status}, only contacts whose status contains 'wa' (wa_only / wa etc.)."""
     brands = {}
     for r in wa_contacts:
         st = _norm(r.get('status'))
         b = _norm(r.get('brand'))
         if not b:
             continue
-        # status 含 wa 视为 WA 渠道联系人；空 status 也保留（曾进过 WA 名单）
+        # status containing wa = WA-channel contact; empty status is kept too (was once on the WA list)
         if 'wa' in st or st == '':
             brands[b] = r.get('status', '')
     return brands
 
 
 def classify_cases(cases, wa_contacts):
-    """把成功案例分成：确定WA成单 / 疑似WA成单 / 邮件或其他成单。"""
+    """Split success cases into: confirmed WA wins / suspected WA wins / e-mail or other wins."""
     wa_brand_map = _wa_brands(wa_contacts)
     confirmed_wa, suspect_wa, other = [], [], []
     for c in cases:
@@ -109,17 +109,17 @@ def classify_cases(cases, wa_contacts):
         elif wc in ('email', 'mail', 'e-mail'):
             other.append(c)
         elif wc == '' and brand in wa_brand_map:
-            # 无 won_channel 但品牌在 WA 名单里 → 疑似（A1 兜底）
+            # no won_channel but the brand is on the WA list → suspected (A1 fallback)
             suspect_wa.append(c)
         else:
             other.append(c)
     return confirmed_wa, suspect_wa, other, wa_brand_map
 
 
-# ---------- 词频：WA 开场词 ----------
-HOOK_KEYWORDS = ['个性化', '具名', '决策人', '钩子', '跟进', '差异化', '母语',
-                 '本地化', '样品', '试用', '演示', 'demo', '案例', '试点', '工艺', '认证', '合规',
-                 '可持续', '新品', '语音', '目录', 'MOQ', '报价', '视频', '图片']
+# ---------- keyword frequency: WA opening words ----------
+HOOK_KEYWORDS = ['personalised', 'named', 'decision maker', 'hook', 'follow-up', 'differentiator', 'native language',
+                 'localised', 'sample', 'trial', 'demo', 'case study', 'pilot', 'process', 'certification', 'compliance',
+                 'sustainable', 'new range', 'voice note', 'catalogue', 'MOQ', 'quote', 'video', 'photo']
 
 
 def _keyword_hits(rows, field):
@@ -145,10 +145,10 @@ def _top_cases(rows, n=5):
     } for c in ordered]
 
 
-# ---------- 漏斗 ----------
+# ---------- funnel ----------
 def build_funnel(wa_contacts, wa_progress, confirmed_wa, suspect_wa):
-    """WA 漏斗：触达（群发 sent）→ 回复（wa_contacts status=replied）→ 成单（confirmed+suspect）。"""
-    # 触达数：优先 wa_progress 的 sent；否则用 wa_contacts 里状态 >= sent 的数量
+    """WA funnel: reached (bulk sent) → replied (wa_contacts status=replied) → won (confirmed+suspect)."""
+    # reached: prefer sent from wa_progress; otherwise count wa_contacts with status >= sent
     reached = None
     if wa_progress and isinstance(wa_progress.get('sent'), list):
         reached = len(wa_progress['sent'])
@@ -172,30 +172,30 @@ def build_funnel(wa_contacts, wa_progress, confirmed_wa, suspect_wa):
         'reply_rate_pct': rate(replied, reached),
         'won_rate_of_reached_pct': rate(won, reached),
         'won_rate_of_replied_pct': rate(won, replied),
-        'note': '触达数据来自 wa_progress.json（群发进度）；若为空则回退到 wa_contacts.csv 状态统计。回复率依赖 wa_contacts.csv 的 status 是否回写 replied。'
+        'note': 'Reached comes from wa_progress.json (bulk-send progress); if empty it falls back to wa_contacts.csv status counts. Reply rate depends on wa_contacts.csv status being written back as replied.'
     }
 
 
-# ---------- review 主逻辑 ----------
+# ---------- review main logic ----------
 def cmd_review(args):
     cases = _read_csv('success_cases.csv')
     wa_contacts = _read_csv('wa_contacts.csv')
     wa_progress = _read_json('wa_progress.json')
 
     if not cases:
-        out = {'status': 'NO_DATA', 'message': '暂无成功案例（success_cases.csv 为空），无法复盘 WA 渠道。'}
+        out = {'status': 'NO_DATA', 'message': 'No success cases yet (success_cases.csv is empty); the WA channel cannot be reviewed.'}
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return
 
     confirmed, suspect, other, wa_brand_map = classify_cases(cases, wa_contacts)
-    wa_rows = confirmed + suspect  # 复盘口径：确定 + 疑似 一起看规律
+    wa_rows = confirmed + suspect  # review scope: confirmed + suspected together, to see patterns
 
     if not wa_rows:
         out = {
             'status': 'NEED_MORE_DATA',
-            'message': '未识别到任何 WA 成单。请在成交时用 csv_ops.py add_success 带上 --won_channel wa，'
-                       '或确认成交品牌是否已进 wa_contacts.csv。',
-            'hint': '当前成功案例总数=%d，其中 won_channel=email/其他=%d。' % (len(cases), len(other))
+            'message': 'No WA win identified. Use csv_ops.py add_success with --won_channel wa when a deal closes, '
+                       'or check whether the won brand is in wa_contacts.csv.',
+            'hint': 'Total success cases=%d, of which won_channel=email/other=%d.' % (len(cases), len(other))
         }
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return
@@ -236,7 +236,7 @@ def cmd_review(args):
 
     if getattr(args, 'html', None):
         _write_html_review(result, args.html)
-        print('\n✅ HTML 报告已生成: %s' % args.html, file=sys.stderr)
+        print('\n✅ HTML report generated: %s' % args.html, file=sys.stderr)
 
 
 def _insights(wa_rows, funnel, confirmed, suspect):
@@ -245,30 +245,30 @@ def _insights(wa_rows, funnel, confirmed, suspect):
     by_need = Counter(r.get('need_tag') or 'Unknown' for r in wa_rows)
     by_hook = Counter(r.get('hook_type') or 'Unknown' for r in wa_rows)
     if by_region:
-        ins.append('WA 最出单地区: %s（%d 单）— 建议 WA 名单向该地区加权。'
+        ins.append('Top WA winning region: %s (%d deals) — weight the WA list towards it.'
                    % by_region.most_common(1)[0])
     if by_need:
-        ins.append('WA 最常成交的需求类型: %s — WA 开发信钩子优先命中它。'
+        ins.append('Most common WA winning need type: %s — aim WA outreach hooks at it first.'
                    % by_need.most_common(1)[0][0])
     if by_hook:
-        ins.append('WA 最有效钩子: %s — 群发模板 {intro} 后优先用这个钩子。'
+        ins.append('Most effective WA hook: %s — use it first after {intro} in the bulk template.'
                    % by_hook.most_common(1)[0][0])
     if funnel.get('reply_rate_pct') is not None:
-        ins.append('WA 回复率 %.1f%%；若明显高于邮件回复率，说明 WA 值得作为「邮件未回」的转化主渠道。'
+        ins.append('WA reply rate %.1f%%; if clearly above the e-mail reply rate, WA deserves to be the main conversion channel for "e-mail unanswered".'
                    % funnel['reply_rate_pct'])
     else:
-        ins.append('WA 回复率暂无法计算：请在 wa_contacts.csv 里把回复的联系人 status 回写为 replied（闭环所需）。')
+        ins.append('WA reply rate cannot be computed yet: set status to replied for responding contacts in wa_contacts.csv (needed to close the loop).')
     if suspect:
-        ins.append('有 %d 个疑似 WA 成单缺 won_channel 标记 — 建议补 --won_channel wa，复盘口径才准。'
+        ins.append('%d suspected WA wins lack the won_channel mark — add --won_channel wa so the review scope is accurate.'
                    % len(suspect))
-    ins.append('【拍板提示】以上均为建议，最终 WA 加码/收缩由你决定。')
+    ins.append('[Decision note] Everything above is a suggestion; scaling WA up or down is your call.')
     return ins
 
 
 def _compare_email(wa_rows, email_rows):
     def block(rows, label):
         if not rows:
-            return {'label': label, 'cases': 0, 'note': '无数据'}
+            return {'label': label, 'cases': 0, 'note': 'no data'}
         amt = sum(_f(r.get('order_amount')) for r in rows)
         return {
             'label': label,
@@ -279,18 +279,18 @@ def _compare_email(wa_rows, email_rows):
             'top_region': (Counter(r.get('region') or 'Unknown' for r in rows).most_common(1)[0][0]),
         }
     wa_b = block(wa_rows, 'WhatsApp')
-    em_b = block(email_rows, 'Email/其他')
+    em_b = block(email_rows, 'Email/other')
     verdict = []
     if wa_b.get('avg_amount_usd') and em_b.get('avg_amount_usd'):
         if wa_b['avg_amount_usd'] > em_b['avg_amount_usd']:
-            verdict.append('WA 单均金额更高 → WA 客户质量偏高，值得加码。')
+            verdict.append('WA average deal size is higher → WA customers are higher quality; worth scaling.')
         else:
-            verdict.append('邮件单均金额更高 → WA 更适合走量/铺面，大单仍靠邮件精耕。')
-    verdict.append('【拍板提示】渠道预算分配由你定，脚本只给对比事实。')
+            verdict.append('E-mail average deal size is higher → WA suits volume/coverage; large deals still rely on e-mail.')
+    verdict.append('[Decision note] Channel budget allocation is yours; the script only gives comparison facts.')
     return {'whatsapp': wa_b, 'email_other': em_b, 'verdict': verdict}
 
 
-# ---------- funnel 子命令 ----------
+# ---------- funnel sub-command ----------
 def cmd_funnel(args):
     cases = _read_csv('success_cases.csv')
     wa_contacts = _read_csv('wa_contacts.csv')
@@ -301,17 +301,17 @@ def cmd_funnel(args):
     print(json.dumps(out, ensure_ascii=False, indent=2))
     if getattr(args, 'html', None):
         _write_html_funnel(funnel, args.html)
-        print('\n✅ HTML 漏斗图已生成: %s' % args.html, file=sys.stderr)
+        print('\n✅ HTML funnel chart generated: %s' % args.html, file=sys.stderr)
 
 
-# ---------- HTML 渲染 ----------
+# ---------- HTML rendering ----------
 def _esc(s):
     return _html.escape(str(s))
 
 
 def _bars(d, title):
     if not d:
-        return '<p class="muted">（暂无数据）</p>'
+        return '<p class="muted">(no data)</p>'
     mx = max(d.values()) or 1
     rows = []
     for k, v in d.items():
@@ -351,14 +351,14 @@ ul.ins li{margin:6px 0;font-size:13px}.muted{color:#9ca3af;font-size:12px}
 
 def _funnel_html_block(f):
     def step(label, val, rate_label=''):
-        return ('<div class="step"><span class="box">%s：%s</span>'
+        return ('<div class="step"><span class="box">%s: %s</span>'
                 '<span class="rate">%s</span></div>' % (_esc(label), _esc(val), _esc(rate_label)))
-    rr = '' if f.get('reply_rate_pct') is None else '回复率 %s%%' % f['reply_rate_pct']
-    wr = '' if f.get('won_rate_of_reached_pct') is None else '触达成单率 %s%%' % f['won_rate_of_reached_pct']
+    rr = '' if f.get('reply_rate_pct') is None else 'reply rate %s%%' % f['reply_rate_pct']
+    wr = '' if f.get('won_rate_of_reached_pct') is None else 'won rate of reached %s%%' % f['won_rate_of_reached_pct']
     return ('<div class="funnel">%s%s%s<div class="warn">%s</div></div>' % (
-        step('触达', f.get('reached', 0)),
-        step('回复', f.get('replied', 0), rr),
-        step('成单(含疑似)', f.get('won_incl_suspect', 0), wr),
+        step('Reached', f.get('reached', 0)),
+        step('Replied', f.get('replied', 0), rr),
+        step('Won (incl. suspected)', f.get('won_incl_suspect', 0), wr),
         _esc(f.get('note', ''))))
 
 
@@ -374,44 +374,44 @@ def _write_html_review(r, path):
     if 'compare_email' in r:
         ce = r['compare_email']
         def cb(b):
-            return ('<div class="card"><div class="l">%s</div><div class="n">%s单</div>'
-                    '<div class="l">单均 $%s · 主钩子 %s</div></div>' % (
+            return ('<div class="card"><div class="l">%s</div><div class="n">%s deals</div>'
+                    '<div class="l">avg $%s · main hook %s</div></div>' % (
                         _esc(b['label']), _esc(b.get('cases', 0)),
                         _esc(b.get('avg_amount_usd', '-')), _esc(b.get('top_hook', '-'))))
-        cmp_html = ('<h2>邮件 vs WhatsApp 对比</h2><div class="cards">%s%s</div>'
+        cmp_html = ('<h2>E-mail vs WhatsApp</h2><div class="cards">%s%s</div>'
                     '<ul class="ins">%s</ul>' % (
                         cb(ce['whatsapp']), cb(ce['email_other']),
                         ''.join('<li>%s</li>' % _esc(v) for v in ce.get('verdict', []))))
     doc = """<!doctype html><html lang="zh"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>WhatsApp 渠道复盘</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>WhatsApp channel review</title>
 <style>%s</style></head><body><div class="wrap">
-<h1>📱 WhatsApp 渠道复盘报告</h1>
-<div class="sub">生成时间 %s · 仅读不改 · 结论仅供参考，最终你拍板</div>
+<h1>📱 WhatsApp channel review</h1>
+<div class="sub">generated %s · read-only · conclusions are suggestions, you decide</div>
 <div class="cards">
-<div class="card"><div class="n">%s</div><div class="l">WA 成单数(含疑似)</div></div>
-<div class="card"><div class="n">$%s</div><div class="l">WA 成单总额</div></div>
-<div class="card"><div class="n">$%s</div><div class="l">WA 单均金额</div></div>
-<div class="card"><div class="n">%s / %s</div><div class="l">确定 / 疑似</div></div>
+<div class="card"><div class="n">%s</div><div class="l">WA wins (incl. suspected)</div></div>
+<div class="card"><div class="n">$%s</div><div class="l">WA won amount</div></div>
+<div class="card"><div class="n">$%s</div><div class="l">WA average deal</div></div>
+<div class="card"><div class="n">%s / %s</div><div class="l">confirmed / suspected</div></div>
 </div>
-<h2>WA 漏斗</h2>%s
-<h2>WA 成单地区分布</h2>%s
-<h2>WA 成单需求类型分布</h2>%s
-<h2>WA 最有效钩子类型</h2>%s
-<h2>WA 最佳开场词（词频）</h2>%s
-<h2>Top WA 成单案例</h2>
-<table><tr><th>客户</th><th>地区</th><th>需求</th><th>钩子</th><th>金额</th></tr>%s</table>
+<h2>WA funnel</h2>%s
+<h2>WA wins by region</h2>%s
+<h2>WA wins by need type</h2>%s
+<h2>Most effective WA hook types</h2>%s
+<h2>Best WA opening words (frequency)</h2>%s
+<h2>Top WA wins</h2>
+<table><tr><th>Customer</th><th>Region</th><th>Need</th><th>Hook</th><th>Amount</th></tr>%s</table>
 %s
-<h2>可行动洞察（建议）</h2><ul class="ins">%s</ul>
+<h2>Actionable insights (suggestions)</h2><ul class="ins">%s</ul>
 </div></body></html>""" % (
         HTML_CSS, _esc(r.get('generated_at', '')),
         _esc(s['wa_cases_total']), _esc(s['total_amount_usd']), _esc(s['avg_amount_usd']),
         _esc(s['confirmed_wa']), _esc(s['suspect_wa']),
         _funnel_html_block(r['funnel']),
-        _bars(r.get('by_region', {}), '地区'),
-        _bars(r.get('by_need_tag', {}), '需求'),
-        _bars(r.get('by_hook_type', {}), '钩子'),
-        _bars(r.get('best_opening_keywords', {}), '开场词'),
-        top_rows or '<tr><td colspan="5" class="muted">暂无</td></tr>',
+        _bars(r.get('by_region', {}), 'region'),
+        _bars(r.get('by_need_tag', {}), 'need'),
+        _bars(r.get('by_hook_type', {}), 'hook'),
+        _bars(r.get('best_opening_keywords', {}), 'opening word'),
+        top_rows or '<tr><td colspan="5" class="muted">none</td></tr>',
         cmp_html, ins)
     with open(path, 'w', encoding="utf-8") as f:
         f.write(doc)
@@ -419,10 +419,10 @@ def _write_html_review(r, path):
 
 def _write_html_funnel(f, path):
     doc = """<!doctype html><html lang="zh"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>WhatsApp 漏斗</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>WhatsApp funnel</title>
 <style>%s</style></head><body><div class="wrap">
-<h1>📱 WhatsApp 开发漏斗</h1>
-<div class="sub">仅读不改 · 触达 → 回复 → 成单</div>
+<h1>📱 WhatsApp outreach funnel</h1>
+<div class="sub">read-only · reached → replied → won</div>
 %s</div></body></html>""" % (HTML_CSS, _funnel_html_block(f))
     with open(path, 'w', encoding="utf-8") as f2:
         f2.write(doc)
@@ -431,19 +431,19 @@ def _write_html_funnel(f, path):
 # ---------- CLI ----------
 def build_parser():
     p = argparse.ArgumentParser(
-        description='WhatsApp 渠道专属复盘（只读，不改客户数据）',
+        description='WhatsApp channel review (read-only, never changes customer data)',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__)
     sub = p.add_subparsers(dest='cmd')
 
-    pr = sub.add_parser('review', help='WA 成单复盘（JSON，可选 --html / --compare-email）')
-    pr.add_argument('--html', metavar='FILE', help='额外输出 HTML 报告到指定文件')
+    pr = sub.add_parser('review', help='WA win review (JSON; optional --html / --compare-email)')
+    pr.add_argument('--html', metavar='FILE', help='Also write an HTML report to this file')
     pr.add_argument('--compare-email', action='store_true', dest='compare_email',
-                    help='追加「邮件 vs WA」对比板块')
+                    help='Add the "e-mail vs WA" comparison section')
     pr.set_defaults(func=cmd_review)
 
-    pf = sub.add_parser('funnel', help='只看 WA 漏斗（触达→回复→成单）')
-    pf.add_argument('--html', metavar='FILE', help='输出 HTML 漏斗图')
+    pf = sub.add_parser('funnel', help='WA funnel only (reached → replied → won)')
+    pf.add_argument('--html', metavar='FILE', help='Write an HTML funnel chart')
     pf.set_defaults(func=cmd_funnel)
 
     return p

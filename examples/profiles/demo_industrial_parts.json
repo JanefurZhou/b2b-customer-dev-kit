@@ -95,8 +95,8 @@
     "require_confirmed_email": true,
     "notes": ""
   },
-  "credentials_note": "SMTP/IMAP 密码等密钥不要写在这里，运行时通过环境变量提供：SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS/IMAP_*",
-  "_demo": "虚构演示档案：只演示字段怎么填，所有名称、域名、数字都是假的；不得用于真实发信，也不得当作任何用户的事实。",
+  "credentials_note": "Never put SMTP/IMAP passwords or other keys here; provide them at runtime through environment variables: SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS/IMAP_*",
+  "_demo": "Fictional demo profile: shows only how to fill the fields; every name, domain and number is made up; never use it for real sending and never copy it into a real profile as any user's facts.",
   "data_sources": {
     "customer_db": "none",
     "customer_db_files": [],

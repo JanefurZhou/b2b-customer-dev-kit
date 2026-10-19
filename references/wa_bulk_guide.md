@@ -1,111 +1,113 @@
-# WhatsApp 群发执行详细指南（邮件 → WA 闭环的最后一环）
+# WhatsApp bulk-send execution guide (the last link of the e-mail → WA loop)
 
-> 本指南是 SKILL.md「九·五、WhatsApp 群发执行」的展开细节。
-> 上游：看板 `email_dashboard.py` 导出的 `wa_targets.json`（pending 名单）。
-> 执行引擎：`scripts/wa_bulk/wa_bulk_sender.py` + 3 个 PowerShell 脚本。
-> 运行环境：**Windows 桌面 + WhatsApp Desktop（Store 版）+ 一台已登录的本地设备（设备名在首次建档/执行时由你指定，记作 <local-device>）**。
-
----
-
-## 一、整条闭环怎么串起来
-
-```
-① 邮件开发（六步法）→ 客户没回 / 明确说加 WA
-② csv_ops.py mark_wa_only <email> <wa> <brand> <name>  → 回写"转WA"状态
-③ email_dashboard.py 生成看板 → 自动导出 wa_targets.json（pending / done / all）
-④ wa_bulk_sender.py convert wa_targets.json → 群发输入（Format B 模板+变量，见下）
-⑤ wa_bulk_sender.py validate → preview（只读预览）→ harness（发给自己测试号）
-⑥ 确认无误 → 正式群发（每条：开聊天→popup检测→截图验证→发送→checkpoint）
-⑦ 发完 audit 复查截图 → 回写 wa_status="sent" → 下次看板归入"已转WA"
-```
-
-**关键**：看板的 pending 名单和群发引擎是天然上下游。名单里的 `whatsapp` 号 + `brand` + `contact` 可直接映射成群发模板的 `phone` / `brand` / `intro` 变量。
+> This guide expands the WhatsApp bulk-send section of SKILL.md.
+> Upstream: `wa_targets.json` (pending list) exported by the dashboard `email_dashboard.py`.
+> Engine: `scripts/wa_bulk/wa_bulk_sender.py` + 3 PowerShell scripts.
+> Environment: **Windows desktop + WhatsApp Desktop (Store edition) + one logged-in local device (device name set by you at first install / run, referred to as <local-device>)**.
 
 ---
 
-## 二、双号体系（通用配置）
+## 1. How the whole loop fits together
 
-| 角色 | 号码 | 用途 |
+```
+① e-mail development (six steps) → customer did not reply / explicitly asked for WA
+② csv_ops.py mark_wa_only <email> <wa> <brand> <name>  → writes back the "moved to WA" status
+③ email_dashboard.py builds the dashboard → exports wa_targets.json automatically (pending / done / all)
+④ wa_bulk_sender.py convert wa_targets.json → bulk-send input (Format B template + variables, see below)
+⑤ wa_bulk_sender.py validate → preview (read-only) → harness (send to your own test number)
+⑥ confirmed → real bulk send (per message: open chat → popup detection → screenshot verification → send → checkpoint)
+⑦ audit re-checks screenshots → write back wa_status="sent" → the dashboard files it under "moved to WA" next time
+```
+
+**Key**: the dashboard's pending list and the bulk engine are natural upstream / downstream. `whatsapp` + `brand` + `contact` in the list map directly to the template variables `phone` / `brand` / `intro`.
+
+---
+
+## 2. Two-number system (generic configuration)
+
+| Role | Number | Use |
 |------|------|------|
-| **小号（开发号）** | `<wa-outreach-number>`（E.164，使用前由你确认填入） | WA 桌面版登录、用来发消息。被封只损失开发号 |
-| **大号（客户对接号）** | 建档 `contact.whatsapp`，即 `WhatsApp: +<country-code-number>` | 邮件/WA 签名里引导客户加的号，长期对接、不群发 |
+| **Small number (outreach number)** | `<wa-outreach-number>` (E.164, confirmed and filled in by you before use) | logged in on WA Desktop, sends messages. A ban only costs the outreach number |
+| **Main number (customer-facing)** | profile `contact.whatsapp`, i.e. `WhatsApp: +<country-code-number>` | the number customers are invited to add in e-mail / WA signatures; long-term conversations, never bulk-sends |
 
-**铁律**：群发只用小号；harness 测试号也用小号自己发给自己看。绝不用大号群发。开发号未经用户确认不得自行填写或编造。
+**Iron rule**: bulk sends only from the small number; the harness test number is also the small number sending to itself. Never bulk-send from the main number. The outreach number is never filled in or invented without the user's confirmation.
 
 ---
 
-## 三、Store版WA 特性（必读，否则脚本失效）
+## 3. Store-edition WA specifics (must read, or the scripts fail)
 
-| 特性 | Store版 | 影响 |
+| Property | Store edition | Impact |
 |------|---------|------|
-| 进程名 | `WhatsApp.Root.exe` | `Get-Process` 必须用 `WhatsApp.Root`，不能用 `WhatsApp` |
-| 窗口标题 | **始终是"WhatsApp"不变** | 不能靠 title 判断当前聊天对象 |
-| 号码注册判断 | popup 白屏检测 | 屏幕中心 3×3 采样 9 点，≥6 白 → 未注册 |
-| 协议注册 | AppxManifest.xml 声明 | HKCU 残缺键会覆盖正确注册，需清理 |
+| process name | `WhatsApp.Root.exe` | `Get-Process` must use `WhatsApp.Root`, not `WhatsApp` |
+| window title | **always "WhatsApp"** | the title cannot identify the current chat |
+| registration check | popup white-screen detection | 9 sample points in a 3×3 grid at the screen centre, ≥6 white → unregistered |
+| protocol registration | declared in AppxManifest.xml | a broken HKCU key overrides the correct registration and must be removed |
 
-## 四、whatsapp:// 协议修复
+## 4. Repairing the whatsapp:// protocol
 
-Store版可能存在 `HKCU:\SOFTWARE\Classes\whatsapp` 残缺注册表键（只有协议名、没有 `shell\open\command`），导致 `whatsapp://send?phone=xxx` 不生效。
+The Store edition may leave a broken registry key `HKCU:\SOFTWARE\Classes\whatsapp` (protocol name only, no `shell\open\command`), so `whatsapp://send?phone=xxx` does nothing.
 
 ```powershell
-# 1. 备份
+# 1. back up
 reg export "HKCU\SOFTWARE\Classes\whatsapp" "<your-local-folder>\whatsapp_reg_backup.reg" /y
-# 2. 删除残缺键（让系统回退到 AppxManifest 正确注册）
+# 2. delete the broken key (the system falls back to the correct AppxManifest registration)
 Remove-Item -Path 'HKCU:\SOFTWARE\Classes\whatsapp' -Recurse -Force
-# 3. 验证
+# 3. verify
 Start-Process 'whatsapp://send?phone=<phone-E164>'
 ```
 
-## 五、本地目录结构
+## 5. Local folder structure
 
 ```
-<your-local-folder>\  （例如 %TEMP% 或你自建的 WA 工作目录，可用环境变量 WA_WORK_DIR / WA_SCREENSHOT_DIR / WA_MESSAGE_DIR / WA_LOG_DIR / WA_PROGRESS_FILE 指定）
-├── 脚本\          ← PowerShell脚本(.ps1)
-├── 截图\          ← WA截图验证(自动生成)
-├── 消息\          ← 消息临时文件 + 联系人JSON
-└── 日志\          ← 发送进度 wa_progress.json
+<your-local-folder>\  (e.g. %TEMP% or your own WA working folder; configurable with WA_WORK_DIR / WA_SCREENSHOT_DIR / WA_MESSAGE_DIR / WA_LOG_DIR / WA_PROGRESS_FILE)
+├── scripts\       ← PowerShell scripts (.ps1)
+├── screenshots\   ← WA verification screenshots (generated)
+├── messages\      ← message temp files + contact JSON
+└── logs\          ← progress wa_progress.json
 ```
 
-截图先存 `$env:TEMP` → `Copy-Item` 到中文路径（GDI+ 对中文路径有限制）。
+Screenshots are saved to `$env:TEMP` first → `Copy-Item` to the target path (GDI+ has limits with non-ASCII paths).
 
 ---
 
-## 六、发送前检查清单（缺一不可）
+## 6. Pre-send checklist (all required)
 
-- [ ] WhatsApp Desktop（Store版）已打开并登录（小号）
-- [ ] 本地设备 <local-device> 在线
-- [ ] `whatsapp://` 协议可用（不行先修复注册表）
-- [ ] 联系人数据已就绪（CSV/Excel 先转 JSON，或直接 JSON）
-- [ ] `validate` 显示 ✅ All passed（无格式错误、无重复号码）
-- [ ] 模板已 `preview` 预览并确认（preview 只读，不会发送）
-- [ ] 今日发送数 < 200（`progress` 查看）
+- [ ] WhatsApp Desktop (Store edition) open and logged in (small number)
+- [ ] local device <local-device> online
+- [ ] `whatsapp://` protocol works (repair the registry first if not)
+- [ ] contact data ready (CSV/Excel converted to JSON, or JSON directly)
+- [ ] `validate` shows ✅ All passed (no format errors, no duplicate numbers)
+- [ ] template reviewed with `preview` (read-only, never sends)
+- [ ] today's count < 200 (`progress`)
 
-任一项没打勾，不许开始。
+Any unticked item → do not start.
 
 ---
 
-## 七、Step 0 — 数据准备（CSV/Excel → JSON）
+## 7. Step 0 — data preparation (CSV/Excel → JSON)
 
-已是 JSON 可跳过。
+Skip when you already have JSON.
 
 ```bash
-python wa_bulk_sender.py convert customers.csv contacts_wa.json   # 零依赖
-python wa_bulk_sender.py convert customers.xlsx                   # 需 openpyxl；没有就先另存为 CSV
-python wa_bulk_sender.py convert wa_targets.json                  # 看板导出的 pending 名单
+python wa_bulk_sender.py convert customers.csv contacts_wa.json   # zero dependencies
+python wa_bulk_sender.py convert customers.xlsx                   # needs openpyxl; otherwise save as CSV first
+python wa_bulk_sender.py convert wa_targets.json                  # the pending list exported by the dashboard
 ```
 
-列名识别（大小写不敏感）：
+Header recognition (case-insensitive):
 
-| 识别的表头 | 字段 | 必需 |
+| Recognised headers | Field | Required |
 |------------|------|------|
-| phone / 电话 / 手机 / 号码 / whatsapp / wa / wa_number / mobile | `phone` | ✅ |
-| brand / 品牌 / 公司 / company / name / 客户名 / customer | `brand` | 可选 |
-| intro / 开场 / 开场白 | `intro` | 可选（Format B 的 {intro}） |
-| message / 消息 / 内容 / 开发信 / msg | `message` | 可选 |
+| phone / whatsapp / wa / wa_number / mobile | `phone` | ✅ |
+| brand / company / name / customer | `brand` | optional |
+| intro | `intro` | optional (Format B {intro}) |
+| message / msg | `message` | optional |
 
-号码自动清洗（去掉 `+`、空格、连字符）。
+The equivalent Chinese-language headers are also recognised for imports from legacy sheets.
 
-**Format A – 扁平列表**：
+Numbers are cleaned automatically (`+`, spaces, hyphens removed).
+
+**Format A – flat list**:
 ```json
 [
   {"brand": "Acme Corp", "phone": "12125551234", "message": "Hi Acme team!\n\n..."},
@@ -113,7 +115,7 @@ python wa_bulk_sender.py convert wa_targets.json                  # 看板导出
 ]
 ```
 
-**Format B – 模板 + 变量（推荐，天然对接看板 pending 名单）**：
+**Format B – template + variables (recommended; maps naturally to the dashboard's pending list)**:
 ```json
 {
   "template": "Hi {brand} team!\n\n{intro}\n\nWe're {company} — {product}. {fact}. More: {website}\n\nWorth a quick chat?",
@@ -125,166 +127,166 @@ python wa_bulk_sender.py convert wa_targets.json                  # 看板导出
   ]
 }
 ```
-> `intro`（每人不同的开场白）就是防封的核心 —— 从看板的 `need_tag` / 背调记录里生成差异化开场，绝不千人一面。
+> `intro` (a different opener per person) is the anti-ban core — generate it from the dashboard's `need_tag` / research notes; never one message for everyone.
 
 
-## 七·二、WhatsApp 开发信模板库（7 钩子 WA 版）⭐
+## 7.2 WhatsApp outreach template bank (WA versions of the 7 hooks) ⭐
 
-> WhatsApp 开发信不能照搬邮件。邮件可以长、可以正式；WhatsApp 要**短、口语、像真人聊天**，
-> 每条都必须有**差异化开场 `{intro}`**（防封核心 + 提回复率）。下面 7 个模板对应邮件的 7 钩子，
-> 但都压到 3～5 行、去正式抬头、加一句轻互动收尾。发送时填进 Format B 的 `template` 字段，
-> `{intro}` 按每家 `need_tag`/`solution_tag`/背调结论单独生成，绝不千人一面。
+> WhatsApp outreach cannot copy e-mail. E-mail may be long and formal; WhatsApp must be **short, conversational, like a real person chatting**,
+> and every message needs a **differentiated opener `{intro}`** (anti-ban core + higher reply rate). The 7 templates below match the 7 e-mail hooks,
+> compressed to 3–5 lines, no formal salutation, with a light interactive closing. Put them into the Format B `template` field;
+> `{intro}` is generated per account from `need_tag` / `solution_tag` / research, never the same sentence twice.
 
-**WhatsApp 开发信骨架（区别于邮件）：**
+**WhatsApp outreach skeleton (unlike e-mail):**
 
 ```
-[差异化开场 {intro}] → [一句身份+能帮到什么] → [一个具体钩子] → [轻互动提问收尾]
+[differentiated opener {intro}] → [one line: who we are + how we help] → [one specific hook] → [light closing question]
 ```
 
-- 先讲**对方**（提近况/接痛点/夸成果），不先讲自己 —— 差异化 + 防封。
-- 全文不超过 5 行；结尾用低门槛问题（要不要发目录？方便聊两句吗？），不硬推销。
-- 先背调定业务与现有方案水平（与你 `differentiators` 的关系）+ `need_tag`/`solution_tag`，再选钩子 —— 推错方向=白发。
+- Talk about **them** first (recent news / pain point / achievement), not about yourself — differentiation + anti-ban.
+- At most 5 lines; close with a low-threshold question (send a catalogue? quick chat?), no hard sell.
+- Research first: their business and current solution level (relation to your `differentiators`) + `need_tag` / `solution_tag`, then pick the hook — the wrong direction = a wasted message.
 
-### 7 个钩子的 WhatsApp 模板（`{intro}` 每人不同）
+### WhatsApp templates for the 7 hooks (`{intro}` differs per person)
 
-> 下表是**结构骨架**，全行业通用；正文里的事实（定位、起步方式、关键事实、认证、定制能力）必须替换为
-> `config/company_profile.json` 中的真实值（`product.*` / `offer.*`），没有的能力就删掉那一行。
+> The table is a **structural skeleton**, cross-industry; the facts in the body (positioning, entry offer, key facts, certifications, custom capability) must be replaced with
+> real values from `config/company_profile.json` (`product.*` / `offer.*`); delete the line for any capability you do not have.
 
-| 钩子 | solution_tag 场景 | WhatsApp 模板骨架（占位符必须替换为真实事实） |
+| Hook | solution_tag scenario | WhatsApp template skeleton (placeholders must become real facts) |
 |------|----------------|-------------------------------------------|
-| ① 方案升级 | `quality_upgrade`：在用低一档方案 | `Hi {brand} team! {intro} We're <your-brand> — <your verifiable differentiator>. Want to compare side by side?` |
-| ② 低门槛起步 | `low_commitment` / `cost`：小团队、首次尝试 | `Hi {brand}! {intro} Easy way to test us: <offer.entry_offer>. <offer.key_facts[0]>. Shall I set it up?` |
-| ③ 时效/节点 | `speed`：有明确档期/上线日/工期 | `Hi {brand} team! {intro} <offer.delivery_time> for <your-core-term> — ready before <their deadline>. What's your timeline?` |
-| ④ 定制/专属 | `exclusive_custom` / `dedicated_service` | `Hi {brand}! {intro} We build <your-core-term> to your spec — <custom capability fact>. Want to see how?` |
-| ⑤ 合规/可持续 | `compliance` / `sustainability`（仅写真实资质） | `Hi {brand} team! {intro} <your-core-term> with <exact certification name>. Want the documentation?` |
-| ⑥ 一站式 | `one_stop`：供应商/工具分散 | `Hi {brand}! {intro} We cover <scope A> and <scope B> from one team. Would that simplify things?` |
-| ⑦ 新方向 | `innovation`：新产品线/新市场/融资 | `Hi {brand} team! {intro} For your <new initiative>: <your one_liner_en>. Worth a quick chat?` |
+| ① solution upgrade | `quality_upgrade`: using a lower-tier solution | `Hi {brand} team! {intro} We're <your-brand> — <your verifiable differentiator>. Want to compare side by side?` |
+| ② low-commitment start | `low_commitment` / `cost`: small team, first attempt | `Hi {brand}! {intro} Easy way to test us: <offer.entry_offer>. <offer.key_facts[0]>. Shall I set it up?` |
+| ③ speed / deadline | `speed`: a clear date / go-live / schedule | `Hi {brand} team! {intro} <offer.delivery_time> for <your-core-term> — ready before <their deadline>. What's your timeline?` |
+| ④ custom / dedicated | `exclusive_custom` / `dedicated_service` | `Hi {brand}! {intro} We build <your-core-term> to your spec — <custom capability fact>. Want to see how?` |
+| ⑤ compliance / sustainability | `compliance` / `sustainability` (real credentials only) | `Hi {brand} team! {intro} <your-core-term> with <exact certification name>. Want the documentation?` |
+| ⑥ one-stop | `one_stop`: scattered suppliers / tools | `Hi {brand}! {intro} We cover <scope A> and <scope B> from one team. Would that simplify things?` |
+| ⑦ new direction | `innovation`: new product line / market / funding | `Hi {brand} team! {intro} For your <new initiative>: <your one_liner_en>. Worth a quick chat?` |
 
-> **{intro} 生成**：从背调/`need_tag`/`solution_tag` 提一句只对这家成立的话。例：刚中标新项目 → intro=`Congrats on winning the <project>`；
-> 在招相关岗位 → intro=`Saw you're hiring a <role> — sounds like <topic> is a priority`。**绝不复用同一句**。
+> **Generating {intro}**: take one sentence from research / `need_tag` / `solution_tag` that is true only for this account. E.g. just won a new project → intro=`Congrats on winning the <project>`;
+> hiring a relevant role → intro=`Saw you're hiring a <role> — sounds like <topic> is a priority`. **Never reuse the same sentence**.
 >
-> **信号不足**：业务/需求看不清时标 `need_review`，交你拍板，不自动下结论、不硬推。
+> **Weak signal**: when the business / need is unclear, flag `need_review` and let the user decide; no automatic conclusions, no hard push.
 
-### 与邮件开发信的差别（一句话记住）
+### Difference from e-mail outreach (one sentence)
 
-- 邮件：可长、可正式、带附件与签名档；WhatsApp：**短、口语、先夸对方、一个钩子、一个轻问题**。
-- 邮件靠标题抓人；WhatsApp 靠**第一行差异化开场**抓人 + 防封。
-- 两者共用同一套 7 钩子 + `need_tag`/`material_tag` 映射，只是**载体不同、语气不同**。
+- E-mail: may be long, formal, with attachments and signature; WhatsApp: **short, conversational, praise them first, one hook, one light question**.
+- E-mail hooks with the subject line; WhatsApp hooks with the **differentiated first line** + anti-ban.
+- Both share the same 7 hooks + `need_tag` / `solution_tag` mapping; only the **medium and tone differ**.
 
 ---
 
-## 七·三、WhatsApp 开发触发（明确方向：什么时候、对谁、怎么启动）⭐
+## 7.3 WhatsApp trigger (clear direction: when, to whom, how to start) ⭐
 
-> 你问“WhatsApp 开发什么时候触发”——不是凭感觉想起来才发，而是 **看板一出现下面 4 个信号之一，就自动进 WA 名单**。这样 WA 不再是“拍脑袋”，而是邮件链路的自然延伸。
+> "When is WhatsApp outreach triggered?" — not whenever you happen to think of it, but **as soon as the dashboard shows one of the 4 signals below, the account enters the WA list**. WA stops being a hunch and becomes the natural extension of the e-mail chain.
 
-### （一）四个触发信号（命中任一 → 进 WA 名单）
+### (1) Four trigger signals (any hit → WA list)
 
-| 触发信号 | 判断依据（看板/数据） | 为什么转 WA |
+| Signal | Basis (dashboard / data) | Why switch to WA |
 |---------|------------------|------------|
-| **① 邮件多轮未回** | `followup_count >= 2` 且 `status != replied`（已发 3 封以上无回） | 邮箱可能没人看/进垃圾箱，WA 直达本人，回复率高 |
-| **② 邮箱退信/无效** | `status == bounced` 或只有通用邮箱无个人邮箱 | 邮件路已断，WA 是唯一剩下的直达渠道 |
-| **③ 高价值目标 + 有公开 WA** | 高粉丝定位/大客户，官网或领英有 WhatsApp 号 | 大单值得用更重的直达方式去抓 |
-| **④ 展会/主动留号** | 客户主动给了 WA（展会、询盘、往来） | 客户已表态愿意用 WA，优先级最高 |
+| **① several e-mail rounds, no reply** | `followup_count >= 2` and `status != replied` (3+ e-mails, no reply) | the mailbox may be unread / in spam; WA reaches the person directly, higher reply rate |
+| **② bounce / invalid mailbox** | `status == bounced` or only a generic mailbox, no personal one | the e-mail route is dead; WA is the only direct channel left |
+| **③ high-value target + public WA** | large account / strong positioning, WhatsApp number on the website or LinkedIn | a big deal justifies the heavier direct channel |
+| **④ trade show / number given voluntarily** | the customer gave their WA (show, inquiry, correspondence) | the customer has signalled WA is welcome; highest priority |
 
-> ①② 是**邮件链自动履带的**（看 `email_dashboard.py` 的 pending/未回名单）；③④ 是背调/人工发现，手动标进名单。
+> ①② are **fed automatically by the e-mail chain** (pending / no-reply list of `email_dashboard.py`); ③④ come from research / manual discovery and are added by hand.
 
-### （二）触发链（完整五步，与邮件闭环衔接）
+### (2) Trigger chain (five steps, joined to the e-mail loop)
 
 ```
-① 看板列 pending/未回名单          ② 导出 WA 目标            ③ 套模板生成消息
-   email_dashboard.py 筛选  ==→   → wa_targets.json      ==→   七·二 模板库 + {intro}逐家生成
-   (①②③④ 信号命中者)              (Format B 结构)         (need_tag/material_tag 定钩子)
-                                                              ↓
-⑥ 复盘看效果              ⑤ 回写看板/名单            ④ 群发引擎逐个发+截图验证
-   wa_review.py review   ←==   mark_wa_only / wa_status  ←==   wa_bulk_sender.py send
-   (漏斗+钩子+成单渠道)         (避免重复触达)             (防封铁律、逐条截图)
+① dashboard lists pending / no reply      ② export WA targets          ③ apply templates
+   email_dashboard.py filter        ==→   → wa_targets.json       ==→   7.2 template bank + {intro} per account
+   (signals ①②③④ hit)                     (Format B structure)          (need_tag / solution_tag picks the hook)
+                                                                        ↓
+⑥ review results                 ⑤ write back dashboard / list       ④ bulk engine sends one by one + screenshot verification
+   wa_review.py review     ←==   mark_wa_only / wa_status      ←==   wa_bulk_sender.py send
+   (funnel + hooks + won channel)  (avoid duplicate contact)           (anti-ban rules, screenshot per message)
         ↓
-   复盘结果反哺 ① 下一轮名单（自循环）：哪个地区/钩子/需求 WA 成单多，下轮就向它加权
+   review results feed ① the next list (self-loop): which region / hook / need wins most on WA gets more weight next round
 ```
 
-### （三）每步具体命令
+### (3) Commands per step
 
 ```bash
-# ① 从看板导出“邮件多轮未回 + 退信”的转 WA 名单（需看板支持；否则人工筛）
-python3 scripts/email_dashboard.py --export-wa-targets wa_targets.json   # 若无此参数，按 status/followup_count 手工导
+# ① export the "several rounds no reply + bounced" WA list from the dashboard (if supported; otherwise filter manually)
+python3 scripts/email_dashboard.py --export-wa-targets wa_targets.json   # without this flag, export manually by status / followup_count
 
-# ②③ 把 wa_targets 套 七·二 模板（逐家生成 {intro}）→ Format B contacts.json（人工/半自动填 template）
+# ②③ apply the 7.2 templates to wa_targets ({intro} per account) → Format B contacts.json (template filled manually / semi-automatically)
 
-# ③ 校验 + 预览
+# ③ validate + preview
 python3 scripts/wa_bulk/wa_bulk_sender.py validate contacts.json
 python3 scripts/wa_bulk/wa_bulk_sender.py preview contacts.json
 
-# ④ 群发（逐条截图验证，防封铁律）
+# ④ bulk send (screenshot verification per message, anti-ban rules)
 python3 scripts/wa_bulk/wa_bulk_sender.py send contacts.json
 
-# ⑤ 回写看板/名单（避免重复触达）
+# ⑤ write back the dashboard / list (avoid duplicate contact)
 python3 scripts/csv_ops.py mark_wa_only <email> <wa_number> <brand> <contact_name>
-# 客户回复了 → 把 wa_contacts.csv 该行 status 回写为 replied（复盘回复率靠它）
+# customer replied → set that row's status in wa_contacts.csv to replied (the reply rate in the review depends on it)
 
-# ⑥ 复盘（只读不改，看 WA 漏斗 + 哪种钩子/地区成单）
+# ⑥ review (read-only: WA funnel + which hook / region wins)
 python3 scripts/wa_review.py review --html wa_review.html --compare-email
 python3 scripts/wa_review.py funnel
-# 成交时务必给 add_success 带上 --won_channel wa，复盘口径才准
+# at close, add_success must carry --won_channel wa for a correct review
 ```
 
-### （四）与邮件链的衔接点（一体化，不是两套）
+### (4) Join points with the e-mail chain (one system, not two)
 
-- 邮件链负责“广播触达”，WA 链负责“邮件未回的难客收口”——**两链共用一个客户表**（见客户开发表 `stage` 列的“邮件未回→转 WA”状态）。
-- 成单时用 `won_channel` 区分是邮件还是 WA 成的，`wa_review --compare-email` 就能告诉你**哪条渠道更值得加预算**。
-- **元需求 2（你拍板）**：信号命中只是“建议进 WA 名单”，是否真发、发多少、先发谁，由你定；信号不足的标 `need_review`。
+- The e-mail chain does "broadcast reach", the WA chain "closes the hard accounts that never replied to e-mail" — **both share one customer table** (see the "no e-mail reply → moved to WA" state in the `stage` column).
+- `won_channel` tells e-mail wins from WA wins at close; `wa_review --compare-email` then shows **which channel deserves more budget**.
+- **Meta-need 2 (you decide)**: a signal hit is only a "suggestion to list"; whether, how many and who first is your call; weak signals get `need_review`.
 
-## 八、Step 1 — 校验与试运行
+## 8. Step 1 — validation and dry run
 
 ```bash
 python wa_bulk_sender.py validate contacts.json
-python wa_bulk_sender.py preview contacts.json      # 只读预览，不发送
+python wa_bulk_sender.py preview contacts.json      # read-only preview, never sends
 ```
 
-**号码格式规则**（无 `+`、无空格、无连字符）：
+**Number format** (no `+`, no spaces, no hyphens):
 
-| 国家 | 格式 | 示例 |
+| Country | Format | Example |
 |------|------|------|
-| US/加拿大 | `1` + 10位 | `12125551234` |
-| 英国 | `44` + 10–11位 | `447911123456` |
-| 法国 | `33` + 9位 | `33612345678` |
-| 德国 | `49` + 10–11位 | `4915100000001` |
-| 意大利 | `39` + 10位 | `393331234567` |
-| 西班牙 | `34` + 9位 | `34612345678` |
-| 澳大利亚 | `61` + 9位 | `61412345678` |
-| 日本 | `81` + 9–10位 | `819012345678` |
-| 中国 | `86` + 11位 | `86<11-digit-mobile>`（示例格式，非真实号码） |
+| US / Canada | `1` + 10 digits | `12125551234` |
+| UK | `44` + 10–11 digits | `447911123456` |
+| France | `33` + 9 digits | `33612345678` |
+| Germany | `49` + 10–11 digits | `4915100000001` |
+| Italy | `39` + 10 digits | `393331234567` |
+| Spain | `34` + 9 digits | `34612345678` |
+| Australia | `61` + 9 digits | `61412345678` |
+| Japan | `81` + 9–10 digits | `819012345678` |
+| China | `86` + 11 digits | `86<11-digit-mobile>` (format example, not a real number) |
 
 ---
 
-## 九、Step 2 — 发送循环（每个联系人按序，不许跳步）
+## 9. Step 2 — send loop (every contact in order, no skipped steps)
 
-### 2-A 打开聊天
+### 2-A open the chat
 ```powershell
 Start-Process "whatsapp://send?phone={phone}"
 ```
-等待 5 秒。
+Wait 5 seconds.
 
-### 2-B popup 白屏检测 ⚠ 不许跳过
-Store版 title 不变，靠 popup 判断号码是否注册：
+### 2-B popup white-screen detection ⚠ never skip
+The Store edition's title never changes; the popup is how registration is detected:
 ```
-屏幕中心 3×3 采样 9 个像素点
-≥6 个白色(R>240,G>240,B>240) → popup → 号码未注册 → SKIP
-<6 个白色 → 无 popup → 聊天已打开 → 继续
+sample 9 pixels in a 3×3 grid at the screen centre
+≥6 white (R>240,G>240,B>240) → popup → number unregistered → SKIP
+<6 white → no popup → chat open → continue
 ```
 
-### 2-C 截图验证
+### 2-C screenshot verification
 ```bash
 python wa_bulk_sender.py screenshot   # → $env:TEMP\wa_verify.png
 ```
-**匹配规则 — 去掉非数字，比对尾 8 位**：
+**Matching rule — strip non-digits, compare the last 8 digits**:
 ```
-✅ 匹配 → 进入 2-D
-❌ 不匹配 → 重试 2-A+2-B+2-C（最多 2 次）→ 仍不匹配 → SKIP 记录原因
-截图失败 → SKIP 记录原因
+✅ match → go to 2-D
+❌ no match → retry 2-A+2-B+2-C (max 2) → still no match → SKIP and record the reason
+screenshot failed → SKIP and record the reason
 ```
 
-### 2-D 发送消息
-**内联法（已验证，最简单，小批量推荐）**：
+### 2-D send the message
+**Inline method (verified, simplest, recommended for small batches)**:
 ```powershell
 Start-Process "whatsapp://send?phone={phone}"
 Start-Sleep -Seconds 5
@@ -294,137 +296,137 @@ Set-Clipboard -Value "{message_text}"
 Start-Sleep -Seconds 2
 [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
 ```
-**临时文件法（消息含特殊字符时）**：
+**Temp-file method (messages with special characters)**:
 ```bash
-python wa_bulk_sender.py send "{message_text}"   # 输出 SENT 或 ERROR:WhatsApp_NOT_FOCUSED
+python wa_bulk_sender.py send "{message_text}"   # prints SENT or ERROR:WhatsApp_NOT_FOCUSED
 ```
-遇 `ERROR:WhatsApp_NOT_FOCUSED`：重试一次；再失败 → 跳过并记录。
+On `ERROR:WhatsApp_NOT_FOCUSED`: retry once; on a second failure → skip and record.
 
-### 2-E Checkpoint 与节奏
-1. 更新 `wa_progress.json`
-2. 累加 `wa_daily_count.json`（`send` 每生成一条自动 +1，`progress` 可看今日计数）
-3. 日计数 = 上限（默认 200，可用环境变量 `WA_DAILY_LIMIT` 下调，不能调高）→ `send` 直接返回 `STOP` 并退出码 3，停止并报告
-4. 联系人之间随机停 **8–15 秒**
-5. 每 5 个联系人：随机停 **30–60 秒** 冷却
-   （第 4、5 条由 `send` 自动执行：距上一条不够时间会先等够再生成下一条，记录在 `wa_pacing.json`）
-
----
-
-## 十、防封铁律（不可协商）
-
-- 每天最多 **200 条**（计数器强制）
-- 每条最少间隔 **8 秒**（随机 8–15 秒）
-- 每 5 条后 **30–60 秒** 冷却
-- 每人 **不同开场白**（`{intro}` 变量）
-- **禁 wa.me 链接**（群发场景 —— 见下方"wa.me 语境澄清"）
-- **禁** 对多人发相同消息
-
-### ⚠️ wa.me 语境澄清（与看板不矛盾）
-- **群发场景禁 wa.me**：这里指不要在群发的消息正文里塞 `wa.me` 链接、也不要靠 `wa.me` 批量拉起聊天 —— 会被判营销、直接封号。群发一律用 `whatsapp://send?phone=` 协议逐个开聊天。
-- **看板一键调用用 wa.me 合理**：看板「触达清单/成功案例卡片」里的 wa.me 链接是给**你本人手动点开单个客户聊天**用的运营工具（一次一个、你自己操作），不是群发、不进消息正文，因此安全。
-- 一句话：**wa.me 不能用于"批量/自动/放进消息里"，可以用于"你手动点开一个聊天"**。
+### 2-E checkpoint and pacing
+1. update `wa_progress.json`
+2. increment `wa_daily_count.json` (`send` adds 1 per generated message; `progress` shows today's count)
+3. daily count = limit (default 200; lower it with `WA_DAILY_LIMIT`, never raise it) → `send` returns `STOP` with exit code 3, stops and reports
+4. random pause of **8–15 seconds** between contacts
+5. every 5 contacts: random **30–60 second** cooldown
+   (4 and 5 are enforced by `send`: when not enough time has passed since the last message it waits first; recorded in `wa_pacing.json`)
 
 ---
 
-## 十一、常见偷懒与真相
+## 10. Anti-ban iron rules (non-negotiable)
 
-| 偷懒说法 | 真相 |
+- at most **200 messages per day** (enforced by the counter)
+- at least **8 seconds** between messages (random 8–15 s)
+- **30–60 s** cooldown after every 5 messages
+- a **different opener per person** (`{intro}` variable)
+- **no wa.me links** (in bulk sends — see the "wa.me context" below)
+- **never** the same message to several people
+
+### ⚠️ wa.me context (no contradiction with the dashboard)
+- **No wa.me in bulk sends**: never put `wa.me` links into bulk message bodies and never open chats in bulk through `wa.me` — it is judged as marketing and banned outright. Bulk sends always open chats one by one through the `whatsapp://send?phone=` protocol.
+- **wa.me in the dashboard's one-click links is fine**: the wa.me links in the dashboard's contact list / success-case cards are an operations tool for **you to open one customer chat manually** (one at a time, by hand), not bulk, not in a message body, therefore safe.
+- In one sentence: **wa.me must not be used "in bulk / automatically / inside messages"; it may be used "to open one chat manually"**.
+
+---
+
+## 11. Common shortcuts and the truth
+
+| Shortcut | Truth |
 |---|---|
-| "2-B popup 检测慢，跳过" | Store版 title 永不变，popup 是唯一能判断号码未注册的方法 |
-| "号码看着对，跳过截图" | 切换延迟时 WA 可能加载上一个聊天，截图是唯一证据 |
-| "200/天太保守，调高" | WhatsApp 对群发封号，200 是安全上限 |
-| "dry-run 没问题，跳过 validate" | validate 抓空消息、错号、位数不对和**重复号码**，dry-run 抓不到 |
-| "跳过的客户以后再补" | 进度文件里的 skip 记录就是你的待办清单，立即导出 |
-| "所有人发一样的" | 相同消息 = 强垃圾信号，永远变开场白 |
-| "为了快，不截图直接内联" | 不验证，消息一定会发到错的窗口 |
+| "2-B popup detection is slow, skip it" | the Store edition's title never changes; the popup is the only way to detect an unregistered number |
+| "the number looks right, skip the screenshot" | WA may still show the previous chat during a switch delay; the screenshot is the only evidence |
+| "200/day is too conservative, raise it" | WhatsApp bans bulk senders; 200 is the safe ceiling |
+| "dry-run was fine, skip validate" | validate catches empty messages, wrong numbers, wrong digit counts and **duplicate numbers**; dry-run does not |
+| "skipped customers can be done later" | the skip records in the progress file are your to-do list; export them now |
+| "same message to everyone" | identical messages = strong spam signal; always vary the opener |
+| "inline without screenshots, to be fast" | without verification the message will land in the wrong window |
 
-## 十二、危险信号（出现任一，立即停）
+## 12. Danger signals (any of them → stop immediately)
 
-- 跳过了 2-B（popup 检测）或 2-C（截图验证）
-- 多个联系人收到相同消息文本
-- 发送间隔 < 8 秒
-- 日计数 > 200 却没按日期重置
-- 发送后没更新 `wa_progress.json`
-- 消息里有没替换的 `{变量}`
-- 用了 `Get-Process -Name 'WhatsApp'`（应为 `WhatsApp.Root`）
-- 试图靠窗口标题判断聊天对象（Store版 title 永不变）
+- 2-B (popup detection) or 2-C (screenshot verification) skipped
+- several contacts received identical text
+- interval < 8 seconds
+- daily count > 200 without a date reset
+- `wa_progress.json` not updated after sending
+- unreplaced `{variables}` in the message
+- `Get-Process -Name 'WhatsApp'` used (must be `WhatsApp.Root`)
+- trying to identify the chat by window title (never changes in the Store edition)
 
 ---
 
-## 十三、发后复查 audit
+## 13. Post-send audit
 
 ```bash
 python wa_bulk_sender.py audit
-# 生成 wa_audit.ps1 → 在 <local-device> 上执行 → 逐个打开已发聊天截图 → AI 读图核对号码+内容
+# generates wa_audit.ps1 → run on <local-device> → opens and screenshots every sent chat → the AI reads the images to verify number + content
 ```
-| 参数 | 默认 | 说明 |
+| Parameter | Default | Description |
 |------|------|------|
-| `-ProgressFile` | `$env:TEMP\wa_progress.json`（或用 `WA_PROGRESS_FILE` 指定） | 进度文件路径 |
-| `-MessageFile` | `""` | 消息 JSON（品牌交叉引用） |
-| `-StartFrom` | `1` | 从第 N 条开始 |
+| `-ProgressFile` | `$env:TEMP\wa_progress.json` (or `WA_PROGRESS_FILE`) | progress file path |
+| `-MessageFile` | `""` | message JSON (brand cross-reference) |
+| `-StartFrom` | `1` | start at entry N |
 
-## 十四、发前沙盒测试 harness
+## 14. Pre-send sandbox test harness
 
 ```bash
-python wa_bulk_sender.py harness contacts.json   # 先自动校验文件，有问题直接拒绝
-# 生成 wa_harness.ps1 -TestPhone <country-code><your-own-test-phone> -MessageFile contacts.json -Count 3
+python wa_bulk_sender.py harness contacts.json   # validates the file first; refuses on problems
+# generates wa_harness.ps1 -TestPhone <country-code><your-own-test-phone> -MessageFile contacts.json -Count 3
 ```
-把前 3 条消息发给**你自己的测试号（小号）**，验证格式/内容/换行是否正确，再决定是否正式群发。
+Sends the first 3 messages to **your own test number (small number)** to verify format / content / line breaks before deciding on the real bulk send.
 
-| 参数 | 必需 | 说明 |
+| Parameter | Required | Description |
 |------|------|------|
-| `-TestPhone` | ✅ | 你自己的 WhatsApp 号（用小号） |
-| `-MessageFile` | ✅ | 消息 JSON 路径 |
-| `-Count` | ❌ | 测试条数，默认 3 |
+| `-TestPhone` | ✅ | your own WhatsApp number (small number) |
+| `-MessageFile` | ✅ | message JSON path |
+| `-Count` | ❌ | test count, default 3 |
 
 ---
 
-## 十五、发后回写看板 + 复盘（闭环收口）
+## 15. Post-send write-back + review (closing the loop)
 
-**第一步：回写（避免重复触达）** —— 群发成功后，把已发客户回写为"已转WA"，下次看板自动归入「✅已转WA」：
+**Step 1: write back (avoid duplicate contact)** — after a successful bulk send, mark the sent customers as "moved to WA"; the dashboard files them under "✅ moved to WA" next time:
 ```bash
 python3 scripts/csv_ops.py mark_wa_only <email> <wa_number> <brand> <contact_name>
 ```
-或在看板数据里给该 record 设 `wa_status="sent"`。**客户回复了 → 把 wa_contacts.csv 该行 status 回写为 `replied`**（复盘回复率靠它）。
+or set `wa_status="sent"` on the record in the dashboard data. **Customer replied → set that row's status in wa_contacts.csv to `replied`** (the reply rate depends on it).
 
-**第二步：成交标渠道** —— WA 谈成单时，登记成功案例务必带上 `--won_channel wa`：
+**Step 2: tag the winning channel** — when a WA conversation closes, the success case must carry `--won_channel wa`:
 ```bash
 python3 scripts/csv_ops.py add_success <email> <brand> <contact> <order_amount> "<success_points>" --won_channel wa --region ... --need_tag ... --hook_type ...
 ```
 
-**第三步：WA 专属复盘**（只读不改，14 铁律）—— 定期看 WA 这条渠道跑得怎么样，成为下一轮名单的依据（自循环）：
+**Step 3: dedicated WA review** (read-only, 14 iron rules) — check regularly how the WA channel performs; it becomes the basis of the next list (self-loop):
 ```bash
-python3 scripts/wa_review.py review --html wa_review.html --compare-email   # WA 漏斗+钩子/地区/需求分布+邮件vs WA 对比
-python3 scripts/wa_review.py funnel                                        # 只看触达→回复→成单漏斗
+python3 scripts/wa_review.py review --html wa_review.html --compare-email   # WA funnel + hook / region / need distribution + e-mail vs WA
+python3 scripts/wa_review.py funnel                                        # reach → reply → won funnel only
 ```
-> 复盘结果**反哺触发**：哪个地区/钩子/`need_tag` 在 WA 上成单多，下一轮 七·三 的 WA 名单就向它加权——形成 **触发→发送→回写→复盘→再触发** 的闭环。复盘结论仅供参考，加码/收缩由你拍板（元需求 2）。
+> The review **feeds the trigger**: which region / hook / `need_tag` wins most on WA gets more weight in the next 7.3 list — the loop **trigger → send → write back → review → trigger again**. Conclusions are advisory; scaling up or down is your decision (meta-need 2).
 
 ---
 
-## 十六、脚本执行方式对照
+## 16. Script execution methods
 
-| 方式 | 可靠性 | 备注 |
+| Method | Reliability | Notes |
 |------|--------|------|
-| `-File xxx.ps1` | ✅ 最佳 | 脚本推荐 |
-| `-EncodedCommand Base64` | ⚠️ 中文乱码 | 中文注释会损坏 |
-| `-Command "内联"` | ❌ `$_` 被吃 | 禁用 |
-| 直接内联（Set-Clipboard+SendKeys） | ✅ 已验证 | 小批量最简单 |
+| `-File xxx.ps1` | ✅ best | recommended |
+| `-EncodedCommand Base64` | ⚠️ non-ASCII corruption | non-ASCII comments break |
+| `-Command "inline"` | ❌ `$_` swallowed | forbidden |
+| direct inline (Set-Clipboard + SendKeys) | ✅ verified | simplest for small batches |
 
-## 十七、关键约束
+## 17. Key constraints
 
-1. **只操作 WhatsApp** — 绝不碰其他程序
-2. **每条消息都截图验证** — 不验证，不发送
-3. PowerShell 脚本里**注释只用 ASCII**
-4. 截图：`$env:TEMP` 暂存 → `Copy-Item` 到目标
-5. 消息走临时文件，绝不拼接进 PowerShell 字符串
-6. 命令执行需用户确认卡
-7. 消息里避免 `'"` 等引号
+1. **Operate WhatsApp only** — never touch other programs
+2. **Screenshot-verify every message** — no verification, no sending
+3. PowerShell scripts: **ASCII-only comments**
+4. Screenshots: `$env:TEMP` first → `Copy-Item` to the target
+5. Messages go through temp files, never concatenated into PowerShell strings
+6. Command execution needs the user's confirmation card
+7. Avoid `'"` quotes in messages
 
-## 十八、脚本清单（scripts/wa_bulk/）
+## 18. Script list (scripts/wa_bulk/)
 
-| 文件 | 作用 |
+| File | Purpose |
 |------|------|
-| `wa_bulk_sender.py` | 主控：validate/preview/send/screenshot/progress/template/audit/harness（send/screenshot/harness/audit 需先完成建档；validate 会拦重复号码） |
-| `wa_audit.ps1` | 发后逐个打开已发聊天截图，供 AI 核对 |
-| `wa_harness.ps1` | 发前把前 N 条发给自己测试号 |
-| `wa_phase1_batch3.ps1` | 批次样例：只开聊天+截图不发送（第一阶段验证号码注册状态）；运行前自检，遇到占位符/格式错/重复号码直接拒绝 |
+| `wa_bulk_sender.py` | controller: validate/preview/send/screenshot/progress/template/audit/harness (send/screenshot/harness/audit require a completed profile; validate blocks duplicate numbers) |
+| `wa_audit.ps1` | opens and screenshots every sent chat after sending, for AI verification |
+| `wa_harness.ps1` | sends the first N messages to your own test number before sending |
+| `wa_phase1_batch3.ps1` | batch sample: open chat + screenshot only, no sending (phase 1 verifies registration status); self-checks before running and refuses on placeholders / format errors / duplicate numbers |

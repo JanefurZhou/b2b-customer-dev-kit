@@ -1,25 +1,25 @@
-# 数据表模板（空表头）
+# Data table templates (headers only)
 
-这 5 个 CSV 只带表头、无任何真实数据，表头与 `scripts/csv_ops.py` 实际写入的字段**完全一致**
-（`scripts/consistency_audit.py` 第 I 项会自动核对）：
+These 5 CSV files contain headers only and no real data; the headers are **identical** to the fields `scripts/csv_ops.py` actually writes
+(`scripts/consistency_audit.py` section I checks this automatically):
 
-| 文件 | 对应 csv_ops 字段常量 | 用途 |
+| File | csv_ops field constant | Purpose |
 |---|---|---|
-| `sent_history.csv` | `SENT_FIELDS` | 发信台账（冷却期、跟进次数、状态） |
-| `blacklist.csv` | `BL_FIELDS` | 黑名单/退信/拦截 |
-| `wa_contacts.csv` | `WA_FIELDS` | WhatsApp 触达记录 |
-| `success_cases.csv` | `SUCCESS_FIELDS` | 成功案例（用户确认后才写入） |
-| `pipeline.csv` | `PIPELINE_FIELDS` | 备用客户池 |
+| `sent_history.csv` | `SENT_FIELDS` | sending ledger (cooldown, follow-up count, status) |
+| `blacklist.csv` | `BL_FIELDS` | blacklist / bounces / blocks |
+| `wa_contacts.csv` | `WA_FIELDS` | WhatsApp contact records |
+| `success_cases.csv` | `SUCCESS_FIELDS` | success cases (written only after user confirmation) |
+| `pipeline.csv` | `PIPELINE_FIELDS` | reserve customer pool |
 
-## 运行时放在哪
+## Where they live at runtime
 
-脚本默认读写运行目录下的 `data/`，可用环境变量 `B2B_DATA_DIR` 指定：
+The scripts read and write `data/` under the working directory by default; the environment variable `B2B_DATA_DIR` overrides it:
 
 ```bash
 export B2B_DATA_DIR=/path/to/your/data
 python3 scripts/csv_ops.py stats
 ```
 
-首次使用：把本目录的表头复制到你的 `B2B_DATA_DIR`（脚本在文件不存在时也会自动建表）。
-这些模板保留在 `examples/` 内不参与运行写入；**真实客户数据永远只存在于你自己
-的私有数据目录，不要提交回技能包**。字段定义见 `references/csv_guide.md`。
+First use: copy the headers from this directory into your `B2B_DATA_DIR` (the scripts also create the tables automatically when a file is missing).
+These templates stay inside `examples/` and are never written to at runtime; **real customer data lives only in your own
+private data directory and must never be committed back into the skill package**. Field definitions: `references/csv_guide.md`.

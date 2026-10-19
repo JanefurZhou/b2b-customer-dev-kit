@@ -1,23 +1,23 @@
-# Skill-Self-Check 审计结果（v3.1）
+# Skill-Self-Check audit result (v3.1, English edition)
 
-工具：[xenos2025/Skill-Self-Check](https://github.com/xenos2025/Skill-Self-Check) 的 run_full_audit 全量审计（静态审计，不运行被审技能）。
+Tool: full run_full_audit of [xenos2025/Skill-Self-Check](https://github.com/xenos2025/Skill-Self-Check) (static audit; the audited skill is not executed).
 
-| 审计项 | v2.2（改前） | v3.1（最终） |
+| Check | v2.2 (before) | v3.1 (final) |
 |---|---|---|
-| hard-gates | fail（critical 1.7 description 无「Use when」触发写法；should_fix 2.5 否定词密度 12） | **pass**（0 项非提示级问题） |
-| ship-safety | stop_ship（critical CMD.1 `../csv_ops.py` 路径不存在 ×2；critical EXT.1 退信扫描无演练模式；should_fix EXT.1 DNS 校验无演练；should_fix EXT.3 PowerShell ×3） | **static_pass**（critical 0；仅剩 EXT.3 PowerShell ×3，已人工审查；v3.1 新增的 `crm_sync.py`、`mail_setup.py` 只有 info 级「有演练开关，需确认默认不外发」，已逐条核对，见 `ship_safety_review.md`） |
-| role-contract | not_assessed（缺角色契约） | **pass**（`role-contract.json` single_context / single_role） |
-| workflow-prompt | not_assessed | **not_applicable**（脚本不调用模型、无多步提示链，已在 SKILL.md 声明） |
-| 评分 basic_usable | 4/5 | **5/5** |
-| 评分 contract_clarity | 5/5 | **5/5** |
-| 评分 support_kit | 4/4 | **4/4** |
+| hard-gates | fail (critical 1.7 description lacks a "Use when" trigger phrase; should_fix 2.5 negation density 12) | **pass** (critical 0; one should_fix left: 2.5 negation density 10 — the red-line section is deliberately written as prohibitions) |
+| ship-safety | stop_ship (critical CMD.1 `../csv_ops.py` path missing ×2; critical EXT.1 bounce scan without dry run; should_fix EXT.1 DNS validation without dry run; should_fix EXT.3 PowerShell ×3) | **static_pass** (critical 0; only EXT.3 PowerShell ×3 remain, manually reviewed; the v3.1 `crm_sync.py` and `mail_setup.py` only carry info-level "has a dry-run switch, confirm default does not send", checked item by item in `ship_safety_review.md`) |
+| role-contract | not_assessed (no role contract) | **pass** (`role-contract.json` single_context / single_role) |
+| workflow-prompt | not_assessed | **not_applicable** (scripts call no model and have no multi-step prompt chain, declared in SKILL.md) |
+| score basic_usable | 4/5 | **5/5** |
+| score contract_clarity | 5/5 | **5/5** |
+| score support_kit | 3/4 | **4/4** (record schema section added to SKILL.md) |
 
-包内自查：`python3 scripts/consistency_audit.py` → PASS 35 · WARN 0 · FAIL 0（A–O 15 个维度，含流程图一致性、数据接入层与四维轮换）。
+In-package self-check: `python3 scripts/consistency_audit.py` → FAIL 0 (dimensions A–O, incl. flowchart consistency, Data Access Layer and four-axis rotation).
 
-复跑：
+Re-run:
 ```bash
 git clone https://github.com/xenos2025/Skill-Self-Check
 cd Skill-Self-Check/skills/skill-self-check/scripts
-# 运行该目录里的 run_full_audit 脚本，参数：<本技能目录> --out-dir <输出目录> --pretty
+# run the run_full_audit script in that directory: <this skill directory> --out-dir <output directory> --pretty
 ```
-包内自查在本技能目录下运行：`python3 scripts/consistency_audit.py`。
+The in-package self-check runs from this skill directory: `python3 scripts/consistency_audit.py`.

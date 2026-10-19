@@ -2,7 +2,7 @@
 
 > Facebook (Meta) groups remain one of the **lowest-cost discovery channels** for many B2B sellers — goods, services and software alike:
 > members include business owners, buyers, operators, managers and distributors who openly discuss what they need.
-> This playbook describes a **compliant, content-first** method. No cold pitching in groups and no scraping of
+> This playbook describes a **compliant, content-first** method. No cold pitching in groups and no harvesting of
 > personal data. Every fact you cite about your own products must come from your onboarding profile
 > (`config/company_profile.json` — see SKILL.md "first-run onboarding gate" and `onboarding_questions.md`).
 
@@ -41,9 +41,9 @@ Use the Facebook search box with combinations such as:
 
 - `<your-core-product> importers`
 - `<your-core-product> buyers group`
-- `<category> wholesale` / `<category> sourcing`（实体商品）
-- `<country> retail business owners`（消费品）
-- `<customer-industry> founders` / `<role> community` / `<category> users`（软件/服务）
+- `<category> wholesale` / `<category> sourcing` (physical goods)
+- `<country> retail business owners` (consumer goods)
+- `<customer-industry> founders` / `<role> community` / `<category> users` (software / services)
 - `<trade show name> exhibitors` / `<industry association> members`
 
 Replace `<your-core-product>` / `<category>` with `product.primary_keywords` from your profile.
@@ -147,7 +147,7 @@ attribute real wins per group in `success_cases.csv`.
 ## 9. Common mistakes
 
 1. Pitching in the group on day one → ban.
-2. Scraping member lists / mass DMs → account restriction and bad reputation.
+2. Harvesting member lists / mass DMs → account restriction and bad reputation.
 3. Quoting capabilities you don't have → trust loss at the sample stage.
 4. Treating Facebook as the closing channel → it only finds and warms people.
 5. No records → you cannot tell which groups work.

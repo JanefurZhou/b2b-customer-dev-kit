@@ -3,19 +3,18 @@ name: b2b-customer-dev-kit
 description: >-
   Use when the user wants to find, vet, and contact new B2B customers in any
   industry: lead search (keyword matrix, 15 discovery channels incl. customs
-  data, no-login public search across 10 social platforms), background research
-  with S1/S2/S3 evidence grades, demand positioning, localized cold email,
-  DNS checks, local-time-window sending, bounce scanning, 5-step follow-up,
-  WhatsApp hand-off, and win review; plus a data-access layer (own customer DB
-  and SaaS/CRM export import, enterprise-mailbox keys or MCP sending, mailbox
-  warm-up, CRM sync) and daily data triggers with a 4-axis search rotation.
-  Triggers: 找客户, 客户开发, cold email, outreach, 背调, 需求定位, 海关数据,
-  社媒获客, 批量发信, 退信处理, WhatsApp 群发, 客户库导入, 企业邮箱, CRM 同步,
-  成功案例复盘. Industry-agnostic and de-identified: ships with no
-  company, contact, or customer data. A mandatory install gate (company profile
-  + Soul Seven-Kit content check + explicit user confirmation) must pass before
-  any search or send script runs. Not for consumer marketing, paid ads, or
-  market sizing.
+  data, no-login public search on 10 social platforms), S1/S2/S3 background
+  research, need positioning, localized cold e-mail, DNS checks, local-window
+  sending, bounce scanning, 5-step follow-up, WhatsApp hand-off, win review;
+  plus a data-access layer (own customer DB and SaaS/CRM import, mailbox keys
+  or MCP sending, warm-up, CRM sync) and daily data triggers with a 4-axis
+  search rotation. Triggers: find customers, customer development, cold email,
+  outreach, lead research, need positioning, customs data, social prospecting,
+  bulk sending, bounce handling, WhatsApp bulk, customer DB import, CRM sync,
+  win review, 找客户, 客户开发, 背调, 海关数据. Industry-agnostic, ships with
+  no company or customer data; a mandatory install gate must pass before any
+  search or send script runs. Not for consumer marketing, paid ads, or market
+  sizing.
 license: CC-BY-NC-4.0
 compatibility: "Requires Python 3.8+ (standard library only; 3.9+ for daylight-saving-exact send windows). Network access needed for DNS/SMTP/IMAP and web search."
 metadata:
@@ -24,151 +23,151 @@ metadata:
   onboarding: "mandatory-first-run"
 ---
 
-# B2B Customer Development Kit（全行业通用版 v3.1）
+# B2B Customer Development Kit (universal edition v3.1)
 
-核心理念：**不做粗筛，每家都查背景、定位需求、针对性推对应方案；品牌名不决定需求，调研才决定。** 用数据闭环替代 AI 记忆，用脚本替代人工计算，用证据替代猜测。
+Core idea: **no coarse filtering — research every account, position its need, and pitch the matching solution; the brand name does not decide the need, research does.** Replace AI memory with a data loop, manual arithmetic with scripts, and guesses with evidence.
 
-## ⛔ 安装门禁 — 新装第一件事（三关不过，所有搜索/发信脚本拒绝运行）
+## ⛔ Install Gate — the first thing after installing (fail any of the three checks and every search/send script refuses to run)
 
-这是一个**通用模板**：不含任何公司名、产品、签名、关键词、客户名单或默认行业。门禁通过之前，只做建档，不做搜索、补充或发送。
+This is a **universal template**: it contains no company name, product, signature, keywords, customer list or default industry. Until the gate passes, only build the profile; do not search, replenish or send.
 
-### 防编造规则（最高优先级）
+### Anti-fabrication rules (highest priority)
 
-- **每一个关键事实都来自用户本人或用户指定的来源**（官网、名片、对话里的原话）：公司名、联系人、邮箱、电话/WhatsApp、网站、产品主张、MOQ/价格/交期/上线时间、认证、案例、关键词。行业包只是方法层建议，不算用户事实。
-- 某个字段不知道 → **问用户**。占位域名、猜出来的邮箱格式、"看起来合理"的数字都会导致退信和误发。
-- **确认只能由用户本人给出。** `attest` 只在你把每个值原样回读、用户明确回复「确认无误」之后运行。确认后档案或七件套任何改动，内容指纹都会失配，脚本重新拦截，必须再回读、再确认。
+- **Every key fact comes from the user or from a source the user names** (website, business card, their own words in the conversation): company name, contacts, e-mail, phone/WhatsApp, website, product claims, MOQ/price/lead time/launch date, certifications, case studies, keywords. Industry packs are method-level suggestions only; they are not user facts.
+- A field is unknown → **ask the user**. Placeholder domains, guessed e-mail patterns and "plausible-looking" numbers cause bounces and mis-sends.
+- **Only the user can confirm.** Run `attest` only after you have read every value back verbatim and the user has explicitly replied "confirmed". Any later change to the profile or the Soul Seven Kit breaks the content fingerprint, the scripts block again, and you must read back and confirm again.
 
-### 第一步：运行新装必做清单
+### Step one: run the first-install checklist
 
 ```bash
-python3 scripts/onboarding.py start      # 一屏列出装好后马上要补的信息 + 每项当前状态（只读）
-python3 scripts/onboarding.py init       # 生成空白 config/company_profile.json + soul_seven_kit/（不覆盖已有文件）
+python3 scripts/onboarding.py start      # one screen: what to fill in right after installing + the current status of each item (read-only)
+python3 scripts/onboarding.py init       # create a blank config/company_profile.json + soul_seven_kit/ (never overwrites existing files)
 ```
 
-### 三关
+### The three checks
 
-| 关 | 要补什么 | 命令 | 不过时 |
+| Check | What to fill in | Command | When it fails |
 |---|---|---|---|
-| 第 1 关 公司档案必填 | `business.industry`、`business.offer_type`、`company.brand_display`、`contact.founder_name`、`contact.email`、`product.one_liner_en`、`product.primary_keywords`（≥3）、`product.differentiators`（≥2）、`targeting.buyer_titles`（≥1）、`data_sources.customer_db`（`imported` / `crm_sync` / `none`，本技能不自带客户数据库） | `ask`（逐项问）或先 `packs` → `pack <id>` → `apply-pack <id>` 套行业方法层（13 个行业包） | 列出缺的字段 |
-| 第 2 关 灵魂七件套体检 | `soul_seven_kit/` 七份：IDENTITY（岗位/服务对象/红线）· SOUL（语气/优先级/决策）· AGENTS（SOP/人工确认/禁做）· TOOLS（何时用/怎么用/坏了怎么办）· MEMORY（结论/待办/下一步）· USER（汇报/审批/敏感）· HEARTBEAT（运行/完成率/错误），每份三五条真内容 | `kit-check`（缺件 / 空壳 / 未替换的「（例…）」示例 / 缺关键段 / 占位符，任何一项都不过） | 列出每份的具体问题 |
-| 第 3 关 用户本人确认 | AI 把档案与七件套摘要原样回读，用户明确回复「确认无误」 | `check`（返回 `FILLED_NOT_CONFIRMED` 是正常的）→ `attest` | `REFUSED` / `CHANGED_AFTER_CONFIRM` |
+| Check 1 Required profile fields | `business.industry`, `business.offer_type`, `company.brand_display`, `contact.founder_name`, `contact.email`, `product.one_liner_en`, `product.primary_keywords` (≥3), `product.differentiators` (≥2), `targeting.buyer_titles` (≥1), `data_sources.customer_db` (`imported` / `crm_sync` / `none`; this skill ships no customer database) | `ask` (field by field) or first `packs` → `pack <id>` → `apply-pack <id>` to apply an industry method layer (13 industry packs) | lists the missing fields |
+| Check 2 Soul Seven Kit health check | Seven files in `soul_seven_kit/`: IDENTITY (role / serves / red lines) · SOUL (tone / priorities / decisions) · AGENTS (SOP / human confirmation / never do) · TOOLS (when to use / how to use / when it breaks) · MEMORY (conclusions / to-do / next step) · USER (reporting / approval / sensitive) · HEARTBEAT (runs / completion rate / errors), each with three to five lines of real content | `kit-check` (missing file / empty shell / unreplaced "(e.g. …)" examples / missing key section / placeholders — any one fails) | lists the specific problems in each file |
+| Check 3 Confirmation by the user | The AI reads the profile and the kit summary back verbatim; the user explicitly replies "confirmed" | `check` (returning `FILLED_NOT_CONFIRMED` is normal) → `attest` | `REFUSED` / `CHANGED_AFTER_CONFIRM` |
 
-七件套的填写参考（客户开发岗，方法层写法，公司事实由用户提供）：`references/soul_kit/填写参考_客户开发岗.md`。首次建档时 MEMORY / HEARTBEAT 照实写「首次建档，尚无数据」即可。
+Fill-in reference for the kit (customer-development role, method-level wording; company facts come from the user): `references/soul_kit/fill_reference_customer_dev.md`. On first install MEMORY / HEARTBEAT may honestly say "first install, no data yet".
 
-建议马上补（不拦截，但直接影响效果，`start` 会逐项显示）：`targeting.target_regions`、`targeting.reference_brands`、`offer.key_facts`、`offer.entry_offer`、`rules.local_send_window`（默认 `09:00-11:00,14:00-16:00`）、`search.social_platforms`（空 = 10 个全开）、SMTP 环境变量（只在脚本批发时需要）。
+Recommended right away (not blocking, but directly affects results; `start` shows each item): `targeting.target_regions`, `targeting.reference_brands`, `offer.key_facts`, `offer.entry_offer`, `rules.local_send_window` (default `09:00-11:00,14:00-16:00`), `search.social_platforms` (empty = all 10 enabled), SMTP environment variables (only needed for scripted bulk sending).
 
-**联系方式规则**：只用用户确认过的联系方式。SMTP/IMAP 密码是密钥，只放环境变量（`SMTP_HOST/PORT/USER/PASS`、`IMAP_*`），不进档案、不进消息。完整访谈脚本：`references/onboarding_questions.md`。
+**Contact-details rule**: use only contact details the user has confirmed. SMTP/IMAP passwords are keys and live only in environment variables (`SMTP_HOST/PORT/USER/PASS`, `IMAP_*`), never in the profile or in messages. Full interview script: `references/onboarding_questions.md`.
 
-### 数据接入层（装好马上配，`start` 逐项显示状态）
+### Data Access Layer (set up right after install; `start` shows the status of each item)
 
-| 接什么 | 命令 | 说明 |
+| What to connect | Command | Notes |
 |---|---|---|
-| 自有客户库（安装必填声明） | `data_import.py inspect <Excel/CSV>` → `import --relation existing_customer\|prospect --source own:excel` | 统一落到 `$B2B_DATA_DIR/customer_db.csv`；中英文列名自动识别，`--map` 可改；老客户/禁联不进冷开发池 |
-| 外贸 SaaS / 海关 / CRM 导出 | 放进 `data/inbox/` → `triggers.py scan` 提醒 → 同一入口导入 | 对接方式与已查证的官方 API/MCP：`references/外贸SaaS对接指引.md` |
-| 发信通道 | `mail_setup.py providers` → `env <服务商> --user <邮箱>` → `test`（只登录不发信） | 企业邮箱客户端密钥 / 多邮箱托管 + 预热爬坡 + 退信自动暂停 / MCP 连接器建草稿：`references/mail_setup.md` |
-| CRM 同步 | `crm_sync.py export --target hubspot\|salesforce\|okki\|fumeng\|generic` · `pull` · `push-hubspot` · `mcp-payload` | CSV 任何 CRM 可用；HubSpot API 与 MCP 默认演练 |
-| 数据触发口 | `triggers.py scan [--apply-safe]` | 池低 / 新导入 / 到期跟进 / 新回复 / 退信异常 / WA 线索 / 预热升档 / CRM 待同步 / 周复盘 → `reports/trigger_queue.json`；外发动作一律人工拍板：`references/数据接入与触发口.md` |
+| Own customer DB (required declaration at install) | `data_import.py inspect <Excel/CSV>` → `import --relation existing_customer\|prospect --source own:excel` | Everything lands in `$B2B_DATA_DIR/customer_db.csv`; English and Chinese column names are recognised automatically, `--map` overrides; existing customers / do-not-contact never enter the cold pool |
+| Trade SaaS / customs / CRM exports | Drop into `data/inbox/` → `triggers.py scan` raises a notice → import through the same entry | Integration paths and verified official APIs/MCPs: `references/saas_integration_guide.md` |
+| Sending route | `mail_setup.py providers` → `env <provider> --user <mailbox>` → `test` (login only, no sending) | Business-mailbox client keys / hosted multi-mailbox + warm-up ramp + automatic bounce pause / MCP connector drafts: `references/mail_setup.md` |
+| CRM sync | `crm_sync.py export --target hubspot\|salesforce\|okki\|fumeng\|generic` · `pull` · `push-hubspot` · `mcp-payload` | CSV works with any CRM; HubSpot API and MCP are dry-run by default |
+| Data Triggers | `triggers.py scan [--apply-safe]` | pool low / new import / follow-up due / new reply / bounce spike / WA lead / warm-up step / CRM sync due / weekly review → `reports/trigger_queue.json`; every outbound action needs human sign-off: `references/data_access_and_triggers.md` |
 
-## Industry Adaptation（行业适配）
+## Industry Adaptation
 
-闭环在任何行业都一样，变的只有三件事，全部在档案里，不在代码里：
+The loop is the same in every industry; only three things change, all in the profile, none in the code:
 
-| 变什么 | 档案区块 | 例：零部件厂 → SaaS → 咨询公司 |
+| What changes | Profile section | Example: parts factory → SaaS → consultancy |
 | --- | --- | --- |
-| 找谁 | `targeting` | OEM 采购 → CTO → 创始人 |
-| 去哪找 | `search` + `business.offer_type` | 海关/展会 → 评测站/招聘 → 招标/名录 |
-| 怎么低门槛开始 | `offer` | 样品 → 14 天试用 → 免费诊断 |
+| Who to find | `targeting` | OEM buyer → CTO → founder |
+| Where to find them | `search` + `business.offer_type` | customs / trade shows → review sites / job posts → tenders / directories |
+| How to start with a low commitment | `offer` | sample → 14-day trial → free diagnosis |
 
-背调产出两个标签：`need_tag`（客户需要你的哪条线，取值由用户在 `positioning.need_tags` 定义）与 `solution_tag`（客户的决策驱动，11 个跨行业固定值：`compliance`、`sustainability`、`quality_upgrade`、`cost`、`speed`、`low_commitment`、`innovation`、`exclusive_custom`、`one_stop`、`dedicated_service`、`strategic_scale`）。钩子按 `solution_tag` 选；v1 旧标签自动映射。13 个行业包、术语对照与 4 份虚构示例档案：`references/行业适配指南.md`。
+Research produces two tags: `need_tag` (which of your lines the customer needs; values defined by the user in `positioning.need_tags`) and `solution_tag` (the customer's decision driver, 11 fixed cross-industry values: `compliance`, `sustainability`, `quality_upgrade`, `cost`, `speed`, `low_commitment`, `innovation`, `exclusive_custom`, `one_stop`, `dedicated_service`, `strategic_scale`). Hooks are chosen by `solution_tag`; legacy v1 tags are mapped automatically. 13 industry packs, terminology map and 4 fictional example profiles: `references/industry_adaptation_guide.md`.
 
 ## When to Use
 
-- 任何行业从 0 到 1 成体系做 B2B 获客：找客户、扩渠道（海关数据、展会、招标、招聘信号、竞品逆向、10 大社媒公开搜索）。
-- 背调与需求定位：need_tag / solution_tag、证据分级、跨品牌排重、标签冲突校正。
-- 写信与发送：多语种本地化冷邮件、DNS/MX 校验、邮箱猜测、按收件人当地时间批量发送。
-- 跟进与复盘：退信扫描、5 级冷却跟进、社媒 1-3-7-21、WhatsApp 转化、成功案例与七件套周复盘。
+- Building systematic B2B acquisition from zero in any industry: finding customers, widening channels (customs data, trade shows, tenders, hiring signals, competitor reverse-lookup, public search on 10 social platforms).
+- Background research and need positioning: need_tag / solution_tag, evidence grading, cross-brand de-dup, tag-conflict correction.
+- Writing and sending: multilingual localised cold e-mail, DNS/MX validation, e-mail guessing, batch sending by the recipient's local time.
+- Follow-up and review: bounce scanning, 5-level cooldown follow-up, social 1-3-7-21, WhatsApp conversion, success cases and weekly kit review.
 
 ### When NOT to use
 
-- 热线索 / 已回复客户 / 询盘未转化 → 交人工单点跟进，先告知用户。
-- 面向消费者的营销、付费广告、SEO、纯市场规模测算；没有合法联系依据的名单。
-- 报价、催款、合同条款 → 本技能只做开发与跟进，这些由用户本人处理。
-- 门禁未 `READY`，或用户尚未批准本批草稿 → 发送保持锁定。
+- Hot leads / customers who already replied / unconverted enquiries → hand to a person for one-to-one follow-up and tell the user first.
+- Consumer marketing, paid ads, SEO, pure market sizing; lists with no lawful basis for contact.
+- Quotes, payment reminders, contract terms → this skill only does development and follow-up; the user handles those.
+- Gate not `READY`, or the user has not yet approved the current draft batch → sending stays locked.
 
-## Process（安装门禁 + 第零步 + 七步法 + 收口）
+## Process (Install Gate + Step 0 + seven steps + close-out)
 
-完整闭环流程图：`references/assets/sop_flowchart.png`（PDF 同名）；每个节点的出口与回路：`references/sop_flowchart.md` 第四节。
+Full loop flowchart: `references/assets/sop_flowchart.png` (PDF with the same name); exits and loops of every node: `references/sop_flowchart.md` section 4.
 
 ```
-安装门禁(start→init→档案→kit-check→check→attest=READY)
-  ▸ 数据接入层              → data_import · mail_setup · crm_sync → 客户池 customer_db
-  ▸ 数据触发口（每天）      → triggers.py scan → 按队列进对应步骤（外发动作人工拍板）
-  ▸ 第零步 全渠道复盘        → 成功打法 + WA 复盘 + 上周七件套写回结论
-  ▸ 第一步 搜索候选          → queries · channels(15) · social(10 平台公开搜索)
-      └ 搜索三铁律          → filter --against 查库 · funnel 漏斗 · 待验证入池
-  ▸ 第二步 背景调查          → 5 信息源 + 背调三问 + S1/S2/S3（只有 S3 → need_review）
-  ▸ 第三步 需求定位          → need_tag + solution_tag（tag_rules 冲突 → 人工）
-  ▸ 第四步 撰写内容          → 母语整封 · ≤120 词 · 纯文本 · 只引用 S1/S2 事实
-  ▸ 第五步 发送执行          → 三道关 → DRY_RUN → 用户批准 → 收件人当地窗口内发
-  ▸ 第六步 跟进管理          → 退信/回复/成交/无回复 四分支；邮件 3/3/10 天；社媒 1-3-7-21
-  ▸ 第七步 WhatsApp 触发     → convert → validate → preview → harness → send → audit → wa_review
-  ▸ 第八步 成单复盘 + 七件套写回 → add_success → review → 周复盘写回 → kit-check → 回第零步
+Install Gate (start→init→profile→kit-check→check→attest=READY)
+  ▸ Data Access Layer          → data_import · mail_setup · crm_sync → customer pool customer_db
+  ▸ Data Triggers (daily)      → triggers.py scan → enter the matching step from the queue (outbound actions need human sign-off)
+  ▸ Step 0 Omni-channel Review → winning patterns + WA review + last week's kit write-back conclusions
+  ▸ Step 1 Search Candidates   → queries · channels(15) · social(public search on 10 platforms)
+      └ Three Iron Rules of Search → filter --against DB lookup · funnel diagnosis · pending-verification pool
+  ▸ Step 2 Background Research → 5 sources + 3 research questions + S1/S2/S3 (S3 only → need_review)
+  ▸ Step 3 Need Positioning    → need_tag + solution_tag (tag_rules conflict → human)
+  ▸ Step 4 Write Content       → whole e-mail in the native language · ≤120 words · plain text · S1/S2 facts only
+  ▸ Step 5 Send                → three pre-send checks → DRY_RUN → user approval → send inside the recipient's local window
+  ▸ Step 6 Follow-up Management → bounce / reply / won / no-reply branches; e-mail 3/3/10 days; social 1-3-7-21
+  ▸ Step 7 WhatsApp Trigger    → convert → validate → preview → harness → send → audit → wa_review
+  ▸ Step 8 Win Review + Kit Write-back → add_success → review → weekly write-back → kit-check → back to Step 0
 ```
 
-1. **门禁 + 数据接入** — `python3 scripts/onboarding.py check` = `READY`；客户库按声明导入，发信通道 `mail_setup.py test` 通过；每天先跑 `triggers.py scan`。
-2. **第零步 全渠道复盘** — `csv_ops.py review_success`、`wa_review.py review`；读 `soul_seven_kit/MEMORY.md` 的本周结论作为本轮起点。
-3. **第一步 搜索候选** — `search_customers.py queries`（关键词矩阵）· `channels`（15 个发现渠道；海关免注册路径见 `references/海关数据操作指引.md`）· `social`（10 大社媒免登录公开搜索 + 30 个采购链职位，打法见 `references/social_media_playbooks.md`）。脚本只生成公开搜索式；需要登录的动作（连接请求、私信、进群）由用户本人决定是否手动做。结果统一走 `filter --against <客户库.csv>`（查库去重 + 漏斗诊断 + 待验证入池）。自循环补池：`replenish` / `schedule` 按四维轮换——深度 d1 公司 → d2 决策人 → d3 存量深挖（最快）· 远度 地区由近到远 · 高度 客户层级由高到低 · 广度 core → wide → max（最慢）（`references/自循环引擎.md`）。
-4. **第二步 背景调查** — 每条结论标证据等级与来源：至少 1 条 S1 或 2 条独立 S2 才定标签；只有 S3 → `need_review` 交用户拍板（`references/research_guide.md` 五·五）。
-5. **第三步 需求定位** — need_tag 决定推哪条线，solution_tag 决定钩子；`conflict-check --against <pool.csv>` 只提示冲突、不改数据。
-6. **第四步 撰写内容** — `references/email_templates.md`；占位符只用 `product.*` / `offer.*` 填；发信脚本拦截任何残留 `<...>` / `{...}`。
-7. **第五步 发送执行** — 发前三道关（邮箱 ✓ 查重 `csv_ops.py check` / `cross_brand_check` ✓ 备注 ✓）→ `DRY_RUN=1` 生成逐封报告 → **用户明确批准** → `decision_maker_sender.py`（或 `batch_sender.py`；发信通道三选一：单邮箱密钥 / 多邮箱托管按预热上限轮换 / `mail_setup.py mcp-export` 交连接器建草稿）。每封自动带 `List-Unsubscribe` 头和正文退订提示。联系人带 `region`/`tz` 时只在收件人当地工作日窗口内发，窗口外本轮延后（`send_window.py table --me <你的时区>` 实时换算，含夏令时）。每日 ≤200 封，间隔 30 秒。
-8. **第六步 跟进管理** — 发信后 24–48 小时扫一次退信/回复：`DRY_RUN=1 imap_scanner.py` 先看识别结果，再正式回写（邮箱只读打开）；`csv_ops.py cooldown <email>` 计算 5 级冷却（按 `followup_count` = 已发封数 − 1：已发 1 / 2 / 3 封后分别等 3 / 3 / 10 天；已发 4 封 → 停通用邮箱，只走 LinkedIn / 个人邮箱；已发 5 封及以上 → 邮件全停，转第七步）；社媒私信按 1-3-7-21（人工）；同一客户同一天只走一个渠道。
-9. **第七步 WhatsApp 触发** — 触发信号命中后：`wa_bulk_sender.py convert → validate → preview → harness → send → audit`（双号隔离；`send` 自动按随机 8–15 秒间隔、每 5 条冷却 30–60 秒出下一条；每日 200 条计数器强制 STOP），细节 `references/wa_bulk_guide.md`。
-10. **第八步 成单复盘 + 七件套写回** — 成交 → AI 给出带证据的痛点候选 → 用户确认 → `add_success --won_channel email|wa`；`review_success` / `email_dashboard.py` / `wa_review.py --compare-email` 做全渠道归因；每周按 `references/soul_kit/周复盘写回.md` 把错写回对应档案 → `kit-check` → 回第零步。
+1. **Gate + data access** — `python3 scripts/onboarding.py check` = `READY`; customer DB imported as declared; sending route passes `mail_setup.py test`; run `triggers.py scan` first every day.
+2. **Step 0 Omni-channel Review** — `csv_ops.py review_success`, `wa_review.py review`; read this week's conclusions in `soul_seven_kit/MEMORY.md` as the starting point for this round.
+3. **Step 1 Search Candidates** — `search_customers.py queries` (keyword matrix) · `channels` (15 discovery channels; no-registration customs path in `references/customs_data_guide.md`) · `social` (login-free public search on 10 social platforms + 30 procurement-chain titles; playbooks in `references/social_media_playbooks.md`). The script only generates public search queries; actions that need a login (connection requests, DMs, joining groups) are the user's own manual decision. All results go through `filter --against <customer_db.csv>` (DB de-dup + funnel diagnosis + pending-verification pool). Self-replenishing pool: `replenish` / `schedule` rotate on four axes — Depth d1 companies → d2 decision makers → d3 deep-mining the existing pool (fastest) · Reach regions near to far · Height customer tier high to low · Breadth core → wide → max (slowest) (`references/self_replenishing_engine.md`).
+4. **Step 2 Background Research** — every conclusion carries an evidence grade and source: at least 1 S1 or 2 independent S2 before setting a tag; S3 only → `need_review` for the user to decide (`references/research_guide.md` §5.5).
+5. **Step 3 Need Positioning** — need_tag decides which line to pitch, solution_tag decides the hook; `conflict-check --against <pool.csv>` only flags conflicts, never changes data.
+6. **Step 4 Write Content** — `references/email_templates.md`; placeholders are filled only from `product.*` / `offer.*`; the senders block any leftover `<...>` / `{...}`.
+7. **Step 5 Send** — three pre-send checks (mailbox ✓ de-dup `csv_ops.py check` / `cross_brand_check` ✓ notes ✓) → `DRY_RUN=1` produces a per-e-mail report → **explicit user approval** → `decision_maker_sender.py` (or `batch_sender.py`; three sending routes: single mailbox key / hosted multi-mailbox rotating under warm-up caps / `mail_setup.py mcp-export` for a connector to draft). Every e-mail carries a `List-Unsubscribe` header and an opt-out line. Contacts with `region`/`tz` are sent only inside the recipient's local weekday window; outside it they are deferred (`send_window.py table --me <your tz>` converts live, daylight saving included). ≤200 e-mails per day, 30-second interval.
+8. **Step 6 Follow-up Management** — 24–48 hours after sending, scan bounces/replies once: `DRY_RUN=1 imap_scanner.py` to see what is detected, then write back for real (mailbox opened read-only); `csv_ops.py cooldown <email>` computes the 5-level cooldown (`followup_count` = e-mails sent − 1: after 1 / 2 / 3 e-mails wait 3 / 3 / 10 days; after 4 e-mails → stop generic mailboxes, LinkedIn / personal mailbox only; 5 or more → stop e-mail entirely, move to Step 7); social DMs on 1-3-7-21 (manual); one channel per customer per day.
+9. **Step 7 WhatsApp Trigger** — when a trigger signal fires: `wa_bulk_sender.py convert → validate → preview → harness → send → audit` (two-number isolation; `send` paces itself at random 8–15 s intervals and a 30–60 s cooldown every 5 messages; the daily 200-message counter forces STOP); details in `references/wa_bulk_guide.md`.
+10. **Step 8 Win Review + Kit Write-back** — deal won → the AI proposes evidence-backed pain-point candidates → the user confirms → `add_success --won_channel email|wa`; `review_success` / `email_dashboard.py` / `wa_review.py --compare-email` for omni-channel attribution; every week write the mistakes back into the matching kit file per `references/soul_kit/weekly_writeback.md` → `kit-check` → back to Step 0.
 
-**Gate scope（门禁范围）**：会搜索、发送、打开 WhatsApp 或真推 CRM 的命令（`search_customers.py`、`batch_sender.py`、`decision_maker_sender.py`、`wa_bulk_sender.py screenshot/send/harness/audit`、`crm_sync.py push-hubspot` 真推模式）在门禁 `READY` 且内容指纹一致之前全部拒绝运行。只读或本地准备工具（`validate`/`preview`/`template`/`convert`、`dns_validator.py`、`email_guesser.py`、`send_window.py`、看板、`data_import.py`、`mail_setup.py`、`triggers.py`、`crm_sync.py export/pull`）建档前也可用，方便安装时先导入客户库、配好邮箱。门禁拦截时，报错会写明卡在哪一关。
+**Gate scope**: commands that search, send, open WhatsApp or really push to a CRM (`search_customers.py`, `batch_sender.py`, `decision_maker_sender.py`, `wa_bulk_sender.py screenshot/send/harness/audit`, `crm_sync.py push-hubspot` in real-push mode) all refuse to run until the gate is `READY` and the content fingerprint matches. Read-only or local preparation tools (`validate`/`preview`/`template`/`convert`, `dns_validator.py`, `email_guesser.py`, `send_window.py`, the dashboards, `data_import.py`, `mail_setup.py`, `triggers.py`, `crm_sync.py export/pull`) work before the profile exists, so you can import the customer DB and set up the mailbox during install. When the gate blocks, the error says which check failed.
 
-**Safety baseline（安全基线）**：凭证只走环境变量（多邮箱托管文件只存变量名）；推 CRM 默认演练；触发口只读，唯一自动动作是退信异常时暂停邮箱；SMTP 仅 465/587+STARTTLS，IMAP 仅 IMAPS；发信、退信扫描、DNS 校验都支持 `DRY_RUN=1` 演练；退信扫描以只读方式打开邮箱；通用邮箱前缀自动拦截；退信永久拉黑；脚本只读不自改客户数据；社媒只做公开搜索。
+**Safety baseline**: credentials live only in environment variables (the hosted-mailbox file stores variable names only); CRM push is dry-run by default; triggers are read-only, the only automatic action is pausing a mailbox on a bounce spike; SMTP only on 465/587+STARTTLS, IMAP only over IMAPS; sending, bounce scanning and DNS validation all support `DRY_RUN=1`; bounce scanning opens the mailbox read-only; generic mailbox prefixes are blocked automatically; bounces are blacklisted permanently; scripts never rewrite customer data on their own; social platforms are public search only.
 
-数据接入与触发口：`references/数据接入与触发口.md`；数据结构与 CSV 操作：`references/csv_guide.md`；完整 SOP：`references/SOP.md`；无人值守调度与人机边界：`references/automation_setup.md`；版本历史：`CHANGELOG.md`。
+Data access and triggers: `references/data_access_and_triggers.md`; data structures and CSV operations: `references/csv_guide.md`; full SOP: `references/SOP.md`; unattended scheduling and the human/machine boundary: `references/automation_setup.md`; version history: `CHANGELOG.md`.
 
-### Check axes（每个客户/每批邮件过这 6 个轴）
+### Check axes (every account / every e-mail batch passes these 6 axes)
 
-- **Target fit** — 业务与档案的产品/服务与客户层匹配，未命中任何 exclude_keywords。
-- **Reachable contact** — 真实、可溯源的具名决策人邮箱，DNS/MX 通过。
-- **Demand hook** — 有具体采购信号，solution_tag 有 S1/S2 证据，钩子由档案的 differentiators 与 offer 支撑。
-- **Localization** — 语言、问候、发信时段匹配收件人所在国家。
-- **Deliverability** — 每日上限、同联系人冷却、当地窗口全部满足。
-- **Approval & signature** — 批次经用户明确批准，签名只含用户确认过的联系方式。
+- **Target fit** — the business matches the profile's product/service and customer tier, and hits none of the exclude_keywords.
+- **Reachable contact** — a real, traceable named decision-maker mailbox that passes DNS/MX.
+- **Demand hook** — a concrete buying signal, solution_tag backed by S1/S2 evidence, hook supported by the profile's differentiators and offer.
+- **Localization** — language, greeting and sending window match the recipient's country.
+- **Deliverability** — daily cap, per-contact cooldown and local window all satisfied.
+- **Approval & signature** — the batch is explicitly approved by the user; the signature contains only user-confirmed contact details.
 
 ## Common Rationalizations
 
-| 借口 | 真相 |
+| Excuse | Reality |
 | --- | --- |
-| "先猜一个公司/产品开工。" | 模板故意留空；编造身份或联系方式会毁掉送达率和信任。先过门禁。 |
-| "七件套把 filled 改成 true 就行。" | `kit-check` 看真内容：空壳、未替换的「（例…）」示例、缺关键段都过不了。 |
-| "确认过一次，后面改档案不用再确认。" | 内容指纹会失配，脚本重新拦截；改动必须回读、再确认。 |
-| "`info@`/`sales@` 也算进客户池。" | 通用邮箱大多退信或无人处理；只有可溯源的具名联系人才算池子健康度。 |
-| "评论区有人提了一句，就定成这个需求。" | 那是 S3 弱信号，只能标 need_review 交用户拍板。 |
-| "为了省时间，批准前先发。" | 外发邮件是高风险对外动作；每一批都要用户明确批准。 |
-| "社媒上直接批量加好友/私信更快。" | 本技能只做免登录公开搜索；登录后的动作由用户本人决定，并遵守平台条款。 |
-| "什么时间方便就什么时间发。" | 按收件人当地工作日窗口发，脚本会把窗口外的收件人延后。 |
-| "退信可能是临时的，再发一次。" | 退信永久拉黑；重发损害发件信誉。 |
-| "新邮箱第一天就发满额度。" | 托管邮箱按预热档位爬坡（档位是可调默认值）；一轮退信超阈值自动暂停。 |
-| "客户库里有邮箱就能冷开发。" | 老客户、禁联、同行不进冷开发池；SaaS 导出的邮箱同样要过 DNS 校验和背调。 |
+| "Let's guess a company/product to get started." | The template is deliberately blank; an invented identity or contact details destroy deliverability and trust. Pass the gate first. |
+| "Just flip filled to true in the kit." | `kit-check` reads the real content: empty shells, unreplaced "(e.g. …)" examples and missing key sections all fail. |
+| "Confirmed once; later profile edits don't need confirming." | The content fingerprint stops matching and the scripts block again; every change must be read back and confirmed. |
+| "`info@`/`sales@` count towards the customer pool." | Generic mailboxes mostly bounce or go unread; only traceable named contacts count towards pool health. |
+| "Someone mentioned it in a comment, so that's the need." | That is a weak S3 signal; it can only be marked need_review for the user to decide. |
+| "To save time, send before approval." | Outbound e-mail is a high-risk external action; every batch needs explicit user approval. |
+| "Mass friend requests / DMs on social would be faster." | This skill only does login-free public search; logged-in actions are the user's decision and must follow platform terms. |
+| "Send whenever it's convenient for me." | Send inside the recipient's local weekday window; the script defers recipients outside it. |
+| "The bounce might be temporary, send again." | Bounces are blacklisted permanently; resending damages sender reputation. |
+| "Use the full quota on a new mailbox from day one." | Hosted mailboxes ramp up through warm-up tiers (adjustable defaults); a round with bounces above the threshold pauses automatically. |
+| "Any e-mail in the customer DB can be cold-contacted." | Existing customers, do-not-contact and competitors never enter the cold pool; SaaS-exported addresses still need DNS validation and research. |
 
 ## Red Flags
 
-- 档案缺失、`configured=false` 或内容指纹不一致时，有搜索/发送/WhatsApp 发送命令在运行。
-- 七件套里还留着「（例…）」示例行，却已经 attest。
-- 草稿里出现用户没确认过的邮箱/电话/网站，或残留 `[...]` / `<...>` 占位符。
-- 猜出来的 `export@/info@` 被当成已验证线索。
-- 只有 S3 证据的客户被定了具体 need_tag 并激进推销。
-- 同一个号码在 WhatsApp 名单里出现两次并进入 harness/send；单日超过 200 条。
-- 当地窗口外发送，或违反同联系人冷却；同一客户同一天走了两个渠道。
-- SMTP/IMAP 密钥写进档案、脚本、日志或 `config/mailboxes.json`。
-- 托管邮箱已暂停仍在发信；推 CRM 或 MCP 发信清单里有 `approved=false` 的条目被执行。
-- 草稿批次在用户明确批准之前被发出。
+- A search / send / WhatsApp-send command running while the profile is missing, `configured=false`, or the content fingerprint does not match.
+- "(e.g. …)" example lines still in the kit, yet `attest` has already run.
+- A draft containing an e-mail / phone / website the user never confirmed, or leftover `[...]` / `<...>` placeholders.
+- A guessed `export@/info@` treated as a verified lead.
+- An account with S3-only evidence given a specific need_tag and pitched aggressively.
+- The same number appearing twice in the WhatsApp list and entering harness/send; more than 200 messages in one day.
+- Sending outside the local window, or breaking the per-contact cooldown; two channels used for one customer on the same day.
+- SMTP/IMAP keys written into the profile, scripts, logs or `config/mailboxes.json`.
+- A paused hosted mailbox still sending; `approved=false` items executed in a CRM push or MCP sending list.
+- A draft batch sent before the user's explicit approval.
 
 ## Role contract
 
@@ -214,14 +213,23 @@ Workflow prompt audit: N/A — single agent context; the bundled scripts make no
 
 ## Verification
 
-一轮开发结束前逐项确认：
+Before closing a development round, confirm each item:
 
-- [ ] `python3 scripts/onboarding.py check` 打印 `READY`，`kit-check` 为 7/7。
-- [ ] `search_customers.py channels` / `social` 的默认渠道与平台贴合用户行业。
-- [ ] 每条新线索都有真实、可溯源的具名联系人，背调证据达到 S1 或 2×S2，弱信号已标 need_review。
-- [ ] 草稿已本地化、只引用事实，批次经用户明确批准；`DRY_RUN` 报告已逐封核对。
-- [ ] 地址通过 DNS/MX；发送发生在收件人当地窗口内，冷却与每日上限得到遵守。
-- [ ] 退信已拉黑，发送/黑名单 CSV 已回写；WhatsApp 名单通过 `validate`（无重复、无未填占位符）。
-- [ ] 看板/漏斗数字已汇报，并区分目标客户与非目标客户，不只报原始数量。
-- [ ] `triggers.py scan` 的人工拍板项已处理并 `ack`；`crm_sync.py` 已与 CRM 对齐（如使用）。
-- [ ] 本周七件套写回已完成并重新 `kit-check`；`python3 scripts/consistency_audit.py` 为 FAIL 0。
+- [ ] `python3 scripts/onboarding.py check` prints `READY` and `kit-check` is 7/7.
+- [ ] The default channels and platforms from `search_customers.py channels` / `social` fit the user's industry.
+- [ ] Every new lead has a real, traceable named contact; research evidence reaches S1 or 2×S2; weak signals are marked need_review.
+- [ ] Drafts are localised and quote only facts; the batch was explicitly approved by the user; the `DRY_RUN` report was checked e-mail by e-mail.
+- [ ] Addresses passed DNS/MX; sending happened inside the recipient's local window; cooldown and daily cap were respected.
+- [ ] Bounces are blacklisted; send / blacklist CSVs are written back; the WhatsApp list passed `validate` (no duplicates, no unfilled placeholders).
+- [ ] Dashboard / funnel numbers were reported, separating target from non-target accounts rather than raw counts only.
+- [ ] Human sign-off items from `triggers.py scan` were handled and `ack`ed; `crm_sync.py` is aligned with the CRM (if used).
+- [ ] This week's kit write-back is done and `kit-check` passes (if it still fails after two fix attempts, stop and hand the listed problems to the user); `python3 scripts/consistency_audit.py` reports FAIL 0.
+
+## Record schema (where state lives)
+
+All state is plain CSV under `B2B_DATA_DIR` (default `data/`), written only through `csv_ops.py`; field lists are the `*_FIELDS` constants in `scripts/csv_ops.py` and are documented in `references/csv_guide.md`:
+
+- `data/sent_history.csv` — `email, brand, send_date (YYYY-MM-DD), subject, need_tag, followup_count, last_followup_date, status (sent / bounced / replied / permanent_stop), notes`
+- `data/blacklist.csv` — `email, brand, reason, date`; `data/wa_contacts.csv` — `wa_number, brand, contact_name, source_date, status`; `data/success_cases.csv` — `email, brand, contact, region, need_tag, … hook_type, source_channel, won_channel, … notes` (full list in csv_guide §3)
+- `data/pipeline.csv` (reserve pool), `data/customer_db.csv` (imported DB), `data/mailbox_usage.csv`, `data/crm_sync_log.csv`, `reports/trigger_queue.json`
+- Weekly conclusions: `soul_seven_kit/MEMORY.md` (section "Conclusions this week"), rewritten by the user at Step 8.

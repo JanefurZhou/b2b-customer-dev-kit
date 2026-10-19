@@ -1,99 +1,99 @@
-# 产品/服务知识库模板（由你填写，全行业通用）
+# Product / service knowledge base template (you fill it in; any industry)
 
-> 这是一份**空白模板**。本 Skill 不内置任何公司或行业的产品事实。
-> 请把 `<...>` 替换为你自己的真实信息；不适用的小节直接删除。
-> 「产品」在本 Skill 里泛指你卖的东西：实体商品、零部件、软件、专业服务、物流方案、工程项目能力都算。
-> AI 起草邮件、提炼钩子时只引用这里和 `config/company_profile.json` 的内容，不得自行编造。
+> This is a **blank template**. The skill ships no product facts of any company or industry.
+> Replace every `<...>` with your own real information; delete sections that do not apply.
+> "Product" here means whatever you sell: physical goods, components, software, professional services, logistics solutions, project capabilities.
+> When the AI drafts e-mails or distils hooks it quotes only this file and `config/company_profile.json`; it must not invent anything.
 
 ---
 
-## 一、你卖什么（产品/服务线）
+## 1. What you sell (product / service lines)
 
-> 每条线一行。`need_tag` 列就是背调时给客户打的「要你哪条线」标签，
-> 同步填进 `positioning.need_tags`。
+> One line per offer line. The `need_tag` column is the "which of your lines they need" tag given to customers during research;
+> copy it into `positioning.need_tags`.
 
-| need_tag | 名称 | 交付形态 | 一句话说明（英文，可直接进邮件） | 典型客户 |
+| need_tag | Name | Offer type | One-liner (English, ready for an e-mail) | Typical customer |
 |---|---|---|---|---|
 | `line_a` | <offer-line-1> | <physical / software / service / project> | <one-liner> | <customer-type> |
 | `line_b` | <offer-line-2> | <...> | <one-liner> | <customer-type> |
 
 ---
 
-## 二、可验证的核心卖点（差异化）
+## 2. Verifiable core selling points (differentiators)
 
-> 每条卖点都要能被客户验证（证书、数据、案例、样品、试用、演示）。
-> 前两条同步填入 `product.differentiators`。
+> Every selling point must be verifiable by the customer (certificate, data, case study, sample, trial, demo).
+> Copy the first two into `product.differentiators`.
 
-### 2.1 核心差异
-- <与常见替代方案相比的真实差异，写可测量的点>
+### 2.1 Core difference
+- <the real, measurable difference compared with common alternatives>
 
-### 2.2 质量与合规
-- <认证名称原文 / 检测报告 / 安全与数据合规 / 行业资质——只写真实持有的>
+### 2.2 Quality and compliance
+- <exact certification names / test reports / security and data compliance / industry licences — only what you really hold>
 
-### 2.3 交付能力
-- <起步门槛 min_commitment：MOQ / 最低合同额 / 最短订阅期>
-- <交付周期 delivery_time：打样+大货 / 上线周期 / 项目工期 / 运输时效>
-- <产能或服务容量：月产能 / 同时服务客户数 / 团队规模>
+### 2.3 Delivery capability
+- <entry threshold min_commitment: MOQ / minimum contract / shortest subscription>
+- <delivery_time: sampling + bulk / go-live time / project duration / transit time>
+- <capacity or service capacity: monthly output / concurrent customers / team size>
 
-### 2.4 定制与研发
-- <是否支持定制、私牌、私有化部署、专属方案；流程与周期>
+### 2.4 Customisation and R&D
+- <customisation, private label, on-premise deployment, dedicated solutions supported? process and lead time>
 
-### 2.5 服务与支持
-- <售后、SLA、驻场、培训、本地化支持、账期——按实际填写>
+### 2.5 Service and support
+- <after-sales, SLA, on-site, training, local support, payment terms — as applicable>
 
 ---
 
-## 三、成交入口（offer 层，填进 profile.offer）
+## 3. Entry to a deal (offer layer, goes into profile.offer)
 
-| 字段 | 你的真实值 | 说明 |
+| Field | Your real value | Notes |
 |---|---|---|
-| `entry_offer` | <free sample / 14-day trial / free audit / pilot / site visit> | 客户零风险或低风险起步的方式 |
-| `cta_question` | <Open to a 20-minute demo next week?> | 邮件最后一句问句 |
-| `key_facts` | <2–4 条短事实> | 例：MOQ 50 pcs · setup in 2 days · ISO 9001 certified |
-| `proof_points` | <可公开案例> | 须客户授权或已脱敏 |
-| `repeat_hook` | <our 2027 range is ready / v3 is live> | 老客户复购跟进用 |
+| `entry_offer` | <free sample / 14-day trial / free audit / pilot / site visit> | how a customer starts with zero or low risk |
+| `cta_question` | <Open to a 20-minute demo next week?> | the closing question of the e-mail |
+| `key_facts` | <2–4 short facts> | e.g. MOQ 50 pcs · setup in 2 days · ISO 9001 certified |
+| `proof_points` | <publishable case studies> | customer-authorised or de-identified |
+| `repeat_hook` | <our 2027 range is ready / v3 is live> | for repeat-order follow-ups with existing customers |
 
 ---
 
-## 四、产品/服务 × 客户类型匹配
+## 4. Product / service × customer-type match
 
-> 列出你最想开发的 3–7 类客户，对每类写清「推哪条线 + 用哪个卖点 + 首选钩子」。
+> List the 3–7 customer types you most want to develop and, for each, "which line + which selling point + preferred hook".
 
-| 客户类型 | 推荐线（need_tag） | 切入卖点 | 首选钩子（industry_playbooks §二） |
+| Customer type | Recommended line (need_tag) | Entry selling point | Preferred hook (industry_playbooks §2) |
 |---|---|---|---|
 | <customer-type-1> | <line_a> | <differentiator> | <2.x> |
 | <customer-type-2> | <line_b> | <differentiator> | <2.x> |
 
 ---
 
-## 五、时间窗口（如适用）
+## 5. Time windows (if applicable)
 
-> 季节、财年预算、招标周期、展会、法规生效日、产品发布节奏……有就写，没有就删本节。
-- 关键窗口：<window>
-- 倒推节奏：<from first contact → trial/sample → decision → delivery>
+> Seasons, fiscal-year budgets, tender cycles, trade shows, regulation effective dates, release rhythm … write them if you have them, otherwise delete this section.
+- Key window: <window>
+- Backward schedule: <from first contact → trial/sample → decision → delivery>
 
 ---
 
-## 六、差异化话术库（英文，必须基于第二节事实）
+## 6. Differentiation phrase bank (English, must rest on the facts in section 2)
 
-| 钩子类型 | 英文话术 |
+| Hook type | English phrase |
 |---|---|
-| 核心差异 | <your measurable difference> |
-| 起步门槛 | <min_commitment fact> |
-| 交付时效 | <delivery_time fact> |
-| 定制能力 | <customisation fact> |
-| 合规/资质 | <certification fact，须有证书> |
-| 案例 | <proof point，须授权> |
+| Core difference | <your measurable difference> |
+| Entry threshold | <min_commitment fact> |
+| Delivery speed | <delivery_time fact> |
+| Customisation | <customisation fact> |
+| Compliance / credentials | <certification fact, certificate required> |
+| Case study | <proof point, authorisation required> |
 
-> 这些是 AI 起草邮件的**事实素材**；最终是否使用、怎么措辞，由你审核草稿后决定。
+> These are the **fact material** for AI-drafted e-mails; whether and how to use them is your decision after reviewing the draft.
 
 ---
 
-## 七、禁用词与行业合规补充
+## 7. Banned words and industry compliance additions
 
-通用基线见 `industry_playbooks.md` §五。在此补充你所在行业的禁用/必披露表述，例如：
-- 医疗/健康：不得做疗效或诊断宣称
-- 食品：不得做健康功效宣称；过敏原与标签按进口国法规
-- 金融/投资：不得承诺收益
-- 软件：安全认证只写已获得的；涉及个人数据须说明合规依据
+General baseline: `industry_playbooks.md` §5. Add the banned / mandatory statements of your industry here, for example:
+- Medical / health: no efficacy or diagnostic claims
+- Food: no health-benefit claims; allergens and labelling per the importing country's rules
+- Finance / investment: no promised returns
+- Software: list only security certifications actually obtained; state the compliance basis when personal data is involved
 - <your-industry-specific rule>

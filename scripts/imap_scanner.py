@@ -1,32 +1,32 @@
 #!/usr/bin/env python3
-"""IMAP 自动退信扫描脚本（零外部依赖，仅用 Python 标准库）
+"""IMAP automatic bounce scanner (zero external dependencies, Python standard library only)
 
-用法:
-    python3 scripts/imap_scanner.py [最大扫描数]
+Usage:
+    python3 scripts/imap_scanner.py [max_scan]
 
-功能:
-    - 登录企业邮箱（IMAP），扫描收件箱中的退信通知
-      （Mailer-Daemon / postmaster / delivery failure 等）
-    - 从退信正文提取被退回的目标邮箱（Final-Recipient / Original-Recipient / 正文匹配）
-    - 对每个退信邮箱调用 csv_ops.py mark_bounced：
-        · 加入 blacklist.csv
-        · sent_history.csv 对应记录标记 bounced
-    - 建议发信后 24-48 小时执行一次
+What it does:
+    - logs in to the business mailbox (IMAP) and scans the inbox for bounce notifications
+      (Mailer-Daemon / postmaster / delivery failure etc.)
+    - extracts the bounced recipient from the bounce body (Final-Recipient / Original-Recipient / body match)
+    - calls csv_ops.py mark_bounced for each bounced address:
+        · added to blacklist.csv
+        · matching sent_history.csv records marked bounced
+    - recommended 24-48 hours after sending
 
-IMAP 凭证（全部走环境变量，脚本内不硬编码）:
-    IMAP_HOST   IMAP 服务器（如 imap.your-mail-provider.com）
-    IMAP_PORT   端口（默认 993，SSL）
-    IMAP_USER   登录用户名 / 邮箱（未设则回退用 SMTP_USER）
-    IMAP_PASS   登录密码 / 授权码（未设则回退用 SMTP_PASS）
-    IMAP_FOLDER 扫描文件夹（默认 INBOX）
-    IMAP_SINCE_DAYS 只扫描最近 N 天（默认 7）
-    DRY_RUN     设为 1 时只列出识别到的退信邮箱，不调用 mark_bounced、不改任何数据
+IMAP credentials (all via environment variables; nothing hard-coded):
+    IMAP_HOST   IMAP server (e.g. imap.your-mail-provider.com)
+    IMAP_PORT   port (default 993, SSL)
+    IMAP_USER   login user / mailbox (falls back to SMTP_USER)
+    IMAP_PASS   login password / authorisation code (falls back to SMTP_PASS)
+    IMAP_FOLDER folder to scan (default INBOX)
+    IMAP_SINCE_DAYS only scan the last N days (default 7)
+    DRY_RUN     set to 1 to only list detected bounced addresses; mark_bounced is not called and no data changes
 
-安全：邮箱以只读方式打开（EXAMINE / readonly=True），脚本不删除、不移动、不标记任何邮件。
+Safety: the mailbox is opened read-only (EXAMINE / readonly=True); the script never deletes, moves or flags any message.
 """
 import imaplib, email, sys, os, re, subprocess, datetime, ssl
 from email.header import decode_header
-for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+for _s in (sys.stdout, sys.stderr):  # keep non-ASCII output safe when redirected or on legacy Windows consoles
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
@@ -55,7 +55,7 @@ def _decode(s):
 
 
 def _body_text(msg):
-    """提取邮件纯文本正文。"""
+    """Extract the plain-text body of a message."""
     if msg.is_multipart():
         chunks = []
         for part in msg.walk():
@@ -70,11 +70,11 @@ def _body_text(msg):
 
 
 def extract_bounced_emails(msg, own_address):
-    """从退信邮件中提取被退回的目标邮箱。"""
+    """Extract the bounced recipient address from a bounce message."""
     body = _body_text(msg)
     found = set()
 
-    # 优先从标准字段提取
+    # Prefer the standard fields
     for line in body.splitlines():
         low = line.lower()
         if low.startswith("final-recipient") or low.startswith("original-recipient"):
@@ -82,7 +82,7 @@ def extract_bounced_emails(msg, own_address):
             if m:
                 found.add(m.group(0).lower())
 
-    # 回退：正文中所有邮箱（排除自己的地址与常见系统地址）
+    # Fallback: every address in the body (excluding our own address and common system addresses)
     if not found:
         for m in EMAIL_RE.findall(body):
             addr = m.lower()
@@ -118,20 +118,20 @@ def main():
     since_days = int(env("IMAP_SINCE_DAYS", "7"))
 
     if not host or not user or not password:
-        print("ERROR: 缺少 IMAP 凭证环境变量（IMAP_HOST / IMAP_USER / IMAP_PASS，"
-              "或回退用 SMTP_USER / SMTP_PASS）。")
+        print("ERROR: IMAP credential variables missing (IMAP_HOST / IMAP_USER / IMAP_PASS, "
+              "or the SMTP_USER / SMTP_PASS fallback).")
         sys.exit(1)
 
-    # 合规：显式传入默认 SSL context（校验证书与主机名），仅用加密 IMAPS。
+    # Compliance: pass the default SSL context explicitly (verifies certificate and host name); encrypted IMAPS only.
     ssl_ctx = ssl.create_default_context()
     conn = imaplib.IMAP4_SSL(host, port, ssl_context=ssl_ctx)
     conn.login(user, password)
-    conn.select(folder, readonly=True)  # 只读：不改邮件的已读/删除状态
+    conn.select(folder, readonly=True)  # read-only: never changes read/deleted flags
 
     since = (datetime.date.today() - datetime.timedelta(days=since_days)).strftime("%d-%b-%Y")
     typ, data = conn.search(None, f'(SINCE {since})')
     ids = data[0].split() if data and data[0] else []
-    ids = ids[-max_scan:]  # 只取最近 max_scan 封
+    ids = ids[-max_scan:]  # only the most recent max_scan messages
 
     bounced_all = set()
     scanned = 0
@@ -156,15 +156,15 @@ def main():
 
     for addr in sorted(bounced_all):
         if DRY_RUN:
-            print(f"  [DRY_RUN] 识别到退信，未写入: {addr}")
+            print(f"  [DRY_RUN] bounce detected, not written: {addr}")
             continue
         csv_ops(["mark_bounced", addr], data_dir)
-        print(f"  退信 → {addr}，已加入黑名单 + 标记 bounced")
+        print(f"  Bounce → {addr}, added to blacklist + marked bounced")
 
     if DRY_RUN:
-        print(f"\n演练完成：扫描 {scanned} 封邮件，识别退信邮箱 {len(bounced_all)} 个（未写入；去掉 DRY_RUN 才会同步黑名单）。")
+        print(f"\nDry run done: scanned {scanned} messages, detected {len(bounced_all)} bounced addresses (not written; remove DRY_RUN to sync the blacklist).")
     else:
-        print(f"\n完成：扫描 {scanned} 封邮件，识别退信邮箱 {len(bounced_all)} 个，已同步黑名单与已发名单。")
+        print(f"\nDone: scanned {scanned} messages, detected {len(bounced_all)} bounced addresses; blacklist and send history synced.")
 
 
 if __name__ == "__main__":

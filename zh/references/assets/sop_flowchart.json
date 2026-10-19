@@ -1,0 +1,445 @@
+{
+ "version": "3.1",
+ "note": "Generated with the flowchart PNG/PDF. Edit the flowchart and this file together.",
+ "clusters": [
+  "① 安装门禁（新装第一件事 · 三关不过，所有搜索/发信脚本拒绝运行）",
+  "② 数据接入层（装好马上配 · 本技能不自带客户数据库 · 全部汇入客户池）",
+  "♻ 自循环客户引擎（四维轮换：高度 · 广度 · 深度 · 远度）",
+  "★ 搜索三铁律（卡在「搜索 → 背调」之间）",
+  "第七步 · WhatsApp 触发 + 群发 + 专属复盘",
+  "第八步 · 成单复盘 + 七件套写回（闭环收口 · 每周）"
+ ],
+ "nodes": {
+  "G0": {
+   "kind": "gate",
+   "title": "新装必做清单",
+   "lines": [
+    "一屏列出马上要补的信息"
+   ],
+   "cmd": "onboarding.py start"
+  },
+  "G1": {
+   "kind": "gate",
+   "title": "第 1 关 · 公司档案必填",
+   "lines": [
+    "行业 / 交付形态 / 产品事实 / 发件人"
+   ],
+   "cmd": "init → ask / apply-pack"
+  },
+  "G2": {
+   "kind": "gate",
+   "title": "第 2 关 · 灵魂七件套体检",
+   "lines": [
+    "缺件 / 空壳 / 未替换示例 / 缺关键段"
+   ],
+   "cmd": "kit-check  7/7"
+  },
+  "G3": {
+   "kind": "gate",
+   "title": "第 3 关 · 用户本人确认",
+   "lines": [
+    "AI 回读 → 你回复「确认无误」"
+   ],
+   "cmd": "check → attest"
+  },
+  "S1": {
+   "kind": "loop",
+   "title": "内置调度器",
+   "lines": [
+    "每天定点只跑一次，收到「暂停」立即退出"
+   ],
+   "cmd": "schedule --at 09:00"
+  },
+  "S2": {
+   "kind": "loop",
+   "title": "检查客户池（customer_db）",
+   "lines": [
+    "可发冷开发数 & 储备天数 · 发信消耗后次日重查"
+   ],
+   "cmd": "replenish"
+  },
+  "S3": {
+   "kind": "loop",
+   "title": "四维轮换补池（不一次打光）",
+   "lines": [
+    "深度 d1 公司 → d2 决策人 → d3 存量深挖",
+    "远度 地区由近到远 · 高度 层级由高到低",
+    "广度 core → wide → max（最慢）"
+   ],
+   "cmd": "replenish --emit"
+  },
+  "A1": {
+   "kind": "data",
+   "title": "SaaS / 海关 / CRM 导出",
+   "lines": [
+    "放进 inbox → 触发口提醒 → 同一入口导入"
+   ],
+   "cmd": "triggers.py scan"
+  },
+  "A2": {
+   "kind": "data",
+   "title": "自有客户库导入（安装必填）",
+   "lines": [
+    "老客户 / 禁联不进冷开发池"
+   ],
+   "cmd": "data_import.py inspect → import"
+  },
+  "A3": {
+   "kind": "data",
+   "title": "发信通道",
+   "lines": [
+    "企业邮箱密钥 · 多邮箱托管预热 · MCP 连接器"
+   ],
+   "cmd": "mail_setup.py providers · test"
+  },
+  "A4": {
+   "kind": "data",
+   "title": "CRM 同步",
+   "lines": [
+    "CSV · HubSpot API · MCP（默认演练）"
+   ],
+   "cmd": "crm_sync.py export · pull"
+  },
+  "A5": {
+   "kind": "data",
+   "title": "数据触发口（每天）",
+   "lines": [
+    "外发动作一律人工拍板 · 退信异常自动暂停邮箱"
+   ],
+   "cmd": "triggers.py scan"
+  },
+  "N0": {
+   "kind": "review",
+   "title": "第零步 · 全渠道复盘",
+   "lines": [
+    "成功案例打法 + WA 复盘 + 上周七件套写回结论",
+    "MEMORY「本周结论」= 本轮起点"
+   ],
+   "cmd": "review_success · wa_review review"
+  },
+  "N1": {
+   "kind": "step",
+   "title": "第一步 · 搜索候选（只用公开搜索）",
+   "lines": [
+    "关键词矩阵 · 15 个发现渠道（含海关免注册路径）",
+    "10 大社媒公开搜索 + 30 个采购链职位"
+   ],
+   "cmd": "queries · channels · social"
+  },
+  "T1": {
+   "kind": "iron",
+   "title": "#1 先查库",
+   "lines": [
+    "只留真正新客户；不带 --against 只警告"
+   ],
+   "cmd": "filter --against 客户库.csv"
+  },
+  "T2": {
+   "kind": "iron",
+   "title": "#2 漏斗诊断",
+   "lines": [
+    "每环 + 累计转化率；多次看趋势"
+   ],
+   "cmd": "funnel"
+  },
+  "T3": {
+   "kind": "iron",
+   "title": "#3 待验证入池",
+   "lines": [
+    "入池宽 · 发信严：无具名邮箱打 pending@",
+    "发信前必须补齐具名邮箱"
+   ],
+   "cmd": "email_guesser · dns_validator"
+  },
+  "N2": {
+   "kind": "core",
+   "title": "第二步 · 背景调查（核心，不可跳）",
+   "lines": [
+    "5 信息源 + 背调三问；品牌名不决定需求",
+    "每条结论标证据等级 S1 / S2 / S3 + 来源 URL"
+   ],
+   "cmd": "research_guide.md"
+  },
+  "NR": {
+   "kind": "stop",
+   "title": "标 need_review → 用户拍板",
+   "lines": [
+    "AI 不下结论；信息不足时 need_tag=unknown",
+    "走保守通用方案，跟进中再确认"
+   ],
+   "cmd": ""
+  },
+  "N3": {
+   "kind": "step",
+   "title": "第三步 · 需求定位（双标签）",
+   "lines": [
+    "need_tag → 推哪条线 · solution_tag → 用哪个钩子",
+    "违反 positioning.tag_rules → 不发，交人工"
+   ],
+   "cmd": "conflict-check"
+  },
+  "N4": {
+   "kind": "step",
+   "title": "第四步 · 撰写内容",
+   "lines": [
+    "按收件人母语写整封 · ≤120 词 · 纯文本",
+    "只引用 S1/S2 事实 · 跟进信必须换角度带新信息"
+   ],
+   "cmd": "email_templates.md"
+  },
+  "N5": {
+   "kind": "step",
+   "title": "第五步 · 发送执行",
+   "lines": [
+    "DRY_RUN 预览 → 用户批准 → 具名决策人发信",
+    "收件人当地工作日窗口 · ≤200 封/天 · 间隔 30s"
+   ],
+   "cmd": "decision_maker_sender.py"
+  },
+  "WB": {
+   "kind": "note",
+   "title": "当地窗口外 → 本轮延后",
+   "lines": [
+    "报告 deferred_window，不写发送历史"
+   ],
+   "cmd": "send_window.py table / check"
+  },
+  "SB": {
+   "kind": "safe",
+   "title": "安全合规基线",
+   "lines": [
+    "凭证只走环境变量 · 465/587 强制加密",
+    "发信 / 退信扫描 / DNS / WA 均有演练模式",
+    "通用邮箱拦截 · 退信永久拉黑 · 只读不自改",
+    "社媒脚本只出公开搜索式；登录/私信由你本人手动"
+   ],
+   "cmd": ""
+  },
+  "N6": {
+   "kind": "step",
+   "title": "第六步 · 跟进管理",
+   "lines": [
+    "24–48h 扫退信/回复（只读打开邮箱，先 DRY_RUN）",
+    "社媒私信（人工）按 1-3-7-21，同一天只走一个渠道"
+   ],
+   "cmd": "imap_scanner.py · cooldown"
+  },
+  "B1": {
+   "kind": "stop",
+   "title": "退信",
+   "lines": [
+    "mark_bounced：拉黑 + 永久停触达",
+    "→ 回客户池补员"
+   ],
+   "cmd": "mark_bounced"
+  },
+  "B2": {
+   "kind": "review",
+   "title": "收到回复 → 人工跟进",
+   "lines": [
+    "报价/交期/询盘回复必须用户确认",
+    "明确拒绝 → add_blacklist 全渠道停"
+   ],
+   "cmd": "mark_replied"
+  },
+  "B3": {
+   "kind": "note",
+   "title": "无回复 → 5 级冷却",
+   "lines": [
+    "followup_count = 已发封数 − 1"
+   ],
+   "cmd": "csv_ops.py cooldown"
+  },
+  "B4": {
+   "kind": "loop",
+   "title": "下单 / 成交",
+   "lines": [
+    "AI 只出带证据的痛点候选",
+    "用户确认后才入库"
+   ],
+   "cmd": "→ 第八步"
+  },
+  "L": {
+   "kind": "note",
+   "title": "停通用邮箱 → 只走 LinkedIn / 个人邮箱",
+   "lines": [
+    "人工 · 社媒 1-3-7-21；Day21 无回再看 WA 信号"
+   ],
+   "cmd": ""
+  },
+  "W1": {
+   "kind": "wa",
+   "title": "WA 触发信号（命中任一）",
+   "lines": [
+    "邮件已发≥3 封无回 · 退信无替代",
+    "高价值且公开 WA · 客户主动留号"
+   ],
+   "cmd": ""
+  },
+  "W2": {
+   "kind": "wa",
+   "title": "名单转群发输入",
+   "lines": [
+    "wa_targets.json / CSV → contacts JSON"
+   ],
+   "cmd": "wa_bulk_sender.py convert"
+  },
+  "W3": {
+   "kind": "wa",
+   "title": "校验 + 只读预览",
+   "lines": [
+    "号码 / 重复 / 空消息 / 未填占位符",
+    "不过 → 修正名单或模板后重新 convert"
+   ],
+   "cmd": "validate → preview"
+  },
+  "W4": {
+   "kind": "wa",
+   "title": "测试号试发",
+   "lines": [
+    "只发给自己的开发号"
+   ],
+   "cmd": "harness"
+  },
+  "W5": {
+   "kind": "wa",
+   "title": "逐条群发（防封铁律）",
+   "lines": [
+    "截图核对尾号 · 8–15s 间隔 · 到 200 条 STOP"
+   ],
+   "cmd": "send · progress"
+  },
+  "W6": {
+   "kind": "wa",
+   "title": "截图复查",
+   "lines": [
+    "未送达 / 发错人 → 单独核查"
+   ],
+   "cmd": "audit"
+  },
+  "W7": {
+   "kind": "wa",
+   "title": "回写 + 成交标渠道",
+   "lines": [
+    "wa_status=sent · add_success --won_channel wa"
+   ],
+   "cmd": ""
+  },
+  "W8": {
+   "kind": "wa",
+   "title": "WA 专属复盘（只读）",
+   "lines": [
+    "漏斗 + 按地区/需求/钩子拆解"
+   ],
+   "cmd": "wa_review review / funnel"
+  },
+  "R1": {
+   "kind": "review",
+   "title": "成功案例入库",
+   "lines": [
+    "痛点 = 用户确认过的版本"
+   ],
+   "cmd": "add_success --won_channel"
+  },
+  "R2": {
+   "kind": "review",
+   "title": "全渠道复盘",
+   "lines": [
+    "按地区 / need_tag / hook_type / 渠道"
+   ],
+   "cmd": "review_success · email_dashboard · wa_review"
+  },
+  "R3": {
+   "kind": "review",
+   "title": "七件套周复盘写回",
+   "lines": [
+    "答错 / 漏做 / 越界 → 归因到唯一一份档案",
+    "改规则，不只改这一句；更新 HEARTBEAT"
+   ],
+   "cmd": "soul_kit/周复盘写回.md"
+  },
+  "R4": {
+   "kind": "review",
+   "title": "重新体检 → 下一轮",
+   "lines": [
+    "结论写进 MEMORY「本周结论」"
+   ],
+   "cmd": "onboarding.py kit-check"
+  },
+  "RX": {
+   "kind": "note",
+   "title": "成单归因（won_channel）",
+   "lines": [
+    "邮件 vs WA 哪条渠道成单多",
+    "→ 下轮渠道 / 地区 / 钩子加权",
+    "海关、社媒等来源按 source_channel 统计"
+   ],
+   "cmd": ""
+  },
+  "DL": {
+   "kind": "data",
+   "title": "数据层（贯穿全程 · 发信记录只经 csv_ops.py 读写）",
+   "lines": [
+    "customer_db · sent_history · blacklist · wa_contacts · success_cases · pipeline · mailbox_usage · crm_sync_log  ｜  发前 check / cross_brand_check，发后 add_sent，退信 mark_bounced",
+    "铁律：脚本只读不自改客户数据；痛点、标签、发送、推 CRM、报价都由用户拍板；密钥只走环境变量"
+   ],
+   "cmd": "consistency_audit.py 自查文档与脚本一致"
+  }
+ },
+ "decisions": {
+  "GD": {
+   "title": "三关全过？",
+   "sub": "onboarding.py check"
+  },
+  "SD": {
+   "title": "保底红线？",
+   "sub": "可发<100 或 储备<30 天"
+  },
+  "TD": {
+   "title": "瓶颈判断",
+   "sub": "库内重复>40% · 具名率<20%"
+  },
+  "ND2": {
+   "title": "证据够定标签？",
+   "sub": "≥1 条 S1 或 2 条独立 S2"
+  },
+  "ND5": {
+   "title": "发前三道关",
+   "sub": "邮箱 ✓ 查重 ✓ 备注 ✓"
+  },
+  "CD": {
+   "title": "followup_count？",
+   "sub": "COOLDOWN_RULES"
+  }
+ },
+ "edge_labels": [
+  "否：缺什么补什么（ask · apply-pack · 填写参考_客户开发岗.md）",
+  "不足",
+  "充足·待明日",
+  "今日搜索词",
+  "候选结果",
+  "入池",
+  "瓶颈：重复高 → 换未覆盖地区/层级；具名率低 → 先补邮箱",
+  "真正新客户",
+  "是",
+  "只有 S3",
+  "用户拍板后",
+  "任一不过 → 修正后重检",
+  "三关全过",
+  "窗口外",
+  "下一窗口",
+  "退信补员 → 回客户池",
+  "0/1/2（已发 1–3 封）：等 3 / 3 / 10 天 → 换角度跟进",
+  "=3 已发 4 封",
+  "≥4（已发 5 封+）：邮件全停 → 转 WhatsApp",
+  "Day21 无回且命中 WA 信号",
+  "成交",
+  "下轮",
+  "汇入",
+  "归因",
+  "回到第零步 · 开始下一轮",
+  "是 · READY → 先配数据接入",
+  "汇入客户池",
+  "触发队列 → 第零步 / 对应步骤"
+ ]
+}

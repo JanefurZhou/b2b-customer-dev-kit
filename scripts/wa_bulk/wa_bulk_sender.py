@@ -7,7 +7,7 @@ Core: Screenshot AI verification + template variables + resume + audit + harness
 import base64
 import json
 import sys
-for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+for _s in (sys.stdout, sys.stderr):  # keep non-ASCII output safe when redirected or on legacy Windows consoles
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
@@ -25,11 +25,11 @@ import time
 _WA_WORK = os.environ.get("WA_WORK_DIR") or os.path.join(os.environ.get("USERPROFILE", r"C:\\Users\\<you>"), "wa_outreach")
 SCRIPT_DIR = os.environ.get("WA_SCRIPT_DIR", os.path.join(_WA_WORK, "scripts"))
 SCREENSHOT_DIR = os.environ.get("WA_SCREENSHOT_DIR", os.path.join(_WA_WORK, "screenshots"))
-# WA_MESSAGE_DIR 与 PowerShell 脚本同名（WA_MSG_DIR 为旧名，仍兼容）
+# WA_MESSAGE_DIR matches the PowerShell script (WA_MSG_DIR is the legacy name, still accepted)
 MSG_DIR = os.environ.get("WA_MESSAGE_DIR") or os.environ.get("WA_MSG_DIR") or os.path.join(_WA_WORK, "messages")
 LOG_DIR = os.environ.get("WA_LOG_DIR", os.path.join(_WA_WORK, "logs"))
 PROGRESS_FILE = os.environ.get("WA_PROGRESS_FILE") or os.path.join(LOG_DIR, "wa_progress.json")
-# 防封：每日发送上限（与 wa_bulk_guide.md「日计数 = 200 → 停止」一致），可用 WA_DAILY_LIMIT 下调
+# Anti-ban: daily sending cap (same as wa_bulk_guide.md "daily count = 200 → stop"); lower it with WA_DAILY_LIMIT
 DAILY_COUNT_FILE = os.path.join(LOG_DIR, "wa_daily_count.json")
 try:
     DAILY_LIMIT = max(1, min(200, int(os.environ.get("WA_DAILY_LIMIT", "200"))))
@@ -56,7 +56,7 @@ def require_profile():
     try:
         return _cfg.load_profile(require_complete=True)
     except _cfg.ProfileNotConfigured as e:
-        print("ERROR: 公司档案未就绪，禁止生成 WhatsApp 发送脚本。")
+        print("ERROR: company profile not ready; generating the WhatsApp sending script is blocked.")
         print(e)
         sys.exit(2)
 
@@ -677,7 +677,7 @@ def bump_daily_count():
             d = json.load(f)
     except (OSError, json.JSONDecodeError):
         d = {}
-    d = {k: v for k, v in d.items() if k >= _today()[:7]}   # 只留本月，防止文件无限增长
+    d = {k: v for k, v in d.items() if k >= _today()[:7]}   # keep the current month only, so the file does not grow forever
     d[_today()] = int(d.get(_today(), 0)) + 1
     os.makedirs(os.path.dirname(DAILY_COUNT_FILE), exist_ok=True)
     with open(DAILY_COUNT_FILE, "w", encoding="utf-8") as f:
@@ -689,8 +689,8 @@ PACING_FILE = os.path.join(LOG_DIR, "wa_pacing.json")
 
 
 def enforce_pacing(sent_today):
-    """防封节奏（与 wa_bulk_guide.md 第十节一致）：两条之间随机 8–15 秒；每满 5 条随机冷却 30–60 秒。
-    距上一条不够时间就在这里等够再生成下一条。WA_PACING=0 仅用于测试。"""
+    """Anti-ban pacing (same as wa_bulk_guide.md section 10): random 8–15 s between messages; every 5 messages a random 30–60 s cooldown.
+    If not enough time has passed since the last message, wait here before generating the next one. WA_PACING=0 is for tests only."""
     if os.environ.get("WA_PACING", "1") == "0":
         return 0.0
     try:
@@ -731,7 +731,7 @@ def cmd_send(args):
 # ========== Convert (CSV / Excel / wa_targets.json → contacts JSON) ==========
 
 _COL_ALIASES = {
-    "phone": ("phone", "电话", "手机", "号码", "whatsapp", "wa", "wa_number", "mobile"),
+    "phone": ("phone", "电话", "手机", "号码", "whatsapp", "wa", "wa_number", "mobile"),  # Chinese aliases kept for imported sheets
     "brand": ("brand", "品牌", "公司", "company", "name", "客户名", "customer"),
     "message": ("message", "消息", "内容", "开发信", "msg"),
     "intro": ("intro", "开场", "开场白"),

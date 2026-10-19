@@ -1,0 +1,1317 @@
+{
+  "schema_version": 1,
+  "note": "行业包只提供『方法层』建议（分层、角色、渠道、意图词、信号）。它不包含也不得替代任何公司事实；应用后所有建议仍需使用者逐项确认。",
+  "offer_types": {
+    "physical_product": "有形产品",
+    "software": "软件/SaaS/IT",
+    "service": "人力交付的专业服务",
+    "project": "项目型（按项目成交）",
+    "other": "其他/混合"
+  },
+  "packs": [
+    {
+      "id": "physical_export",
+      "name": "实体商品外贸/出口制造",
+      "offer_type": "physical_product",
+      "suits": "工厂/贸易公司向海外进口商、批发商、品牌方、零售商出口有形产品（消费品、家居、礼品、五金、包装等）",
+      "buyer_titles": [
+        "buyer",
+        "purchasing manager",
+        "sourcing manager",
+        "product manager",
+        "owner"
+      ],
+      "channel_keywords": [
+        "importer",
+        "wholesale",
+        "distributor",
+        "private label",
+        "retailer"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_importers",
+          "desc": "进口商/批发商/分销商",
+          "keyword_suffixes": [
+            "importer",
+            "wholesale",
+            "distributor",
+            "sourcing"
+          ]
+        },
+        {
+          "name": "L2_brands",
+          "desc": "自有品牌方/私牌",
+          "keyword_suffixes": [
+            "brand",
+            "private label",
+            "own brand"
+          ]
+        },
+        {
+          "name": "L3_retail",
+          "desc": "连锁零售/独立零售",
+          "keyword_suffixes": [
+            "retailer",
+            "store chain",
+            "independent store"
+          ]
+        },
+        {
+          "name": "L4_ecommerce",
+          "desc": "电商/独立站卖家",
+          "keyword_suffixes": [
+            "online store",
+            "DTC brand",
+            "ecommerce brand"
+          ]
+        },
+        {
+          "name": "L5_projects",
+          "desc": "项目/机构/企业采购",
+          "keyword_suffixes": [
+            "corporate procurement",
+            "project buyer",
+            "institutional supplier"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "looking for supplier",
+        "new supplier",
+        "private label manufacturer",
+        "OEM supplier",
+        "sample order",
+        "bulk order",
+        "vendor application",
+        "sourcing agent"
+      ],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "customs",
+        "exhibition",
+        "competitor",
+        "maps",
+        "ecommerce",
+        "rfq",
+        "social",
+        "media"
+      ],
+      "demand_signals": [
+        "官网有 wholesale/trade/vendor 页",
+        "海关数据显示持续进口同类货",
+        "展会参展/买家名录",
+        "上新、开店、拓品类新闻"
+      ],
+      "entry_offer_examples": [
+        "free sample",
+        "sample set",
+        "trial order"
+      ],
+      "cta_examples": [
+        "Worth sending you a sample?",
+        "Shall I send our catalogue?"
+      ],
+      "key_fact_examples": [
+        "MOQ <your-moq>",
+        "samples in <your-sample-lead-time>",
+        "bulk in <your-lead-time>",
+        "<your-cert> certified"
+      ],
+      "competitor_marker_examples": [
+        "factory",
+        "manufacturer",
+        "made in <your-country>"
+      ],
+      "exclude_keyword_examples": [
+        "repair",
+        "second hand",
+        "rental",
+        "job",
+        "news"
+      ],
+      "compliance_notes": "目标市场的产品安全/标签/认证要求（如 CE、FCC、REACH、FDA、CPSIA 等）按你品类真实适用的写，不适用不写。"
+    },
+    {
+      "id": "industrial_b2b",
+      "name": "工业品/零部件/原材料",
+      "offer_type": "physical_product",
+      "suits": "向 OEM 整机厂、维修与集成商、工程公司供应零部件、原材料、设备与耗材",
+      "buyer_titles": [
+        "procurement manager",
+        "purchasing engineer",
+        "supply chain manager",
+        "engineering manager",
+        "plant manager"
+      ],
+      "channel_keywords": [
+        "OEM",
+        "system integrator",
+        "distributor",
+        "EPC contractor",
+        "maintenance"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_oem",
+          "desc": "整机/设备制造商",
+          "keyword_suffixes": [
+            "OEM",
+            "equipment manufacturer",
+            "machine builder"
+          ]
+        },
+        {
+          "name": "L2_distributors",
+          "desc": "工业品分销商",
+          "keyword_suffixes": [
+            "industrial distributor",
+            "MRO supplier",
+            "stockist"
+          ]
+        },
+        {
+          "name": "L3_integrators",
+          "desc": "系统集成/工程商",
+          "keyword_suffixes": [
+            "system integrator",
+            "EPC contractor",
+            "engineering company"
+          ]
+        },
+        {
+          "name": "L4_end_users",
+          "desc": "终端工厂/运维",
+          "keyword_suffixes": [
+            "plant",
+            "maintenance department",
+            "facility"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "RFQ",
+        "request for quotation",
+        "alternative supplier",
+        "second source",
+        "approved vendor",
+        "supplier qualification",
+        "drawing",
+        "spec sheet"
+      ],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "directory",
+        "customs",
+        "exhibition",
+        "tender",
+        "rfq",
+        "hiring",
+        "competitor",
+        "social"
+      ],
+      "demand_signals": [
+        "发布 RFQ/招标",
+        "招聘采购/供应链岗位",
+        "新厂/扩产新闻",
+        "在用竞品型号（可替代）"
+      ],
+      "entry_offer_examples": [
+        "sample parts",
+        "engineering sample",
+        "quote against your drawing"
+      ],
+      "cta_examples": [
+        "Send a drawing and I'll quote within <your-quote-time>?",
+        "Worth a sample against your spec?"
+      ],
+      "key_fact_examples": [
+        "tolerance <your-tolerance>",
+        "<your-cert> certified",
+        "lead time <your-lead-time>",
+        "PPAP/FAI available"
+      ],
+      "competitor_marker_examples": [
+        "manufacturer of <your-product>",
+        "<your-product> factory"
+      ],
+      "exclude_keyword_examples": [
+        "hobby",
+        "DIY",
+        "consumer",
+        "news"
+      ],
+      "compliance_notes": "常见门槛：ISO 9001/IATF 16949/AS9100、RoHS/REACH、材料证明、出口管制。只写你真实持有的。"
+    },
+    {
+      "id": "brand_distribution",
+      "name": "消费品牌招商/渠道分销",
+      "offer_type": "physical_product",
+      "suits": "已有品牌的公司寻找海外代理、分销商、零售渠道（食品饮料除外，见 food_agri）",
+      "buyer_titles": [
+        "category manager",
+        "buyer",
+        "head of purchasing",
+        "business development",
+        "founder"
+      ],
+      "channel_keywords": [
+        "distributor",
+        "agent",
+        "retailer",
+        "stockist",
+        "marketplace seller"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_distributors",
+          "desc": "国家/区域总代、分销商",
+          "keyword_suffixes": [
+            "distributor",
+            "exclusive agent",
+            "importer"
+          ]
+        },
+        {
+          "name": "L2_chains",
+          "desc": "连锁零售/百货/专业店",
+          "keyword_suffixes": [
+            "retail chain",
+            "department store",
+            "specialty retailer"
+          ]
+        },
+        {
+          "name": "L3_independent",
+          "desc": "独立门店/精品店",
+          "keyword_suffixes": [
+            "independent retailer",
+            "concept store",
+            "stockist"
+          ]
+        },
+        {
+          "name": "L4_online",
+          "desc": "线上零售商/平台大卖",
+          "keyword_suffixes": [
+            "online retailer",
+            "marketplace seller",
+            "ecommerce retailer"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "new brands",
+        "brand onboarding",
+        "looking for distributors",
+        "exclusive distribution",
+        "stockist enquiry",
+        "wholesale program"
+      ],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "competitor",
+        "maps",
+        "exhibition",
+        "ecommerce",
+        "social",
+        "media",
+        "directory"
+      ],
+      "demand_signals": [
+        "代理同类竞品",
+        "新开门店/扩张",
+        "社媒征集新品牌",
+        "参加行业展会"
+      ],
+      "entry_offer_examples": [
+        "starter order",
+        "sell-in kit",
+        "marketing support pack"
+      ],
+      "cta_examples": [
+        "Shall I send our distributor deck?",
+        "Open to a short call on territory?"
+      ],
+      "key_fact_examples": [
+        "retail margin <your-margin>",
+        "starter order <your-min-order>",
+        "<your-market-proof>"
+      ],
+      "competitor_marker_examples": [],
+      "exclude_keyword_examples": [
+        "job",
+        "review",
+        "coupon"
+      ],
+      "compliance_notes": "商标在目标国注册状态、独家授权条款、标签/进口资质。"
+    },
+    {
+      "id": "saas_software",
+      "name": "SaaS/软件/IT 服务",
+      "offer_type": "software",
+      "suits": "向企业销售软件订阅、平台、API、IT 外包与系统集成服务",
+      "buyer_titles": [
+        "CTO",
+        "head of engineering",
+        "VP operations",
+        "IT manager",
+        "head of marketing",
+        "founder"
+      ],
+      "channel_keywords": [
+        "company",
+        "startup",
+        "scale-up",
+        "enterprise",
+        "agency"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_ideal_fit",
+          "desc": "与你理想客户画像(ICP)高度吻合的公司",
+          "keyword_suffixes": [
+            "company",
+            "platform",
+            "startup"
+          ]
+        },
+        {
+          "name": "L2_stack_users",
+          "desc": "使用相邻/竞品工具的公司",
+          "keyword_suffixes": [
+            "uses <adjacent-tool>",
+            "<competitor> customer",
+            "integration"
+          ]
+        },
+        {
+          "name": "L3_growth_signal",
+          "desc": "在招聘/融资/扩张的公司",
+          "keyword_suffixes": [
+            "hiring",
+            "raised funding",
+            "series A"
+          ]
+        },
+        {
+          "name": "L4_partners",
+          "desc": "代理/实施伙伴/咨询公司",
+          "keyword_suffixes": [
+            "implementation partner",
+            "consultancy",
+            "reseller"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "alternative to",
+        "switching from",
+        "evaluating tools",
+        "RFP software",
+        "pricing comparison",
+        "migration",
+        "integration with"
+      ],
+      "channel_site_terms": [
+        "site:linkedin.com",
+        "site:g2.com",
+        "site:capterra.com",
+        "site:producthunt.com"
+      ],
+      "recommended_channels": [
+        "review",
+        "hiring",
+        "media",
+        "competitor",
+        "partners",
+        "events",
+        "social"
+      ],
+      "demand_signals": [
+        "招聘与你解决问题相关的岗位",
+        "刚融资/换 CTO",
+        "在评测站点比较同类工具",
+        "公开抱怨现有工具"
+      ],
+      "entry_offer_examples": [
+        "free trial",
+        "pilot",
+        "demo",
+        "free audit/assessment"
+      ],
+      "cta_examples": [
+        "Open to a 20-minute demo next week?",
+        "Worth a 2-week pilot on one team?"
+      ],
+      "key_fact_examples": [
+        "setup in <your-onboarding-time>",
+        "<your-integration> integration",
+        "SOC 2 / ISO 27001 <only if held>",
+        "<your-customer-count> customers"
+      ],
+      "competitor_marker_examples": [
+        "<your-category> software",
+        "<your-category> platform"
+      ],
+      "exclude_keyword_examples": [
+        "tutorial",
+        "free download",
+        "course",
+        "job board"
+      ],
+      "compliance_notes": "数据保护（GDPR、CCPA）、数据驻留、安全认证；冷邮件须提供退订方式。"
+    },
+    {
+      "id": "professional_services",
+      "name": "专业服务（咨询/营销/设计/法律财税/人力）",
+      "offer_type": "service",
+      "suits": "代理机构、咨询公司、设计/营销/翻译/法律/会计/招聘等以人力交付的 B2B 服务",
+      "buyer_titles": [
+        "founder",
+        "CEO",
+        "managing director",
+        "head of marketing",
+        "HR director",
+        "CFO"
+      ],
+      "channel_keywords": [
+        "company",
+        "SME",
+        "startup",
+        "firm",
+        "group"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_sme",
+          "desc": "中小企业决策人",
+          "keyword_suffixes": [
+            "SME",
+            "small business",
+            "family business"
+          ]
+        },
+        {
+          "name": "L2_growth",
+          "desc": "扩张期/新进市场公司",
+          "keyword_suffixes": [
+            "expanding to",
+            "new office",
+            "entering market"
+          ]
+        },
+        {
+          "name": "L3_mid_market",
+          "desc": "中大型企业职能负责人",
+          "keyword_suffixes": [
+            "head of",
+            "director",
+            "department"
+          ]
+        },
+        {
+          "name": "L4_referral",
+          "desc": "可转介的伙伴",
+          "keyword_suffixes": [
+            "partner agency",
+            "consultancy",
+            "accountant"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "looking for agency",
+        "request for proposal",
+        "outsourcing",
+        "hiring freelancer",
+        "need help with",
+        "tender"
+      ],
+      "channel_site_terms": [
+        "site:linkedin.com",
+        "site:clutch.co"
+      ],
+      "recommended_channels": [
+        "hiring",
+        "tender",
+        "directory",
+        "media",
+        "events",
+        "partners",
+        "social"
+      ],
+      "demand_signals": [
+        "招聘你能外包替代的岗位",
+        "发布 RFP/招标",
+        "进入新市场/开新办公室",
+        "官网/内容明显缺你擅长的能力"
+      ],
+      "entry_offer_examples": [
+        "free audit",
+        "sample deliverable",
+        "discovery call",
+        "fixed-price pilot"
+      ],
+      "cta_examples": [
+        "Want the 3-point audit I put together for <company>?",
+        "Open to a 15-minute call?"
+      ],
+      "key_fact_examples": [
+        "<your-case-result>",
+        "<your-years> years in <niche>",
+        "fixed fee from <your-price>"
+      ],
+      "competitor_marker_examples": [
+        "agency",
+        "consultancy"
+      ],
+      "exclude_keyword_examples": [
+        "course",
+        "template",
+        "free tool",
+        "job"
+      ],
+      "compliance_notes": "执业资质（律师、会计、医疗等）以真实为准；不承诺结果；案例需客户授权或脱敏。"
+    },
+    {
+      "id": "logistics_supply_chain",
+      "name": "物流/货代/供应链服务",
+      "offer_type": "service",
+      "suits": "国际货代、海外仓、报关清关、第三方物流、供应链金融",
+      "buyer_titles": [
+        "logistics manager",
+        "supply chain manager",
+        "import manager",
+        "operations director",
+        "ecommerce manager"
+      ],
+      "channel_keywords": [
+        "importer",
+        "exporter",
+        "ecommerce seller",
+        "manufacturer",
+        "brand"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_importers",
+          "desc": "进口商/贸易公司",
+          "keyword_suffixes": [
+            "importer",
+            "trading company"
+          ]
+        },
+        {
+          "name": "L2_ecommerce",
+          "desc": "跨境电商卖家",
+          "keyword_suffixes": [
+            "Amazon seller",
+            "ecommerce brand",
+            "marketplace seller"
+          ]
+        },
+        {
+          "name": "L3_manufacturers",
+          "desc": "出口制造商",
+          "keyword_suffixes": [
+            "exporter",
+            "manufacturer"
+          ]
+        },
+        {
+          "name": "L4_projects",
+          "desc": "项目物流/大件",
+          "keyword_suffixes": [
+            "project cargo",
+            "EPC",
+            "heavy lift"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "freight quote",
+        "3PL",
+        "fulfillment partner",
+        "customs broker",
+        "warehouse",
+        "shipping rates"
+      ],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "customs",
+        "directory",
+        "hiring",
+        "exhibition",
+        "social",
+        "media"
+      ],
+      "demand_signals": [
+        "海关数据显示稳定进出口量",
+        "新开仓/进入新市场",
+        "招聘物流岗位",
+        "抱怨延误/费用"
+      ],
+      "entry_offer_examples": [
+        "free quote",
+        "trial shipment",
+        "lane rate check"
+      ],
+      "cta_examples": [
+        "Send me one lane and I'll benchmark it?",
+        "Worth a trial shipment?"
+      ],
+      "key_fact_examples": [
+        "transit <your-transit-time>",
+        "<your-warehouse-locations>",
+        "licensed <your-license>"
+      ],
+      "competitor_marker_examples": [
+        "freight forwarder",
+        "logistics company"
+      ],
+      "exclude_keyword_examples": [
+        "tracking",
+        "job",
+        "courier near me"
+      ],
+      "compliance_notes": "货代/报关资质、保险、危险品资质；报价有效期与附加费说明清楚。"
+    },
+    {
+      "id": "healthcare_lab",
+      "name": "医疗器械/实验室/制药耗材（强监管）",
+      "offer_type": "physical_product",
+      "suits": "医疗器械、诊断试剂、实验室设备与耗材、原料药/辅料",
+      "buyer_titles": [
+        "procurement manager",
+        "lab manager",
+        "regulatory affairs manager",
+        "purchasing director",
+        "distributor owner"
+      ],
+      "channel_keywords": [
+        "distributor",
+        "hospital group",
+        "laboratory",
+        "clinic chain",
+        "CRO"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_distributors",
+          "desc": "持证医疗/实验室分销商",
+          "keyword_suffixes": [
+            "medical distributor",
+            "lab supplies distributor",
+            "importer"
+          ]
+        },
+        {
+          "name": "L2_institutions",
+          "desc": "医院集团/实验室/科研机构",
+          "keyword_suffixes": [
+            "hospital group",
+            "laboratory",
+            "research institute"
+          ]
+        },
+        {
+          "name": "L3_brands",
+          "desc": "贴牌/OEM 品牌方",
+          "keyword_suffixes": [
+            "private label",
+            "OEM brand"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "tender",
+        "registered distributor",
+        "CE marked",
+        "FDA registered",
+        "ISO 13485 supplier",
+        "GMP"
+      ],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "tender",
+        "directory",
+        "exhibition",
+        "customs",
+        "competitor"
+      ],
+      "demand_signals": [
+        "公开招标",
+        "代理竞品",
+        "注册新产品",
+        "扩张到新国家"
+      ],
+      "entry_offer_examples": [
+        "sample for evaluation",
+        "technical dossier",
+        "documentation pack"
+      ],
+      "cta_examples": [
+        "Shall I send the technical file for review?"
+      ],
+      "key_fact_examples": [
+        "ISO 13485 <only if held>",
+        "CE/FDA status <exact>",
+        "shelf life <your-shelf-life>"
+      ],
+      "competitor_marker_examples": [
+        "manufacturer"
+      ],
+      "exclude_keyword_examples": [
+        "patient",
+        "symptoms",
+        "pharmacy near me",
+        "job"
+      ],
+      "compliance_notes": "强监管：注册证/认证必须逐字准确，不得做疗效宣称；目标国注册状态未明确前不得暗示可直接销售。"
+    },
+    {
+      "id": "food_agri",
+      "name": "食品/饮料/农产品",
+      "offer_type": "physical_product",
+      "suits": "食品饮料、农产品、配料原料的出口与渠道开发",
+      "buyer_titles": [
+        "category buyer",
+        "purchasing manager",
+        "import manager",
+        "product developer",
+        "owner"
+      ],
+      "channel_keywords": [
+        "importer",
+        "distributor",
+        "retailer",
+        "food service",
+        "manufacturer"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_importers",
+          "desc": "食品进口商/分销商",
+          "keyword_suffixes": [
+            "food importer",
+            "distributor",
+            "wholesaler"
+          ]
+        },
+        {
+          "name": "L2_retail",
+          "desc": "商超/专业食品店/线上",
+          "keyword_suffixes": [
+            "supermarket buyer",
+            "specialty food store",
+            "online grocery"
+          ]
+        },
+        {
+          "name": "L3_foodservice",
+          "desc": "餐饮/酒店/团餐",
+          "keyword_suffixes": [
+            "food service",
+            "HoReCa",
+            "catering"
+          ]
+        },
+        {
+          "name": "L4_ingredients",
+          "desc": "以你产品为原料的生产商",
+          "keyword_suffixes": [
+            "food manufacturer",
+            "ingredient buyer",
+            "co-packer"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "new suppliers",
+        "private label",
+        "sample request",
+        "ingredient sourcing",
+        "organic supplier"
+      ],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "customs",
+        "exhibition",
+        "competitor",
+        "maps",
+        "media",
+        "directory"
+      ],
+      "demand_signals": [
+        "海关进口记录",
+        "上新/自有品牌计划",
+        "参加食品展",
+        "菜单/配方变化"
+      ],
+      "entry_offer_examples": [
+        "sample box",
+        "spec sheet",
+        "trial pallet"
+      ],
+      "cta_examples": [
+        "Shall I ship a sample box?"
+      ],
+      "key_fact_examples": [
+        "shelf life <your-shelf-life>",
+        "<your-cert> (HACCP/BRC/IFS/Organic) <only if held>",
+        "MOQ <your-moq>"
+      ],
+      "competitor_marker_examples": [
+        "producer",
+        "manufacturer"
+      ],
+      "exclude_keyword_examples": [
+        "recipe",
+        "restaurant review",
+        "calories"
+      ],
+      "compliance_notes": "食品安全认证、进口国标签与添加剂法规、检疫证书；不得做健康功效宣称。"
+    },
+    {
+      "id": "construction_projects",
+      "name": "建材/工程/项目型销售",
+      "offer_type": "project",
+      "suits": "建材、幕墙、照明、暖通、装配式等以项目为单位成交的产品与服务",
+      "buyer_titles": [
+        "procurement manager",
+        "project manager",
+        "architect",
+        "quantity surveyor",
+        "contractor owner"
+      ],
+      "channel_keywords": [
+        "contractor",
+        "developer",
+        "architect",
+        "distributor",
+        "installer"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_contractors",
+          "desc": "总包/分包",
+          "keyword_suffixes": [
+            "general contractor",
+            "subcontractor",
+            "fit-out contractor"
+          ]
+        },
+        {
+          "name": "L2_specifiers",
+          "desc": "建筑师/设计院/顾问",
+          "keyword_suffixes": [
+            "architect",
+            "design firm",
+            "MEP consultant"
+          ]
+        },
+        {
+          "name": "L3_developers",
+          "desc": "开发商/业主",
+          "keyword_suffixes": [
+            "developer",
+            "property group",
+            "hotel group"
+          ]
+        },
+        {
+          "name": "L4_distributors",
+          "desc": "建材分销/安装商",
+          "keyword_suffixes": [
+            "building materials distributor",
+            "installer"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "tender",
+        "bill of quantities",
+        "specification",
+        "project pipeline",
+        "planning approval",
+        "bid invitation"
+      ],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "tender",
+        "media",
+        "directory",
+        "exhibition",
+        "maps",
+        "social"
+      ],
+      "demand_signals": [
+        "项目中标/获批新闻",
+        "招标公告",
+        "设计方案公示",
+        "新开发计划"
+      ],
+      "entry_offer_examples": [
+        "sample board",
+        "technical submittal",
+        "site visit",
+        "mock-up"
+      ],
+      "cta_examples": [
+        "Shall I send the technical submittal for <project>?"
+      ],
+      "key_fact_examples": [
+        "<your-standard> compliant",
+        "warranty <your-warranty>",
+        "<your-reference-project>"
+      ],
+      "competitor_marker_examples": [
+        "manufacturer",
+        "factory"
+      ],
+      "exclude_keyword_examples": [
+        "DIY",
+        "home owner",
+        "job"
+      ],
+      "compliance_notes": "当地建筑规范/防火/能效认证，项目参考需授权。"
+    },
+    {
+      "id": "energy_cleantech",
+      "name": "新能源/光伏储能/清洁技术",
+      "offer_type": "project",
+      "suits": "光伏组件、储能、充电桩、节能改造等产品与 EPC 服务",
+      "buyer_titles": [
+        "procurement manager",
+        "project developer",
+        "EPC manager",
+        "energy manager",
+        "installer owner"
+      ],
+      "channel_keywords": [
+        "EPC",
+        "installer",
+        "developer",
+        "distributor",
+        "utility"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_installers",
+          "desc": "安装商/集成商",
+          "keyword_suffixes": [
+            "solar installer",
+            "integrator",
+            "electrical contractor"
+          ]
+        },
+        {
+          "name": "L2_epc",
+          "desc": "EPC/开发商",
+          "keyword_suffixes": [
+            "EPC",
+            "project developer",
+            "IPP"
+          ]
+        },
+        {
+          "name": "L3_distributors",
+          "desc": "分销商",
+          "keyword_suffixes": [
+            "distributor",
+            "wholesaler"
+          ]
+        },
+        {
+          "name": "L4_c_and_i",
+          "desc": "工商业业主",
+          "keyword_suffixes": [
+            "commercial rooftop",
+            "factory energy",
+            "facility manager"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "tender",
+        "RFP",
+        "subsidy",
+        "grid connection",
+        "bankable",
+        "tier 1"
+      ],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "tender",
+        "directory",
+        "exhibition",
+        "media",
+        "customs",
+        "hiring"
+      ],
+      "demand_signals": [
+        "新项目备案/并网",
+        "补贴政策变化",
+        "招标",
+        "扩张新区域"
+      ],
+      "entry_offer_examples": [
+        "datasheet + certificates",
+        "pilot project",
+        "site assessment"
+      ],
+      "cta_examples": [
+        "Shall I send datasheets and certificates?"
+      ],
+      "key_fact_examples": [
+        "<your-cert> (IEC/UL) <only if held>",
+        "warranty <your-warranty>",
+        "<your-capacity> delivered"
+      ],
+      "competitor_marker_examples": [
+        "manufacturer"
+      ],
+      "exclude_keyword_examples": [
+        "home DIY",
+        "calculator",
+        "job"
+      ],
+      "compliance_notes": "IEC/UL/本地并网认证、贸易救济（反倾销）与原产地规则要事先核实。"
+    },
+    {
+      "id": "education_training",
+      "name": "企业培训/教育服务",
+      "offer_type": "service",
+      "suits": "企业内训、在线课程平台、语言与职业培训、学校/机构合作",
+      "buyer_titles": [
+        "HR director",
+        "L&D manager",
+        "head of training",
+        "school principal",
+        "program director"
+      ],
+      "channel_keywords": [
+        "company",
+        "school",
+        "university",
+        "association",
+        "training provider"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_corporate",
+          "desc": "企业 HR/L&D",
+          "keyword_suffixes": [
+            "L&D",
+            "HR department",
+            "talent development"
+          ]
+        },
+        {
+          "name": "L2_institutions",
+          "desc": "学校/大学/培训机构",
+          "keyword_suffixes": [
+            "school",
+            "university",
+            "training center"
+          ]
+        },
+        {
+          "name": "L3_associations",
+          "desc": "行业协会/商会",
+          "keyword_suffixes": [
+            "association",
+            "chamber of commerce"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "training provider",
+        "RFP training",
+        "upskilling",
+        "onboarding program",
+        "CPD"
+      ],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "hiring",
+        "tender",
+        "directory",
+        "events",
+        "social",
+        "media"
+      ],
+      "demand_signals": [
+        "招聘 L&D/HR",
+        "新政策需要培训",
+        "扩张/并购",
+        "公开招标"
+      ],
+      "entry_offer_examples": [
+        "free workshop",
+        "sample lesson",
+        "needs assessment"
+      ],
+      "cta_examples": [
+        "Open to a free 45-minute workshop for your team?"
+      ],
+      "key_fact_examples": [
+        "<your-learners> learners trained",
+        "<your-accreditation> <only if held>"
+      ],
+      "competitor_marker_examples": [
+        "training company"
+      ],
+      "exclude_keyword_examples": [
+        "student",
+        "homework",
+        "free course"
+      ],
+      "compliance_notes": "资质与认证、学员数据隐私、不承诺就业或通过率。"
+    },
+    {
+      "id": "packaging_materials",
+      "name": "包装材料/包装容器",
+      "offer_type": "physical_product",
+      "suits": "玻璃瓶罐、塑料/金属容器、纸盒彩盒、软包装、标签与包装辅料等，卖给品牌方、灌装/代工厂、包装分销商",
+      "buyer_titles": [
+        "packaging buyer",
+        "packaging manager",
+        "purchasing manager",
+        "product development manager",
+        "brand manager"
+      ],
+      "channel_keywords": [
+        "brand owner",
+        "contract filler",
+        "co-packer",
+        "packaging distributor",
+        "private label"
+      ],
+      "customer_levels": [
+        {
+          "name": "L1_brand_owners",
+          "desc": "品牌方（饮料/食品/美妆/日化/保健品/香氛等自有品牌）",
+          "keyword_suffixes": [
+            "brand",
+            "beauty brand",
+            "beverage brand",
+            "private label"
+          ]
+        },
+        {
+          "name": "L2_fillers",
+          "desc": "灌装厂/代工厂/OEM 生产商",
+          "keyword_suffixes": [
+            "contract filler",
+            "co-packer",
+            "contract manufacturer",
+            "OEM manufacturer"
+          ]
+        },
+        {
+          "name": "L3_distributors",
+          "desc": "包装分销商/包装贸易商",
+          "keyword_suffixes": [
+            "packaging distributor",
+            "packaging supplier",
+            "packaging wholesaler"
+          ]
+        },
+        {
+          "name": "L4_startups",
+          "desc": "新锐/众筹/小批量品牌（低起订量切入）",
+          "keyword_suffixes": [
+            "startup brand",
+            "small batch",
+            "indie brand"
+          ]
+        }
+      ],
+      "intent_terms": [
+        "new packaging supplier",
+        "custom packaging",
+        "packaging redesign",
+        "sustainable packaging",
+        "low MOQ packaging",
+        "packaging sample",
+        "private label packaging",
+        "rebranding"
+      ],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "customs",
+        "exhibition",
+        "competitor",
+        "ecommerce",
+        "social",
+        "media",
+        "directory",
+        "rfq"
+      ],
+      "demand_signals": [
+        "新品上市/换包装/品牌重塑新闻",
+        "官网或电商出现新 SKU、新规格",
+        "招聘包装工程师/包装开发岗位",
+        "参加包装或终端行业展会",
+        "海关数据显示持续进口同类容器"
+      ],
+      "entry_offer_examples": [
+        "stock-mould samples",
+        "sample kit",
+        "small trial run"
+      ],
+      "cta_examples": [
+        "Worth sending a few stock samples?",
+        "Shall I send our standard-size list?"
+      ],
+      "key_fact_examples": [
+        "MOQ <your-moq>",
+        "stock moulds in <your-sizes>",
+        "decoration: <your-decoration-options>",
+        "samples in <your-sample-lead-time>"
+      ],
+      "competitor_marker_examples": [
+        "packaging factory",
+        "glass factory",
+        "bottle manufacturer",
+        "made in <your-country>"
+      ],
+      "exclude_keyword_examples": [
+        "recycling center",
+        "scrap",
+        "second hand",
+        "job",
+        "news"
+      ],
+      "compliance_notes": "食品接触/化妆品接触材料合规（如 EU 1935/2004、FDA 21 CFR、LFGB）、包装与包装废弃物法规（如欧盟 PPWR、EPR 注册）、回收标识要求——只写你产品真实适用并能出具证明的。"
+    },
+    {
+      "id": "custom",
+      "name": "自定义（以上都不贴切）",
+      "offer_type": "other",
+      "suits": "空白骨架：所有分层、渠道、意图词由你在建档时自己填写",
+      "buyer_titles": [],
+      "channel_keywords": [],
+      "customer_levels": [],
+      "intent_terms": [],
+      "channel_site_terms": [],
+      "recommended_channels": [
+        "social",
+        "media",
+        "directory",
+        "competitor",
+        "hiring",
+        "events"
+      ],
+      "demand_signals": [],
+      "entry_offer_examples": [],
+      "cta_examples": [],
+      "key_fact_examples": [],
+      "competitor_marker_examples": [],
+      "exclude_keyword_examples": [],
+      "compliance_notes": "按你行业的真实法规填写。"
+    }
+  ]
+}
