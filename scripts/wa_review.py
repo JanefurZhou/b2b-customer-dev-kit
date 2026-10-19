@@ -32,6 +32,11 @@ wa_review.py — WhatsApp 渠道专属复盘脚本（通用版，行业无关）
 
 import os
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 import csv
 import json
 import argparse
@@ -51,7 +56,7 @@ def _read_csv(name):
     p = _path(name)
     if not os.path.exists(p):
         return []
-    with open(p, newline='', encoding='utf-8') as f:
+    with open(p, newline='', encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
 
 
@@ -60,7 +65,7 @@ def _read_json(name):
     if not os.path.exists(p):
         return None
     try:
-        with open(p, 'r', encoding='utf-8') as f:
+        with open(p, 'r', encoding="utf-8-sig") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return None
@@ -408,7 +413,7 @@ def _write_html_review(r, path):
         _bars(r.get('best_opening_keywords', {}), '开场词'),
         top_rows or '<tr><td colspan="5" class="muted">暂无</td></tr>',
         cmp_html, ins)
-    with open(path, 'w', encoding='utf-8') as f:
+    with open(path, 'w', encoding="utf-8") as f:
         f.write(doc)
 
 
@@ -419,7 +424,7 @@ def _write_html_funnel(f, path):
 <h1>📱 WhatsApp 开发漏斗</h1>
 <div class="sub">仅读不改 · 触达 → 回复 → 成单</div>
 %s</div></body></html>""" % (HTML_CSS, _funnel_html_block(f))
-    with open(path, 'w', encoding='utf-8') as f2:
+    with open(path, 'w', encoding="utf-8") as f2:
         f2.write(doc)
 
 

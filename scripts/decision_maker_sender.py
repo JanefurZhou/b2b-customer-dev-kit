@@ -34,6 +34,11 @@ import send_window as _sw  # 收件人当地发信窗口
 from email.mime.text import MIMEText
 from email.header import Header
 from email.utils import formataddr
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 _here = os.path.dirname(os.path.abspath(__file__))
 _spec = importlib.util.spec_from_file_location("batch_sender", os.path.join(_here, "batch_sender.py"))
@@ -152,7 +157,7 @@ def main():
     }
 
     try:
-        with open(infile, encoding="utf-8") as f:
+        with open(infile, encoding="utf-8-sig") as f:
             items = json.load(f)
     except json.JSONDecodeError as e:
         print(f"ERROR: 「{infile}」不是合法 JSON：{e}")

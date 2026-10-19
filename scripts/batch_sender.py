@@ -56,6 +56,11 @@ import mail_setup as _ms   # 发信通道：单邮箱 / 多邮箱托管预热 / 
 from email.mime.text import MIMEText
 from email.header import Header
 from email.utils import formataddr
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
@@ -252,7 +257,7 @@ def main():
         print(f"ERROR: 找不到输入文件「{infile}」。请传入草稿清单 JSON（数组，见脚本顶部说明）。")
         sys.exit(1)
     try:
-        with open(infile, encoding="utf-8") as f:
+        with open(infile, encoding="utf-8-sig") as f:
             items = json.load(f)
     except json.JSONDecodeError as e:
         print(f"ERROR: 输入文件「{infile}」不是合法 JSON：{e}")

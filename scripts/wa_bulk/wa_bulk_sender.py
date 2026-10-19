@@ -7,6 +7,11 @@ Core: Screenshot AI verification + template variables + resume + audit + harness
 import base64
 import json
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 import os
 import re
 import random
@@ -417,7 +422,7 @@ def load_messages(filepath):
     2. Template+vars: {"template": "...", "contacts": [...], ...}
     Returns unified list: [{"brand": "X", "phone": "X", "message": "X"}, ...]
     """
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, 'r', encoding="utf-8-sig") as f:
         data = json.load(f)
 
     if isinstance(data, list):
@@ -558,7 +563,7 @@ def load_progress():
     """Load send progress"""
     if os.path.exists(PROGRESS_FILE):
         try:
-            with open(PROGRESS_FILE, 'r', encoding='utf-8') as f:
+            with open(PROGRESS_FILE, 'r', encoding="utf-8-sig") as f:
                 return json.load(f)
         except json.JSONDecodeError:
             return None
@@ -574,7 +579,7 @@ def save_progress(total, sent, skipped, last_index):
         'timestamp': __import__('datetime').datetime.now().isoformat()
     }
     os.makedirs(os.path.dirname(PROGRESS_FILE), exist_ok=True)
-    with open(PROGRESS_FILE, 'w', encoding='utf-8') as f:
+    with open(PROGRESS_FILE, 'w', encoding="utf-8") as f:
         json.dump(progress, f, ensure_ascii=False, indent=2)
 
 def clear_progress():
@@ -590,7 +595,7 @@ def cmd_audit(args):
     require_profile()
     # Save .ps1 to workspace
     script_path = os.path.join(os.path.dirname(__file__), "wa_audit.ps1")
-    with open(script_path, 'w', encoding='utf-8') as f:
+    with open(script_path, 'w', encoding="utf-8") as f:
         f.write(_render_ps(AUDIT_PS1))
     print(f"✅ Audit script saved to: {script_path}")
     print()
@@ -630,7 +635,7 @@ def cmd_harness(args):
         print(f"✅ {args[0]}: {len(messages)} messages passed all pre-send checks")
     # Save .ps1 to workspace
     script_path = os.path.join(os.path.dirname(__file__), "wa_harness.ps1")
-    with open(script_path, 'w', encoding='utf-8') as f:
+    with open(script_path, 'w', encoding="utf-8") as f:
         f.write(_render_ps(HARNESS_PS1))
     print(f"✅ Harness script saved to: {script_path}")
     print()
@@ -658,7 +663,7 @@ def _today():
 
 def load_daily_count():
     try:
-        with open(DAILY_COUNT_FILE, encoding="utf-8") as f:
+        with open(DAILY_COUNT_FILE, encoding="utf-8-sig") as f:
             d = json.load(f)
         return int(d.get(_today(), 0))
     except (OSError, ValueError, json.JSONDecodeError):
@@ -668,7 +673,7 @@ def load_daily_count():
 def bump_daily_count():
     d = {}
     try:
-        with open(DAILY_COUNT_FILE, encoding="utf-8") as f:
+        with open(DAILY_COUNT_FILE, encoding="utf-8-sig") as f:
             d = json.load(f)
     except (OSError, json.JSONDecodeError):
         d = {}
@@ -689,7 +694,7 @@ def enforce_pacing(sent_today):
     if os.environ.get("WA_PACING", "1") == "0":
         return 0.0
     try:
-        with open(PACING_FILE, encoding="utf-8") as f:
+        with open(PACING_FILE, encoding="utf-8-sig") as f:
             last = float(json.load(f).get("last_ts", 0))
     except (OSError, ValueError, json.JSONDecodeError):
         last = 0.0
@@ -759,7 +764,7 @@ def _rows_from_file(path):
         ws = openpyxl.load_workbook(path, read_only=True, data_only=True).active
         return [["" if c is None else str(c) for c in row] for row in ws.iter_rows(values_only=True)]
     if ext == ".json":
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8-sig") as f:
             data = json.load(f)
         items = data.get("pending", data.get("contacts", [])) if isinstance(data, dict) else data
         header = ["brand", "phone", "intro", "message"]

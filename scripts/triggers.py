@@ -34,6 +34,11 @@ triggers.py — 数据触发口：扫描客户池与各数据表，生成「今�
 
 import os
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 import csv
 import json
 import argparse
@@ -62,7 +67,7 @@ def _rows(name):
 def _state():
     if os.path.exists(STATE_FILE):
         try:
-            return json.load(open(STATE_FILE, encoding="utf-8"))
+            return json.load(open(STATE_FILE, encoding="utf-8-sig"))
         except Exception:
             pass
     return {"acked": [], "last_review": "", "seen_inbox": []}

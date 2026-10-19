@@ -56,6 +56,11 @@ results.json 期望结构：
 """
 
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 import os
 import re
 import json
@@ -922,7 +927,7 @@ def cmd_social(args):
 
 
 def cmd_filter(args):
-    with open(args.results, "r", encoding="utf-8") as f:
+    with open(args.results, "r", encoding="utf-8-sig") as f:
         results = json.load(f)
     if isinstance(results, dict) and "results" in results:
         results = results["results"]
@@ -944,7 +949,7 @@ def cmd_filter(args):
     out = args.out or "candidates.csv"
     fields = ["domain", "url", "brand", "email_grade", "best_email",
               "all_emails", "region_hint", "customer_type_hint", "next_action", "note"]
-    with open(out, "w", encoding="utf-8", newline="") as f:
+    with open(out, "w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         w.writerows(candidates)
@@ -1033,7 +1038,7 @@ def _load_state(path):
     state = None
     if os.path.exists(path):
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, "r", encoding="utf-8-sig") as f:
                 state = json.load(f)
         except Exception:
             state = None
@@ -1368,7 +1373,7 @@ def cmd_conflict_check(args):
 
     if args.new:
         if args.new.lower().endswith(".json"):
-            with open(args.new, "r", encoding="utf-8") as f:
+            with open(args.new, "r", encoding="utf-8-sig") as f:
                 new_data = json.load(f)
             if isinstance(new_data, dict) and "results" in new_data:
                 new_data = new_data["results"]
@@ -1409,7 +1414,7 @@ def cmd_conflict_check(args):
         for name, fld, old_v, new_v, why in conflicts:
             print(f"  ▸ {name} | {fld}：旧=[{old_v or '空'}] ≠ 新=[{new_v or '空'}] → {why}")
         if args.out:
-            with open(args.out, "w", encoding="utf-8", newline="") as f:
+            with open(args.out, "w", encoding="utf-8-sig", newline="") as f:
                 w = csv.writer(f)
                 w.writerow(["name", "field", "old_tag", "new_tag", "reason", "decision"])
                 for name, fld, old_v, new_v, why in conflicts:

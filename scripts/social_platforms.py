@@ -15,6 +15,12 @@ social_platforms.py — 10 大海外社媒「免登录公开搜索」配方 + �
 """
 
 from urllib.parse import quote_plus
+import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # ---------------- 采购链职位词库：决策层 / 执行层 / 影响层 各 10 个 ----------------
 TITLE_TIERS = {

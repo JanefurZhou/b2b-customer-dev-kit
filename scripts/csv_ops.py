@@ -26,6 +26,11 @@ Commands:
 """
 import csv, os, sys, datetime, re, json
 from collections import Counter
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 DATA_DIR = os.environ.get("B2B_DATA_DIR", "data")
 
@@ -44,13 +49,13 @@ def _read_csv(name):
     p = _path(name)
     if not os.path.exists(p):
         return []
-    with open(p, newline='', encoding='utf-8') as f:
+    with open(p, newline='', encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
 
 def _write_csv(name, fieldnames, rows):
     p = _path(name)
     os.makedirs(os.path.dirname(p), exist_ok=True)
-    with open(p, 'w', newline='', encoding='utf-8') as f:
+    with open(p, 'w', newline='', encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
         w.writerows(rows)
@@ -59,7 +64,7 @@ def _append_csv(name, fieldnames, row):
     p = _path(name)
     os.makedirs(os.path.dirname(p), exist_ok=True)
     file_exists = os.path.exists(p) and os.path.getsize(p) > 0
-    with open(p, 'a', newline='', encoding='utf-8') as f:
+    with open(p, 'a', newline='', encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         if not file_exists:
             w.writeheader()

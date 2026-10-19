@@ -20,6 +20,11 @@ import datetime
 import json
 import os
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 DEFAULT_WINDOW = "09:00-11:00,14:00-16:00"
 

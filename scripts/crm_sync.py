@@ -24,6 +24,11 @@ target 可选：hubspot / salesforce / okki / fumeng / generic
 
 import os
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 import csv
 import json
 import argparse
@@ -226,7 +231,7 @@ def _log(action, target, n):
     p = os.path.join(DATA_DIR, "crm_sync_log.csv")
     os.makedirs(DATA_DIR, exist_ok=True)
     first = not os.path.exists(p)
-    with open(p, "a", encoding="utf-8", newline="") as f:
+    with open(p, "a", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
         if first:
             w.writerow(["time", "action", "target", "count"])

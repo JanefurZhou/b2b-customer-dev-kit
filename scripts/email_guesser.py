@@ -21,6 +21,11 @@
     first / last / lastf / first-last
 """
 import json, sys, os, re, importlib.util
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # 动态加载同目录下的 dns_validator（避免包结构约束）
 _here = os.path.dirname(os.path.abspath(__file__))
@@ -78,7 +83,7 @@ def main():
     infile = sys.argv[1]
     outfile = sys.argv[2] if len(sys.argv) > 2 else None
 
-    with open(infile, encoding="utf-8") as f:
+    with open(infile, encoding="utf-8-sig") as f:
         items = json.load(f)
     if isinstance(items, dict):
         items = items.get("records", items.get("items", [items]))

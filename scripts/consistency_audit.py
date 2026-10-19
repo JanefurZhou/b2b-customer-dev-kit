@@ -31,6 +31,11 @@ import json
 import os
 import re
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(ROOT, "scripts")
@@ -44,7 +49,7 @@ def add(sec, level, msg):
 
 
 def read(p):
-    with open(p, encoding="utf-8") as f:
+    with open(p, encoding="utf-8-sig") as f:
         return f.read()
 
 
@@ -332,7 +337,7 @@ def check_packs():
         if m not in ids and m not in ("id",):
             add("F", "FAIL", f"文档示例使用了不存在的行业包 `{m}`")
     for f in glob.glob(os.path.join(ROOT, "examples", "profiles", "*.json")):
-        d = json.load(open(f, encoding="utf-8"))
+        d = json.load(open(f, encoding="utf-8-sig"))
         pid = d.get("business", {}).get("industry_pack")
         if pid and pid not in ids:
             add("F", "FAIL", f"{rel(f)} 引用不存在的行业包 {pid}")
@@ -603,7 +608,7 @@ def check_flowchart():
     if not os.path.exists(path):
         add("N", "FAIL", "缺 references/assets/sop_flowchart.json（流程图规格，随 PNG/PDF 一起生成）")
         return
-    spec = json.load(open(path, encoding="utf-8"))
+    spec = json.load(open(path, encoding="utf-8-sig"))
     bad = 0
     # N1 版本
     m = re.search(r'version:\s*"([\d.]+)"', read(os.path.join(ROOT, "SKILL.md")))

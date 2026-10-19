@@ -34,6 +34,11 @@ data_import.py — 自有客户库 / 外贸 SaaS 导出 / CRM 导出 → 统一�
 import os
 import re
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 import csv
 import json
 import zipfile
@@ -257,7 +262,7 @@ def load_db(path):
 
 def save_db(path, rows):
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w", encoding="utf-8", newline="") as f:
+    with open(path, "w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=DB_FIELDS, extrasaction="ignore")
         w.writeheader()
         for r in rows:
@@ -326,7 +331,7 @@ def _sync_blacklist(rows):
         return 0
     os.makedirs(DATA_DIR, exist_ok=True)
     write_header = not os.path.exists(path) or os.path.getsize(path) == 0
-    with open(path, "a", encoding="utf-8", newline="") as f:
+    with open(path, "a", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["email", "brand", "reason", "date"])
         if write_header:
             w.writeheader()
@@ -387,7 +392,7 @@ def cmd_import(args):
     bl = _sync_blacklist(db)
     log = os.path.join(DATA_DIR, "import_log.csv")
     first = not os.path.exists(log)
-    with open(log, "a", encoding="utf-8", newline="") as f:
+    with open(log, "a", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
         if first:
             w.writerow(["time", "file", "source", "relation", "rows", "added", "updated"])

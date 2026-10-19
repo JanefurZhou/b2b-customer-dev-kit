@@ -39,6 +39,11 @@ mail_setup.py — 发信通道接管：企业邮箱密钥 / 多邮箱托管 / �
 
 import os
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 import csv
 import json
 import ssl
@@ -114,7 +119,7 @@ DEFAULT_BOUNCE_PAUSE_RATE = 0.05
 def load_mailboxes():
     if not os.path.exists(MAILBOX_FILE):
         return {"mailboxes": []}
-    with open(MAILBOX_FILE, encoding="utf-8") as f:
+    with open(MAILBOX_FILE, encoding="utf-8-sig") as f:
         data = json.load(f)
     data.setdefault("mailboxes", [])
     return data
@@ -153,7 +158,7 @@ def _usage_rows():
     p = os.path.join(DATA_DIR, USAGE_FILE)
     if not os.path.exists(p):
         return []
-    with open(p, encoding="utf-8", newline="") as f:
+    with open(p, encoding="utf-8-sig", newline="") as f:
         return list(csv.DictReader(f))
 
 
@@ -170,7 +175,7 @@ def record_usage(mid, sent, bounced):
     p = os.path.join(DATA_DIR, USAGE_FILE)
     os.makedirs(DATA_DIR, exist_ok=True)
     first = not os.path.exists(p) or os.path.getsize(p) == 0
-    with open(p, "a", encoding="utf-8", newline="") as f:
+    with open(p, "a", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["date", "time", "mailbox", "sent", "bounced"])
         if first:
             w.writeheader()
@@ -474,7 +479,7 @@ def cmd_resume(a):
 
 
 def cmd_mcp_export(a):
-    r = json.load(open(a.report, encoding="utf-8"))
+    r = json.load(open(a.report, encoding="utf-8-sig"))
     items = [x for x in r.get("sent", []) if x.get("dry_run") and x.get("email")]
     if not items:
         raise SystemExit("ERROR: 报告里没有 DRY_RUN 条目。先 DRY_RUN=1 跑 batch_sender / decision_maker_sender。")
@@ -489,7 +494,7 @@ def cmd_mcp_export(a):
 
 
 def cmd_mcp_writeback(a):
-    items = json.load(open(a.outbox, encoding="utf-8"))
+    items = json.load(open(a.outbox, encoding="utf-8-sig"))
     n = 0
     for x in items:
         if x.get("status") == "sent" and x.get("approved") and not x.get("written_back"):

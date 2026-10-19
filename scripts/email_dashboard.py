@@ -50,6 +50,11 @@ import json, sys, os, html as html_mod
 from datetime import datetime
 from collections import Counter
 from urllib.parse import quote
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 
 # 复购跟进的一句话来自 profile.offer.repeat_hook（行业通用；未填用中性句）
@@ -97,7 +102,7 @@ def esc(text):
     return html_mod.escape(str(text)) if text else ""
 
 def load_data(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, 'r', encoding="utf-8-sig") as f:
         return json.load(f)
 
 def analyze_email_type(email):
@@ -839,13 +844,13 @@ def main():
     data = load_data(input_file)
     html_content = generate_html(data, title)
     
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_file, 'w', encoding="utf-8") as f:
         f.write(html_content)
     
     # 导出 WhatsApp 目标清单（供后续 WA 开发信流程直接调用）
     wa_json = export_wa_targets(data)
     wa_path = os.path.join(os.path.dirname(os.path.abspath(output_file)), 'wa_targets.json')
-    with open(wa_path, 'w', encoding='utf-8') as f:
+    with open(wa_path, 'w', encoding="utf-8") as f:
         json.dump(wa_json, f, ensure_ascii=False, indent=2)
     print(f"📱 WhatsApp目标已导出: {wa_path}（待发{len(wa_json['pending'])} / 已转{len(wa_json['done'])}）")
     

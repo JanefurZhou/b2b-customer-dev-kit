@@ -27,6 +27,11 @@ check 通过之前，任何搜索/发信/补池脚本都会被 config.py 拒绝�
 import os
 import re
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 import json
 import datetime
 
@@ -167,7 +172,7 @@ def _kit_filled_map():
         p = os.path.join(KIT_INSTANCE_DIR, name)
         filled = False
         if os.path.exists(p):
-            head = open(p, encoding="utf-8", errors="replace").read(400)
+            head = open(p, encoding="utf-8-sig", errors="replace").read(400)
             # 仅认可 frontmatter 中 filled: true
             m = re.search(r"(?im)^\s*filled\s*:\s*(true|false)\s*$", head)
             filled = bool(m and m.group(1).lower() == "true")
@@ -194,7 +199,7 @@ def cmd_start():
     path = _cfg.profile_path()
     data = {}
     if os.path.exists(path):
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8-sig") as f:
             data = json.load(f)
     missing = dict(_cfg.missing_fields(data)) if data else None
     health = _cfg.kit_health()
@@ -286,7 +291,7 @@ def cmd_check():
     if not os.path.exists(path):
         print("NOT_CONFIGURED 档案不存在。先运行：python3 scripts/onboarding.py init")
         sys.exit(2)
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8-sig") as f:
         data = json.load(f)
     missing = _cfg.missing_fields(data)
     if missing:
@@ -360,7 +365,7 @@ def cmd_attest():
     if not os.path.exists(path):
         print("NOT_CONFIGURED 档案不存在。先运行 init。")
         sys.exit(2)
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8-sig") as f:
         data = json.load(f)
     missing = _cfg.missing_fields(data)
     if missing:
@@ -406,7 +411,7 @@ def cmd_ask():
         data = blank_profile()
         print("未发现档案，已载入空白模板。")
     else:
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8-sig") as f:
             data = json.load(f)
         print("已载入现有档案，按回车保留原值。")
 
@@ -529,7 +534,7 @@ def cmd_apply_pack(pid):
     if not os.path.exists(path):
         print("NOT_CONFIGURED 档案不存在。先运行 init。")
         sys.exit(2)
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8-sig") as f:
         data = json.load(f)
     filled, kept = [], []
     for dotted, key in _PACK_TARGETS:

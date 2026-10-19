@@ -22,6 +22,11 @@
     - DRY_RUN=1：只列出将要查询的去重域名，不发出任何网络请求。
 """
 import json, sys, os, socket, struct, random
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # 公共 DNS 解析器（可用环境变量覆盖）
 DNS_SERVERS = os.environ.get("DNS_SERVERS", "1.1.1.1,8.8.8.8").split(",")
@@ -146,7 +151,7 @@ def main():
     infile = sys.argv[1]
     outfile = sys.argv[2] if len(sys.argv) > 2 else None
 
-    with open(infile, encoding="utf-8") as f:
+    with open(infile, encoding="utf-8-sig") as f:
         items = json.load(f)
     if isinstance(items, dict):
         items = items.get("records", items.get("items", [items]))

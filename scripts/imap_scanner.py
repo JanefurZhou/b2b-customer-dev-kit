@@ -26,6 +26,11 @@ IMAP 凭证（全部走环境变量，脚本内不硬编码）:
 """
 import imaplib, email, sys, os, re, subprocess, datetime, ssl
 from email.header import decode_header
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 BOUNCE_SENDERS = ("mailer-daemon", "postmaster", "mail delivery", "delivery status",
                   "delivery failure", "returned mail", "undelivered")

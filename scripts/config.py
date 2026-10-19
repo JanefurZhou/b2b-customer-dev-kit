@@ -20,6 +20,11 @@ import os
 import re
 import json
 import sys
+for _s in (sys.stdout, sys.stderr):  # Windows 重定向/GBK 终端下中文不乱码不报错
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # ---- profile 位置（基于本文件解析，不硬编码绝对路径）----
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -90,7 +95,7 @@ def load_profile(require_complete=True):
             )
         return None
     try:
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8-sig") as f:
             data = json.load(f)
     except (json.JSONDecodeError, OSError) as e:
         raise ProfileNotConfigured(f"公司档案无法解析：{e}。请重新运行 onboarding.py init。")
@@ -169,7 +174,7 @@ def kit_health(kit_dir=None):
         if not os.path.exists(fp):
             out[name] = ["缺件：文件不存在（先运行 onboarding.py init）"]
             continue
-        with open(fp, encoding="utf-8", errors="replace") as f:
+        with open(fp, encoding="utf-8-sig", errors="replace") as f:
             text = f.read()
         m = re.search(r"(?im)^\s*filled\s*:\s*(true|false)\s*$", text[:400])
         if not (m and m.group(1).lower() == "true"):
@@ -282,7 +287,7 @@ PACKS_FILE = os.path.join(_SKILL_ROOT, "references", "industry_packs.json")
 def load_packs():
     """返回 {pack_id: pack_dict}；文件缺失返回空字典。"""
     try:
-        with open(PACKS_FILE, encoding="utf-8") as f:
+        with open(PACKS_FILE, encoding="utf-8-sig") as f:
             doc = json.load(f)
     except (OSError, json.JSONDecodeError):
         return {}
