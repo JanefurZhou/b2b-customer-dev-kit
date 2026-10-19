@@ -16,7 +16,7 @@ description: >-
   + Soul Seven-Kit content check + explicit user confirmation) must pass before
   any search or send script runs. Not for consumer marketing, paid ads, or
   market sizing.
-license: Proprietary
+license: CC-BY-NC-4.0
 compatibility: "Requires Python 3.8+ (standard library only; 3.9+ for daylight-saving-exact send windows). Network access needed for DNS/SMTP/IMAP and web search."
 metadata:
   version: "3.1"

@@ -1,5 +1,6 @@
 # B2B Customer Development Kit · B2B 客户开发闭环 Skill（全行业通用版）
 
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-3.1-blue.svg)](CHANGELOG.md)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](#安装)
 [![Self-Check](https://img.shields.io/badge/Skill--Self--Check-pass-brightgreen.svg)](references/skill_self_check_report.md)
@@ -29,7 +30,7 @@
 ## 安装
 
 ```bash
-git clone <本仓库地址>
+git clone https://github.com/JanefurZhou/b2b-customer-dev-kit.git
 cd b2b-customer-dev-kit
 python3 scripts/onboarding.py start        # 看新装必做清单
 python3 scripts/onboarding.py init         # 生成空白公司档案
@@ -71,4 +72,4 @@ docs/training/           培训材料：完整版解说、20 分钟精简版、�
 
 ## License
 
-见 [LICENSE](LICENSE)。
+[CC BY-NC 4.0](LICENSE)：可署名后非商业性地使用、修改和分享；商业使用请先联系作者。
