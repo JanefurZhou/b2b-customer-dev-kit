@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "configured": false,
+  "user_confirmed": false,
+  "confirmed_at": "",
+  "filled_at": "",
+  "business": {
+    "industry": "HR onboarding SaaS",
+    "offer_type": "software",
+    "industry_pack": "saas_software",
+    "sales_motion": "",
+    "deal_size": "",
+    "sales_cycle": ""
+  },
+  "company": {
+    "brand_display": "Brightdesk (demo)",
+    "legal_entity": "",
+    "website": "https://brightdesk.example",
+    "product_site": "",
+    "headquarters_country": ""
+  },
+  "contact": {
+    "founder_name": "Ana Ruiz",
+    "founder_title": "Co-founder",
+    "email": "ana@brightdesk.example",
+    "whatsapp": "",
+    "signature_lines": []
+  },
+  "product": {
+    "one_liner_en": "onboarding software that gets new hires productive in their first week",
+    "one_liner_local": "",
+    "primary_keywords": [
+      "employee onboarding software",
+      "HR onboarding",
+      "onboarding platform"
+    ],
+    "alt_keywords": [],
+    "differentiators": [
+      "<your-hris> integration out of the box",
+      "<your-result-metric>"
+    ],
+    "moq": "",
+    "sample_lead_time": "",
+    "bulk_lead_time": ""
+  },
+  "offer": {
+    "entry_offer": "14-day pilot with one team",
+    "cta_question": "Open to a 20-minute demo next week?",
+    "key_facts": [
+      "setup in <your-setup-time>",
+      "EU hosting"
+    ],
+    "min_commitment": "",
+    "delivery_time": "",
+    "proof_points": [],
+    "repeat_hook": ""
+  },
+  "positioning": {
+    "need_tags": [
+      "core_onboarding",
+      "compliance_module"
+    ],
+    "conflict_groups": {},
+    "tag_rules": [
+      {
+        "if_field": "variant_tag",
+        "equals": "on_premise",
+        "forbid_field": "solution_tag",
+        "values": [
+          "low_commitment"
+        ],
+        "reason": "私有化部署没有低门槛试用"
+      }
+    ],
+    "hooks": {}
+  },
+  "targeting": {
+    "buyer_titles": [
+      "HR director",
+      "head of people"
+    ],
+    "channel_keywords": [],
+    "customer_levels": [],
+    "target_regions": [
+      "GB",
+      "DE"
+    ],
+    "languages": [],
+    "exclude_keywords": [],
+    "competitor_markers": [],
+    "reference_brands": [],
+    "customer_industries": [
+      "logistics",
+      "manufacturing",
+      "retail chain"
+    ]
+  },
+  "search": {
+    "scene_terms": [],
+    "intent_terms": [],
+    "channel_site_terms": [],
+    "niche_terms": [],
+    "cert_terms": [],
+    "channels": []
+  },
+  "rules": {
+    "daily_limit": 200,
+    "local_send_window": "09:00-11:00,14:00-16:00",
+    "same_contact_cooldown_hours": 24,
+    "require_confirmed_email": true,
+    "notes": ""
+  },
+  "credentials_note": "SMTP/IMAP 密码等密钥不要写在这里，运行时通过环境变量提供：SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS/IMAP_*",
+  "_demo": "虚构演示档案：只演示字段怎么填，所有名称、域名、数字都是假的；不得用于真实发信，也不得当作任何用户的事实。",
+  "data_sources": {
+    "customer_db": "none",
+    "customer_db_files": [],
+    "saas_sources": [],
+    "mail_route": "not_yet",
+    "mail_provider": "",
+    "crm": "none",
+    "crm_route": ""
+  }
+}

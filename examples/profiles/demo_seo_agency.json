@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "configured": false,
+  "user_confirmed": false,
+  "confirmed_at": "",
+  "filled_at": "",
+  "business": {
+    "industry": "B2B SEO consulting",
+    "offer_type": "service",
+    "industry_pack": "professional_services",
+    "sales_motion": "",
+    "deal_size": "",
+    "sales_cycle": ""
+  },
+  "company": {
+    "brand_display": "Fieldnote Search (demo)",
+    "legal_entity": "",
+    "website": "https://fieldnote.example",
+    "product_site": "",
+    "headquarters_country": ""
+  },
+  "contact": {
+    "founder_name": "Mia Chen",
+    "founder_title": "Founder",
+    "email": "mia@fieldnote.example",
+    "whatsapp": "",
+    "signature_lines": []
+  },
+  "product": {
+    "one_liner_en": "SEO for B2B manufacturers selling into Europe",
+    "one_liner_local": "",
+    "primary_keywords": [
+      "B2B SEO",
+      "industrial SEO",
+      "SEO for manufacturers"
+    ],
+    "alt_keywords": [],
+    "differentiators": [
+      "<your-case-result>",
+      "<your-years> years in industrial niches"
+    ],
+    "moq": "",
+    "sample_lead_time": "",
+    "bulk_lead_time": ""
+  },
+  "offer": {
+    "entry_offer": "free 3-point site audit",
+    "cta_question": "Want the 3-point audit I put together for your site?",
+    "key_facts": [
+      "fixed monthly fee from <your-price>",
+      "no long-term contract"
+    ],
+    "min_commitment": "",
+    "delivery_time": "",
+    "proof_points": [],
+    "repeat_hook": ""
+  },
+  "positioning": {
+    "need_tags": [],
+    "conflict_groups": {},
+    "tag_rules": [],
+    "hooks": {}
+  },
+  "targeting": {
+    "buyer_titles": [
+      "head of marketing",
+      "managing director"
+    ],
+    "channel_keywords": [],
+    "customer_levels": [],
+    "target_regions": [
+      "DE",
+      "FR",
+      "IT"
+    ],
+    "languages": [],
+    "exclude_keywords": [],
+    "competitor_markers": [],
+    "reference_brands": [],
+    "customer_industries": [
+      "industrial machinery manufacturer",
+      "packaging manufacturer"
+    ]
+  },
+  "search": {
+    "scene_terms": [],
+    "intent_terms": [],
+    "channel_site_terms": [],
+    "niche_terms": [],
+    "cert_terms": [],
+    "channels": []
+  },
+  "rules": {
+    "daily_limit": 200,
+    "local_send_window": "09:00-11:00,14:00-16:00",
+    "same_contact_cooldown_hours": 24,
+    "require_confirmed_email": true,
+    "notes": ""
+  },
+  "credentials_note": "SMTP/IMAP 密码等密钥不要写在这里，运行时通过环境变量提供：SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS/IMAP_*",
+  "_demo": "虚构演示档案：只演示字段怎么填，所有名称、域名、数字都是假的；不得用于真实发信，也不得当作任何用户的事实。",
+  "data_sources": {
+    "customer_db": "none",
+    "customer_db_files": [],
+    "saas_sources": [],
+    "mail_route": "not_yet",
+    "mail_provider": "",
+    "crm": "none",
+    "crm_route": ""
+  }
+}
