@@ -180,6 +180,28 @@ Rules:
 4. Customer facts quoted in e-mails may come from S1/S2 only; S3 content never enters an e-mail.
 5. Pain points of success cases are tiered the same way: the AI proposes evidence-backed candidates only; `add_success` after user confirmation.
 
+## 5.6 Decision chain, end-customer complaints and purchase timing (v3.2) ⭐
+
+### Three roles in the decision chain
+| Role | Typical titles | How to use |
+|---|---|---|
+| Decider | Owner, CEO, Founder, Head of Buying | switch to them after the handler has had 3 e-mails with no reply; shorter mail, talk outcomes |
+| Handler | buying / sourcing titles in `targeting.buyer_titles` | first e-mail goes here; talk specs, MOQ, delivery |
+| Influencer | design, product development, QA, technical lead | never mass-mailed; mine their public content for hooks (new product direction, material or tech preferences) |
+
+Sources: public pages only (LinkedIn, team page, exhibitor lists), graded S1/S2; a role you cannot find is "not obtained" — never invent a name. Notes format: `chain=decider:name/title;handler:…;influencer:…`.
+
+### End-customer complaints as pain-point hooks
+1. Find public reviews of the account's own customers: site reviews, marketplaces, Trustpilot, G2, app stores, social comments (pick by industry).
+2. Read the low ratings only, group them by problem, and keep only the group **your product or service actually solves**.
+3. In the e-mail say "noticed some users mention X" — never name reviewers or inflate shares; log the review links in notes (S2).
+4. AI grouping is only a candidate; **a pain point is used only after the user confirms it**, same rule as success cases.
+
+### Purchase timing (when customs records exist)
+- Run `python3 scripts/customs_summary.py <imports.csv> --md`: the median purchase interval infers the next purchase window; **send the first e-mail 4–6 weeks before it**. For small-batch accounts lead with `low_commitment`.
+- Import stoppage (last shipment older than twice the median interval and over 180 days): they may have switched suppliers or shrunk — pitch "backup supplier", never push for an order.
+- No data: do not estimate timing; follow the industry's buying season and the account's launch rhythm. **Never use unsourced ratios** (e.g. "send when 75% of the cycle has passed"). Label every window "inferred".
+
 ## 6. Suggested time budget
 
 | Stage | Time | Output |
@@ -189,6 +211,7 @@ Rules:
 | website scan | 3–4 min | main business + current solution + customer type + certifications + news |
 | search / LinkedIn | 2–3 min | buying signals, decision makers, recent moves |
 | tag decision | 1 min | need_tag + solution_tag |
+| decision chain / complaints / timing (key accounts) | 3–5 min | chain, pain-point candidates, purchase window |
 | **total** | **7–10 min per account** | — |
 
 In batch development, a 2-minute scope gate per account can do the coarse split first, then dig into the ones that pass. **Before sending, every account's tag must rest on research.**
@@ -206,6 +229,8 @@ In batch development, a 2-minute scope gate per account can do the coarse split 
 | judging the business by the company name | check the website business lines before every send |
 | one research pass is valid forever | companies pivot / expand; re-check periodically |
 | inventing thresholds / lead times / certifications / cases to fill out the pitch | only verifiable facts from the profile |
+| writing "helped a client grow 30%" | only numbers from user-confirmed success_cases; none → no number |
+| estimating timing with an arbitrary ratio | only the median interval from customs records, labelled "inferred" |
 
 ---
 
@@ -222,6 +247,9 @@ Buying signal: [vendor / partner / RFP / hiring / expansion / certification / no
 need_tag: [<line_a>/<line_b>/multi/unknown]
 solution_tag: [compliance/cost/speed/low_commitment/... (only capabilities you really have)]
 Sources: [website / search / LinkedIn / ...]
+Decision chain: [decider / handler / influencer; "not obtained" when unknown]
+Pain-point candidates: [grouped low reviews + links; awaiting user confirmation]
+Purchase window: [customs_summary.py inference, or "no data"]
 Notes: [special findings: new product, expansion, funding, tender, new management …]
 ```
 

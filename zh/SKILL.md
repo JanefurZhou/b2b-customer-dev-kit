@@ -19,12 +19,12 @@ description: >-
 license: CC-BY-NC-4.0
 compatibility: "Requires Python 3.8+ (standard library only; 3.9+ for daylight-saving-exact send windows). Network access needed for DNS/SMTP/IMAP and web search."
 metadata:
-  version: "3.1"
+  version: "3.2"
   type: "universal-template"
   onboarding: "mandatory-first-run"
 ---
 
-# B2B Customer Development Kit（全行业通用版 v3.1）
+# B2B Customer Development Kit（全行业通用版 v3.2）
 
 核心理念：**不做粗筛，每家都查背景、定位需求、针对性推对应方案；品牌名不决定需求，调研才决定。** 用数据闭环替代 AI 记忆，用脚本替代人工计算，用证据替代猜测。
 
@@ -118,9 +118,9 @@ python3 scripts/onboarding.py init       # 生成空白 config/company_profile.j
 1. **门禁 + 数据接入** — `python3 scripts/onboarding.py check` = `READY`；客户库按声明导入，发信通道 `mail_setup.py test` 通过；每天先跑 `triggers.py scan`。
 2. **第零步 全渠道复盘** — `csv_ops.py review_success`、`wa_review.py review`；读 `soul_seven_kit/MEMORY.md` 的本周结论作为本轮起点。
 3. **第一步 搜索候选** — `search_customers.py queries`（关键词矩阵）· `channels`（15 个发现渠道；海关免注册路径见 `references/海关数据操作指引.md`）· `social`（10 大社媒免登录公开搜索 + 30 个采购链职位，打法见 `references/social_media_playbooks.md`）。脚本只生成公开搜索式；需要登录的动作（连接请求、私信、进群）由用户本人决定是否手动做。结果统一走 `filter --against <客户库.csv>`（查库去重 + 漏斗诊断 + 待验证入池）。自循环补池：`replenish` / `schedule` 按四维轮换——深度 d1 公司 → d2 决策人 → d3 存量深挖（最快）· 远度 地区由近到远 · 高度 客户层级由高到低 · 广度 core → wide → max（最慢）（`references/自循环引擎.md`）。
-4. **第二步 背景调查** — 每条结论标证据等级与来源：至少 1 条 S1 或 2 条独立 S2 才定标签；只有 S3 → `need_review` 交用户拍板（`references/research_guide.md` 五·五）。
+4. **第二步 背景调查** — 每条结论标证据等级与来源：至少 1 条 S1 或 2 条独立 S2 才定标签；只有 S3 → `need_review` 交用户拍板（`references/research_guide.md` 五·五）。重点客户另写决策链（拍板人 / 对接人 / 影响者）、终端差评痛点候选（用户确认后才用），有海关记录时用 `customs_summary.py` 推断采购窗口（五·六）。询盘到达后的交易风控（身份、制裁、签约主体、付款条件）交给独立的 customer-background-investigation 技能。
 5. **第三步 需求定位** — need_tag 决定推哪条线，solution_tag 决定钩子；`conflict-check --against <pool.csv>` 只提示冲突、不改数据。
-6. **第四步 撰写内容** — `references/email_templates.md`；占位符只用 `product.*` / `offer.*` 填；发信脚本拦截任何残留 `<...>` / `{...}`。
+6. **第四步 撰写内容** — `references/email_templates.md`；占位符只用 `product.*` / `offer.*` 填；发信脚本拦截任何残留 `<...>` / `{...}`。案例、ROI、百分比只引用用户确认过的 `success_cases`；没有就只写能力，不写数字。
 7. **第五步 发送执行** — 发前三道关（邮箱 ✓ 查重 `csv_ops.py check` / `cross_brand_check` ✓ 备注 ✓）→ `DRY_RUN=1` 生成逐封报告 → **用户明确批准** → `decision_maker_sender.py`（或 `batch_sender.py`；发信通道三选一：单邮箱密钥 / 多邮箱托管按预热上限轮换 / `mail_setup.py mcp-export` 交连接器建草稿）。每封自动带 `List-Unsubscribe` 头和正文退订提示。联系人带 `region`/`tz` 时只在收件人当地工作日窗口内发，窗口外本轮延后（`send_window.py table --me <你的时区>` 实时换算，含夏令时）。每日 ≤200 封，间隔 30 秒。
 8. **第六步 跟进管理** — 发信后 24–48 小时扫一次退信/回复：`DRY_RUN=1 imap_scanner.py` 先看识别结果，再正式回写（邮箱只读打开）；`csv_ops.py cooldown <email>` 计算 5 级冷却（按 `followup_count` = 已发封数 − 1：已发 1 / 2 / 3 封后分别等 3 / 3 / 10 天；已发 4 封 → 停通用邮箱，只走 LinkedIn / 个人邮箱；已发 5 封及以上 → 邮件全停，转第七步）；社媒私信按 1-3-7-21（人工）；同一客户同一天只走一个渠道。
 9. **第七步 WhatsApp 触发** — 触发信号命中后：`wa_bulk_sender.py convert → validate → preview → harness → send → audit`（双号隔离；`send` 自动按随机 8–15 秒间隔、每 5 条冷却 30–60 秒出下一条；每日 200 条计数器强制 STOP），细节 `references/wa_bulk_guide.md`。
@@ -169,6 +169,7 @@ python3 scripts/onboarding.py init       # 生成空白 config/company_profile.j
 - SMTP/IMAP 密钥写进档案、脚本、日志或 `config/mailboxes.json`。
 - 托管邮箱已暂停仍在发信；推 CRM 或 MCP 发信清单里有 `approved=false` 的条目被执行。
 - 草稿批次在用户明确批准之前被发出。
+- 草稿里出现未经用户确认的案例、ROI 或百分比；用没有出处的"周期比例"决定发信时机。
 
 ## Role contract
 
@@ -218,7 +219,7 @@ Workflow prompt audit: N/A — single agent context; the bundled scripts make no
 
 - [ ] `python3 scripts/onboarding.py check` 打印 `READY`，`kit-check` 为 7/7。
 - [ ] `search_customers.py channels` / `social` 的默认渠道与平台贴合用户行业。
-- [ ] 每条新线索都有真实、可溯源的具名联系人，背调证据达到 S1 或 2×S2，弱信号已标 need_review。
+- [ ] 每条新线索都有真实、可溯源的具名联系人，背调证据达到 S1 或 2×S2，弱信号已标 need_review；重点客户已写决策链（查不到的角色写"未获取"）。
 - [ ] 草稿已本地化、只引用事实，批次经用户明确批准；`DRY_RUN` 报告已逐封核对。
 - [ ] 地址通过 DNS/MX；发送发生在收件人当地窗口内，冷却与每日上限得到遵守。
 - [ ] 退信已拉黑，发送/黑名单 CSV 已回写；WhatsApp 名单通过 `validate`（无重复、无未填占位符）。

@@ -1,9 +1,9 @@
 # B2B 客户开发闭环 Skill（全行业通用版）· 中文版
 
-> 本目录是中文版（v3.1）。英文版在仓库根目录：[../README.md](../README.md)。两版结构相同、版本号一致，可任选其一独立使用。
+> 本目录是中文版（v3.2）。英文版在仓库根目录：[../README.md](../README.md)。两版结构相同、版本号一致，可任选其一独立使用。
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3.1-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.2-blue.svg)](CHANGELOG.md)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](#安装)
 [![Self-Check](https://img.shields.io/badge/Skill--Self--Check-pass-brightgreen.svg)](references/skill_self_check_report.md)
 
@@ -11,7 +11,9 @@
 
 包内不含任何公司、联系人或客户数据。客户库、邮箱、CRM 都在安装时由使用者自己接入。
 
-![SOP 闭环流程图 v3.1](references/assets/sop_flowchart.png)
+![B2B 客户自动开发路径图](references/assets/auto_dev_path_zh.png)
+
+完整 SOP 闭环流程图（含每个节点的出口与回路）：[references/assets/sop_flowchart.png](references/assets/sop_flowchart.png)。流程图节点自 v3.1 起未变，v3.2 只在第二步、第四步内补充内容。
 
 ## 能做什么
 
@@ -21,9 +23,9 @@
 | 数据接入层 | 自有客户库 / SaaS·海关·CRM 导出统一导入；企业邮箱密钥、多邮箱托管预热、MCP 连接器三种发信路径；CRM 同步；每日数据触发口 | `data_import.py` · `mail_setup.py` · `crm_sync.py` · `triggers.py` |
 | 自循环引擎 | 四维轮换补池：深度（公司 → 决策人 → 存量深挖）· 远度（由近到远）· 高度（由高到低）· 广度（core → wide → max） | `search_customers.py replenish` |
 | 第一步 搜索 | 15 个发现渠道 + 10 大社媒公开搜索式 + 30 个采购链职位；需要登录的动作一律人工 | `search_customers.py queries / channels / social` |
-| 第二步 背调 | 证据分级 S1/S2/S3，≥1 条 S1 或 2 条独立 S2 才能打标签；品牌名不决定需求 | `references/research_guide.md` |
+| 第二步 背调 | 证据分级 S1/S2/S3，≥1 条 S1 或 2 条独立 S2 才能打标签；品牌名不决定需求；v3.2 新增决策链、终端差评痛点钩子（用户确认）、按海关采购间隔推断时机 | `references/research_guide.md` · `customs_summary.py` |
 | 第三步 定位 | 需求标签 + 方案标签双标签，规则冲突拦截 | `search_customers.py conflict-check` |
-| 第四步 撰写 | 收件人母语、≤120 词、纯文本、只引用 S1/S2 事实 | `references/email_templates.md` |
+| 第四步 撰写 | 收件人母语、≤120 词、纯文本、只引用 S1/S2 事实；案例和数字只来自用户确认过的成功案例 | `references/email_templates.md` |
 | 第五步 发送 | 演练 → 人工批准 → 只发具名决策人 → 当地窗口 → 限额 → 自动退订头 | `decision_maker_sender.py` · `batch_sender.py` |
 | 第六步 跟进 | 冷却期 3/3/10 天最多 4 封，社媒 1-3-7-21，退信永久拉黑 | `imap_scanner.py` · `csv_ops.py cooldown` |
 | 第七步 WhatsApp | 触发式启动；校验 → 测试号 → 逐条发 → 200 条强制停 → 截图复查 | `wa_bulk_sender.py` |

@@ -18,12 +18,12 @@ description: >-
 license: CC-BY-NC-4.0
 compatibility: "Requires Python 3.8+ (standard library only; 3.9+ for daylight-saving-exact send windows). Network access needed for DNS/SMTP/IMAP and web search."
 metadata:
-  version: "3.1"
+  version: "3.2"
   type: "universal-template"
   onboarding: "mandatory-first-run"
 ---
 
-# B2B Customer Development Kit (universal edition v3.1)
+# B2B Customer Development Kit (universal edition v3.2)
 
 Core idea: **no coarse filtering — research every account, position its need, and pitch the matching solution; the brand name does not decide the need, research does.** Replace AI memory with a data loop, manual arithmetic with scripts, and guesses with evidence.
 
@@ -117,9 +117,9 @@ Install Gate (start→init→profile→kit-check→check→attest=READY)
 1. **Gate + data access** — `python3 scripts/onboarding.py check` = `READY`; customer DB imported as declared; sending route passes `mail_setup.py test`; run `triggers.py scan` first every day.
 2. **Step 0 Omni-channel Review** — `csv_ops.py review_success`, `wa_review.py review`; read this week's conclusions in `soul_seven_kit/MEMORY.md` as the starting point for this round.
 3. **Step 1 Search Candidates** — `search_customers.py queries` (keyword matrix) · `channels` (15 discovery channels; no-registration customs path in `references/customs_data_guide.md`) · `social` (login-free public search on 10 social platforms + 30 procurement-chain titles; playbooks in `references/social_media_playbooks.md`). The script only generates public search queries; actions that need a login (connection requests, DMs, joining groups) are the user's own manual decision. All results go through `filter --against <customer_db.csv>` (DB de-dup + funnel diagnosis + pending-verification pool). Self-replenishing pool: `replenish` / `schedule` rotate on four axes — Depth d1 companies → d2 decision makers → d3 deep-mining the existing pool (fastest) · Reach regions near to far · Height customer tier high to low · Breadth core → wide → max (slowest) (`references/self_replenishing_engine.md`).
-4. **Step 2 Background Research** — every conclusion carries an evidence grade and source: at least 1 S1 or 2 independent S2 before setting a tag; S3 only → `need_review` for the user to decide (`references/research_guide.md` §5.5).
+4. **Step 2 Background Research** — every conclusion carries an evidence grade and source: at least 1 S1 or 2 independent S2 before setting a tag; S3 only → `need_review` for the user to decide (`references/research_guide.md` §5.5). Key accounts also get a decision chain (decider / handler / influencer), end-customer complaint candidates for hooks (used only after the user confirms), and a purchase window inferred by `customs_summary.py` when customs records exist (§5.6). Post-inquiry risk vetting (identity, sanctions, contracting entity, payment terms) belongs to the separate customer-background-investigation skill.
 5. **Step 3 Need Positioning** — need_tag decides which line to pitch, solution_tag decides the hook; `conflict-check --against <pool.csv>` only flags conflicts, never changes data.
-6. **Step 4 Write Content** — `references/email_templates.md`; placeholders are filled only from `product.*` / `offer.*`; the senders block any leftover `<...>` / `{...}`.
+6. **Step 4 Write Content** — `references/email_templates.md`; placeholders are filled only from `product.*` / `offer.*`; the senders block any leftover `<...>` / `{...}`. Case studies, ROI and percentages come only from user-confirmed `success_cases`; with none, write capabilities, not numbers.
 7. **Step 5 Send** — three pre-send checks (mailbox ✓ de-dup `csv_ops.py check` / `cross_brand_check` ✓ notes ✓) → `DRY_RUN=1` produces a per-e-mail report → **explicit user approval** → `decision_maker_sender.py` (or `batch_sender.py`; three sending routes: single mailbox key / hosted multi-mailbox rotating under warm-up caps / `mail_setup.py mcp-export` for a connector to draft). Every e-mail carries a `List-Unsubscribe` header and an opt-out line. Contacts with `region`/`tz` are sent only inside the recipient's local weekday window; outside it they are deferred (`send_window.py table --me <your tz>` converts live, daylight saving included). ≤200 e-mails per day, 30-second interval.
 8. **Step 6 Follow-up Management** — 24–48 hours after sending, scan bounces/replies once: `DRY_RUN=1 imap_scanner.py` to see what is detected, then write back for real (mailbox opened read-only); `csv_ops.py cooldown <email>` computes the 5-level cooldown (`followup_count` = e-mails sent − 1: after 1 / 2 / 3 e-mails wait 3 / 3 / 10 days; after 4 e-mails → stop generic mailboxes, LinkedIn / personal mailbox only; 5 or more → stop e-mail entirely, move to Step 7); social DMs on 1-3-7-21 (manual); one channel per customer per day.
 9. **Step 7 WhatsApp Trigger** — when a trigger signal fires: `wa_bulk_sender.py convert → validate → preview → harness → send → audit` (two-number isolation; `send` paces itself at random 8–15 s intervals and a 30–60 s cooldown every 5 messages; the daily 200-message counter forces STOP); details in `references/wa_bulk_guide.md`.
@@ -168,6 +168,7 @@ Data access and triggers: `references/data_access_and_triggers.md`; data structu
 - SMTP/IMAP keys written into the profile, scripts, logs or `config/mailboxes.json`.
 - A paused hosted mailbox still sending; `approved=false` items executed in a CRM push or MCP sending list.
 - A draft batch sent before the user's explicit approval.
+- A case study, ROI or percentage in a draft that is not in a user-confirmed success case; send timing based on an unsourced "cycle ratio".
 
 ## Role contract
 
@@ -217,7 +218,7 @@ Before closing a development round, confirm each item:
 
 - [ ] `python3 scripts/onboarding.py check` prints `READY` and `kit-check` is 7/7.
 - [ ] The default channels and platforms from `search_customers.py channels` / `social` fit the user's industry.
-- [ ] Every new lead has a real, traceable named contact; research evidence reaches S1 or 2×S2; weak signals are marked need_review.
+- [ ] Every new lead has a real, traceable named contact; research evidence reaches S1 or 2×S2; weak signals are marked need_review; key accounts have a decision chain (unknown roles marked "not obtained").
 - [ ] Drafts are localised and quote only facts; the batch was explicitly approved by the user; the `DRY_RUN` report was checked e-mail by e-mail.
 - [ ] Addresses passed DNS/MX; sending happened inside the recipient's local window; cooldown and daily cap were respected.
 - [ ] Bounces are blacklisted; send / blacklist CSVs are written back; the WhatsApp list passed `validate` (no duplicates, no unfilled placeholders).

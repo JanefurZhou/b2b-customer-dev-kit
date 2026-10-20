@@ -1,5 +1,5 @@
 {
- "version": "3.1",
+ "version": "3.2",
  "note": "Generated with the flowchart PNG/PDF. Edit the flowchart and this file together.",
  "clusters": [
   "① Install Gate (first thing after install · until all 3 checks pass, every search / send script refuses to run)",

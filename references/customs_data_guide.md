@@ -42,6 +42,16 @@
 | Number of suppliers | 2–5 (room to switch) | only 1 for many years (hard to enter; long-term follow-up) |
 | Goods description | matches your HS code / category | only a neighbouring category (research first, then decide) |
 
+## 2.5 Quantifying and timing (v3.2)
+
+Export the bills you found to CSV (English or Chinese headers: date, origin, supplier, hs, teu) and run:
+
+```bash
+python3 scripts/customs_summary.py <imports.csv> --md
+```
+
+You get shipment count, last shipment, monthly TEU, scale tier (small-batch < 0.5 / mid-volume 0.5–3 / bulk > 3 TEU per month), origin and supplier shares, median purchase interval, next purchase window (inferred), plus import-stoppage, single-supplier and small-sample signals. How to use them: `references/research_guide.md` 5.6.
+
 ## 3. How to use it in an e-mail (without exposing data-source details)
 
 - You may write: "We work with several importers of <category> in <country>" (only when true); "Saw you're active in <category>".

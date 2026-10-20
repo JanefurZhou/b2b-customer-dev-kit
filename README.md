@@ -1,7 +1,7 @@
 # B2B Customer Development Kit (industry-generic, de-identified)
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3.1-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.2-blue.svg)](CHANGELOG.md)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](#install)
 [![Self-Check](https://img.shields.io/badge/Skill--Self--Check-pass-brightgreen.svg)](references/skill_self_check_report.md)
 
@@ -11,7 +11,9 @@ An industry-agnostic, de-identified Agent Skill for B2B customer development: **
 
 The package contains no company, contact or customer data. Customer DB, mailboxes and CRM are connected by the user at install.
 
-![SOP closed-loop flowchart v3.1](references/assets/sop_flowchart.png)
+![SOP closed-loop flowchart](references/assets/sop_flowchart.png)
+
+One-page path overview (Chinese): [references/assets/auto_dev_path_zh.png](references/assets/auto_dev_path_zh.png). The SOP flowchart nodes are unchanged since v3.1; v3.2 adds content inside Step 2 and Step 4.
 
 ## What it does
 
@@ -21,9 +23,9 @@ The package contains no company, contact or customer data. Customer DB, mailboxe
 | Data Access Layer | Own customer DB and SaaS / customs / CRM exports imported into one table; three sending routes (business-mailbox keys, hosted multi-mailbox warm-up, MCP connector); CRM sync; daily Data Triggers | `data_import.py` · `mail_setup.py` · `crm_sync.py` · `triggers.py` |
 | Self-replenishing engine | Four-axis rotation: Depth (companies → decision makers → deep-dive) · Reach (near → far) · Height (high → low) · Breadth (core → wide → max) | `search_customers.py replenish` |
 | Step 1 Search | 15 discovery channels + public search queries for 10 social platforms + 30 procurement-chain titles; anything that needs a login is manual | `search_customers.py queries / channels / social` |
-| Step 2 Research | Evidence tiers S1/S2/S3; ≥1 S1 or 2 independent S2 before tagging; the brand name does not decide the need | `references/research_guide.md` |
+| Step 2 Research | Evidence tiers S1/S2/S3; ≥1 S1 or 2 independent S2 before tagging; the brand name does not decide the need; v3.2 adds the decision chain, end-customer complaint hooks (user-confirmed) and purchase timing from customs intervals | `references/research_guide.md` · `customs_summary.py` |
 | Step 3 Positioning | Dual tags (need tag + solution tag) with rule-conflict blocking | `search_customers.py conflict-check` |
-| Step 4 Writing | Recipient's native language, ≤120 words, plain text, S1/S2 facts only | `references/email_templates.md` |
+| Step 4 Writing | Recipient's native language, ≤120 words, plain text, S1/S2 facts only; cases and numbers only from user-confirmed success cases | `references/email_templates.md` |
 | Step 5 Sending | Dry run → human approval → named decision makers only → local window → daily cap → automatic opt-out header | `decision_maker_sender.py` · `batch_sender.py` |
 | Step 6 Follow-up | Cooldown 3/3/10 days, 4 e-mails at most; social 1-3-7-21; bounces blacklisted for good | `imap_scanner.py` · `csv_ops.py cooldown` |
 | Step 7 WhatsApp | Triggered; validate → test number → one by one → hard stop at 200 → screenshot audit | `wa_bulk_sender.py` |

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v3.2 — decision chain, complaint hooks, purchase timing
+
+- Step 2 Research (`references/research_guide.md` §5.6): key accounts get a three-role decision chain (decider / handler / influencer; unknown roles are "not obtained", never invented); end-customer complaints grouped into pain-point hook candidates, used only after the user confirms; purchase timing inferred from the median interval of customs records — first e-mail 4–6 weeks before the window, no unsourced "cycle ratio".
+- New `scripts/customs_summary.py` (10 self-tests, standard library only, same logic as the customer-background-investigation skill): shipment count, last shipment, monthly TEU, scale tier, origin and supplier shares, median interval, inferred next window, import-stoppage / single-supplier / new-category / small-sample signals. `references/customs_data_guide.md` §2.5 shows how to run it.
+- Step 4 Writing: case studies, ROI and percentages only from user-confirmed `success_cases`.
+- Red Flags and Verification updated accordingly; SKILL.md states that post-inquiry risk vetting belongs to the separate customer-background-investigation skill.
+- New one-page Chinese path diagram `references/assets/auto_dev_path_zh.png`. SOP flowchart nodes unchanged.
+
 ## v3.1 — four-axis rotation + Data Access Layer + Data Triggers
 
 ### Four-axis rotation (Height / Breadth / Depth / Reach)
